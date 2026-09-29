@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Activity, Building2, CalendarDays, CheckSquare2, ChevronRight, CircleHelp,
-  Clock3, LayoutDashboard, LogOut, Plus, RefreshCw, Users,
+  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Users,
 } from 'lucide-react'
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
@@ -10,14 +10,19 @@ import type { DashboardData, SafeUser } from '../lib/auth-api'
 type View = 'overview' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
 type Row = Record<string, unknown>
 
-const viewItems: { id: View; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'employees', label: 'Employees', icon: Users },
-  { id: 'departments', label: 'Departments', icon: Building2 },
-  { id: 'attendance', label: 'Attendance', icon: Clock3 },
-  { id: 'leaves', label: 'Leave requests', icon: CalendarDays },
-  { id: 'tasks', label: 'Tasks', icon: CheckSquare2 },
+const navGroups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
+  { label: 'OVERVIEW', items: [{ id: 'overview', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'MANAGEMENT', items: [
+    { id: 'employees', label: 'Employees', icon: Users },
+    { id: 'departments', label: 'Departments', icon: Building2 },
+  ] },
+  { label: 'TIME & WORK', items: [
+    { id: 'attendance', label: 'Attendance', icon: Clock3 },
+    { id: 'leaves', label: 'Leave requests', icon: CalendarDays },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare2 },
+  ] },
 ]
+const viewItems = navGroups.flatMap((group) => group.items)
 
 const formatDate = (value: unknown) => value ? new Date(String(value)).toLocaleDateString() : '—'
 
@@ -26,6 +31,7 @@ export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<SafeUser | null>(null)
   const [view, setView] = useState<View>('overview')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [stats, setStats] = useState<DashboardData>({})
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -143,15 +149,25 @@ export default function Dashboard() {
   if (!user) return <main className="dashboard-loading">Loading your workspace…</main>
 
   return (
-    <main className="workbench">
+    <main className={sidebarCollapsed ? 'workbench is-sidebar-collapsed' : 'workbench'}>
       <aside className="workbench-sidebar">
-        <a className="workbench-brand" href="/dashboard"><span className="workbench-mark">S</span><span>snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
-        <div className="workspace-label">WORKSPACE</div>
+        <div className="sidebar-brand-row">
+          <a className="workbench-brand" href="/dashboard"><span className="workbench-mark">S</span><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
+          <button className="sidebar-toggle" type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}>
+            {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
+          </button>
+        </div>
         <nav className="workbench-nav" aria-label="Workspace navigation">
-          {viewItems.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} onClick={() => setView(id)} type="button">
-              <Icon size={17} strokeWidth={1.8} /><span>{label}</span>{view === id && <ChevronRight className="nav-chevron" size={15} />}
-            </button>
+          {navGroups.map(({ label: groupLabel, items }, groupIndex) => (
+            <div className="nav-group" key={groupLabel}>
+              <div className="workspace-label">{groupLabel}</div>
+              {items.map(({ id, label, icon: Icon }) => (
+                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={sidebarCollapsed ? label : undefined} aria-label={label} onClick={() => setView(id)} type="button">
+                  <Icon size={17} strokeWidth={1.8} /><span>{label}</span>{view === id && <ChevronRight className="nav-chevron" size={15} />}
+                </button>
+              ))}
+              {groupIndex < navGroups.length - 1 && <div className="nav-separator" />}
+            </div>
           ))}
         </nav>
         <div className="sidebar-bottom">

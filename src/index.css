@@ -151,9 +151,16 @@ a { color: inherit; }
 .account-details dd { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .account-loading { margin-top: 24px; color: var(--muted); font-size: 13px; }
 
-.workbench { display: grid; min-height: 100vh; grid-template-columns: 248px minmax(0, 1fr); color: #243a33; background: #f4f6f1; }
+.workbench { display: grid; min-height: 100vh; grid-template-columns: 248px minmax(0, 1fr); color: #243a33; background: #f4f6f1; transition: grid-template-columns 180ms ease; }
+.workbench.is-sidebar-collapsed { grid-template-columns: 76px minmax(0, 1fr); }
 .workbench-sidebar { position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column; padding: 25px 16px 17px; color: #e9eee7; background: #193c33; }
+.sidebar-brand-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 38px; }
 .workbench-brand { display: flex; align-items: center; gap: 10px; margin: 0 8px 38px; color: inherit; font: 800 16px Manrope, sans-serif; text-decoration: none; }
+.sidebar-brand-row .workbench-brand { min-width: 0; margin: 0 4px; }
+.brand-copy { min-width: 0; }
+.sidebar-toggle { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(230,239,228,.2); border-radius: 5px; color: #d8e5dc; background: transparent; cursor: pointer; }
+.sidebar-toggle:hover { color: #fff; background: rgba(255,255,255,.1); }
+.sidebar-toggle:focus-visible, .nav-item:focus-visible { outline: 2px solid #d9ed74; outline-offset: 2px; }
 .workbench-mark { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 8px 8px 8px 2px; color: #193c33; background: #d9ed74; }
 .brand-caption { display: block; margin-top: 1px; color: #a7b9ab; font: 8px 'DM Mono', monospace; letter-spacing: .08em; }
 .workspace-label, .section-kicker { color: #87988c; font: 500 9px 'DM Mono', monospace; letter-spacing: .08em; }
@@ -172,6 +179,14 @@ a { color: inherit; }
 .profile-copy { display: grid; min-width: 0; gap: 2px; flex: 1; }
 .profile-copy strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .profile-copy small { color: #a8b9ad; font: 9px 'DM Mono', monospace; }
+.is-sidebar-collapsed .workbench-sidebar { padding-inline: 12px; }
+.is-sidebar-collapsed .sidebar-brand-row { flex-direction: column; gap: 15px; margin-bottom: 28px; }
+.is-sidebar-collapsed .brand-copy, .is-sidebar-collapsed .workspace-label, .is-sidebar-collapsed .nav-item span, .is-sidebar-collapsed .nav-chevron, .is-sidebar-collapsed .help-row span, .is-sidebar-collapsed .profile-copy { display: none; }
+.is-sidebar-collapsed .workbench-brand { margin: 0; }
+.is-sidebar-collapsed .nav-item { justify-content: center; padding: 0; }
+.is-sidebar-collapsed .nav-item.selected::before { left: -12px; }
+.is-sidebar-collapsed .help-row { justify-content: center; padding-inline: 0; }
+.is-sidebar-collapsed .profile-chip { width: 100%; flex-direction: column; justify-content: center; padding-inline: 0; }
 .workbench-main { min-width: 0; }
 .workbench-topbar { position: sticky; z-index: 2; top: 0; display: flex; height: 62px; align-items: center; justify-content: space-between; padding: 0 38px; border-bottom: 1px solid #e4e9e1; background: rgba(255,255,255,.93); backdrop-filter: blur(10px); }
 .workbench-topbar > div, .topbar-actions { display: flex; align-items: center; gap: 12px; }
@@ -248,9 +263,13 @@ a { color: inherit; }
 @media (max-width: 680px) {
   .workbench { display: flex; flex-direction: column; }
   .workbench-sidebar { position: sticky; z-index: 5; top: 0; width: 100%; height: auto; padding: 10px 12px; }
-  .workbench-brand { margin: 0 4px 11px; font-size: 14px; }
+  .sidebar-brand-row, .is-sidebar-collapsed .sidebar-brand-row { flex-direction: row; margin-bottom: 11px; }
+  .workbench-brand, .is-sidebar-collapsed .workbench-brand { margin: 0 4px; font-size: 14px; }
   .workbench-mark { width: 29px; height: 29px; }
   .brand-caption, .workspace-label, .sidebar-bottom { display: none; }
+  .is-sidebar-collapsed .workbench-nav { display: none; }
+  .is-sidebar-collapsed .brand-copy { display: block; }
+  .is-sidebar-collapsed .workbench-sidebar { padding-inline: 12px; }
   .workbench-nav { display: flex; overflow-x: auto; gap: 4px; }
   .nav-item { width: auto; min-width: max-content; min-height: 35px; gap: 7px; padding: 0 9px; font-size: 10px; }
   .nav-item.selected::before, .nav-chevron { display: none; }
