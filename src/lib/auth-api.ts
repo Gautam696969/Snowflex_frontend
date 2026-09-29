@@ -8,6 +8,7 @@ export interface SafeUser {
 interface ApiResponse {
   success: boolean
   message?: string
+  data?: unknown
 }
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -29,15 +30,18 @@ export function register(input: { fullName: string; email: string; password: str
   return request('/auth/register', { method: 'POST', body: JSON.stringify(input) })
 }
 
-export function login(input: { email: string; password: string }): Promise<ApiResponse & { token: string; user: SafeUser }> {
-  return request('/auth/login', { method: 'POST', body: JSON.stringify(input) })
+export async function login(input: { email: string; password: string }): Promise<{ token: string; user: SafeUser }> {
+  const response = await request<ApiResponse & { data: { token: string; user: SafeUser } }>('/auth/login', {
+    method: 'POST', body: JSON.stringify(input),
+  })
+  return response.data
 }
 
 export async function getCurrentUser(token: string): Promise<SafeUser> {
-  const response = await request<ApiResponse & { user: SafeUser }>('/auth/me', {
+  const response = await request<ApiResponse & { data: SafeUser }>('/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   })
-  return response.user
+  return response.data
 }
 
 export async function logout(token: string): Promise<void> {
@@ -56,4 +60,53 @@ export function readToken(): string | null {
 export function clearToken(): void {
   sessionStorage.removeItem(tokenKey)
   localStorage.removeItem(tokenKey)
+}
+
+export interface DashboardData {
+  totalEmployees?: number
+  activeEmployees?: number
+  presentToday?: number
+  absentToday?: number
+  lateToday?: number
+  pendingLeaves?: number
+  pendingTasks?: number
+  teamSize?: number
+  teamPresentToday?: number
+  teamAbsentToday?: number
+  pendingLeaveRequests?: number
+  attendanceThisMonth?: number
+  leaveBalance?: number
+  assignedTasks?: number
+  completedTasks?: number
+}
+
+export async function getDashboard(token: string, role: string): Promise<DashboardData> {
+  const endpoint = role === 'ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
+  const response = await request<ApiResponse & { data: DashboardData }>(`/dashboard/${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function getEmployees(token: string): Promise<Record<string, unknown>[]> {
+  const response = await request<ApiResponse & { data: Record<string, unknown>[] }>('/employees', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function getDepartments(token: string): Promise<Record<string, unknown>[]> {
+  const response = await request<ApiResponse & { data: Record<string, unknown>[] }>('/departments', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function apiRequest<T>(path: string, token: string, method = 'GET', input?: unknown): Promise<T> {
+  const response = await request<ApiResponse & { data: T }>(path, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+    ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+  })
+  return response.data
 }

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Account from './pages/Account'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/account" element={<Account />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
