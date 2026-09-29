@@ -31,7 +31,7 @@ export default function Login() {
     try {
       const result = await login({ email, password })
       storeToken(result.token, remember)
-      navigate('/account', { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (error) {
       setServerError(error instanceof Error ? error.message : 'Unable to sign in.')
     } finally {
