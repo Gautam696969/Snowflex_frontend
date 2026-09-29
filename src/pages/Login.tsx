@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import Input from '../components/Input'
 import LoadingButton from '../components/LoadingButton'
 import PasswordInput from '../components/PasswordInput'
@@ -31,9 +32,12 @@ export default function Login() {
     try {
       const result = await login({ email, password })
       storeToken(result.token, remember)
+      toast.success('Welcome back!')
       navigate('/dashboard', { replace: true })
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : 'Unable to sign in.')
+      const message = error instanceof Error ? error.message : 'Unable to sign in.'
+      setServerError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }

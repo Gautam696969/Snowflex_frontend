@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import {
   Activity, Building2, CalendarDays, CheckSquare2, ChevronRight, CircleHelp,
-  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Users,
+  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Users, X,
 } from 'lucide-react'
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [saving, setSaving] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   async function loadData(currentToken: string, currentUser: SafeUser, currentView: View) {
     setLoading(true)
@@ -82,8 +84,9 @@ export default function Dashboard() {
         setUser(authenticatedUser)
         await loadData(currentToken, authenticatedUser, view)
       })
-      .catch(() => {
+      .catch((error) => {
         clearToken()
+        toast.error(error instanceof Error ? error.message : 'Session expired. Please sign in again.')
         navigate('/login', { replace: true })
       })
     return () => { active = false }
@@ -116,10 +119,21 @@ export default function Dashboard() {
   }
 
   async function handleLogout() {
+    setShowLogoutConfirm(true)
+  }
+
+  async function confirmLogout() {
+    setShowLogoutConfirm(false)
     const currentToken = readToken()
-    try { if (currentToken) await logout(currentToken) } catch { /* Always clear a local token on sign-out. */ }
-    clearToken()
-    navigate('/login', { replace: true })
+    try {
+      if (currentToken) await logout(currentToken)
+      toast.success('Signed out successfully')
+    } catch {
+      toast.error('Error during sign out')
+    } finally {
+      clearToken()
+      navigate('/login', { replace: true })
+    }
   }
 
   const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role
@@ -152,7 +166,7 @@ export default function Dashboard() {
     <main className={sidebarCollapsed ? 'workbench is-sidebar-collapsed' : 'workbench'}>
       <aside className="workbench-sidebar">
         <div className="sidebar-brand-row">
-          <a className="workbench-brand" href="/dashboard"><span className="workbench-mark">S</span><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
+          <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations"><Snowflake className="workbench-mark" size={20} strokeWidth={2.5} /><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
           <button className="sidebar-toggle" type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}>
             {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
           </button>
@@ -171,14 +185,30 @@ export default function Dashboard() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="help-row"><CircleHelp size={16} /><span>People operations</span></div>
-          <button className="profile-chip" type="button" onClick={handleLogout}>
+          <div className="help-row" title="Help & Support"><CircleHelp size={16} /><span>People operations</span></div>
+          <button className="profile-chip" type="button" onClick={handleLogout} title="Sign out">
             <span className="profile-avatar">{user.fullName.slice(0, 1).toUpperCase()}</span>
             <span className="profile-copy"><strong>{user.fullName}</strong><small>{role}</small></span>
             <LogOut size={16} aria-label="Sign out" />
           </button>
         </div>
       </aside>
+
+      {showLogoutConfirm && (
+        <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 id="logout-modal-title">Sign out</h3>
+              <button className="modal-close" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Close"><X size={18} /></button>
+            </div>
+            <p className="modal-body">Are you sure you want to sign out?</p>
+            <div className="modal-footer">
+              <button className="secondary-action" type="button" onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
+              <button className="primary-action" type="button" onClick={confirmLogout}>Sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="workbench-main">
         <header className="workbench-topbar">
