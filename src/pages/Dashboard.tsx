@@ -1,24 +1,28 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
   Activity, Building2, CalendarDays, Check, CheckSquare2, ChevronRight, CircleHelp,
-  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Users, X,
+  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon,
 } from 'lucide-react'
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-  TableSortLabel, Paper, InputBase, IconButton, Menu as MuiMenu, MenuItem, Divider,
+  TableSortLabel, Paper, InputBase, IconButton, MenuItem,
   FormControl, Select as MuiSelect,
 } from '@mui/material'
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
+import AiAssistant from '../components/AiAssistant'
 
-type View = 'overview' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
+type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
 type Row = Record<string, unknown>
 
 const navGroups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
-  { label: 'OVERVIEW', items: [{ id: 'overview', label: 'Dashboard', icon: LayoutDashboard }] },
+  { label: 'OVERVIEW', items: [
+    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'assistant', label: 'AI Employee', icon: Sparkles },
+  ] },
   { label: 'MANAGEMENT', items: [
     { id: 'employees', label: 'Employees', icon: Users },
     { id: 'departments', label: 'Departments', icon: Building2 },
@@ -56,6 +60,7 @@ export default function Dashboard() {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null)
   const [decidedRows, setDecidedRows] = useState<Set<string | number>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   async function loadData(currentToken: string, currentUser: SafeUser, currentView: View) {
     setLoading(true)
@@ -63,6 +68,8 @@ export default function Dashboard() {
     try {
       if (currentView === 'overview') {
         setStats(await getDashboard(currentToken, currentUser.role))
+        setRows([])
+      } else if (currentView === 'assistant') {
         setRows([])
       } else if (currentView === 'employees') {
         setRows(await getEmployees(currentToken))
@@ -111,7 +118,14 @@ export default function Dashboard() {
   }, [view])
 
   async function refresh() {
-    if (token && user) await loadData(token, user, view)
+    if (token && user) {
+      setRefreshing(true)
+      try {
+        await loadData(token, user, view)
+      } finally {
+        setRefreshing(false)
+      }
+    }
   }
 
   async function perform(path: string, method: string, payload?: unknown) {
@@ -259,8 +273,6 @@ export default function Dashboard() {
     return filteredRows.slice(start, start + pageSize)
   }, [filteredRows, currentPage, pageSize])
 
-  const totalPages = Math.ceil(filteredRows.length / pageSize)
-
   function resetPagination() {
     setCurrentPage(1)
   }
@@ -291,7 +303,15 @@ export default function Dashboard() {
         ['Pending leaves', stats.pendingLeaves ?? 0, `${stats.pendingTasks ?? 0} open tasks`, CheckSquare2],
       ] as const
 
-  if (!user) return <main className="dashboard-loading">Loading your workspace…</main>
+  if (!user) return (
+    <main className="dashboard-loading">
+      <div className="live-loader" role="status" aria-live="polite">
+        <span className="live-loader-ring"><i /><i /><i /><i /></span>
+        <strong>Loading your workspace…</strong>
+        <small>Authenticating and fetching your Snowflake data</small>
+      </div>
+    </main>
+  )
 
   return (
     <main className={sidebarCollapsed ? 'workbench is-sidebar-collapsed' : 'workbench'}>
@@ -384,12 +404,12 @@ export default function Dashboard() {
       <section className="workbench-main">
         <header className="workbench-topbar">
           <div><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
-          <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()}><RefreshCw size={17} /></button></div>
+          <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()} disabled={refreshing}><RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} /></button></div>
         </header>
 
         <div className="page-content">
           <div className="page-heading">
-            <div><span className="section-kicker">PEOPLE OPERATIONS</span><h1>{view === 'overview' ? `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${user.fullName.split(' ')[0]}` : activeItem?.label}</h1><p>{view === 'overview' ? 'Here is what is happening across your workspace today.' : `Manage ${activeItem?.label.toLowerCase()} in one place.`}</p></div>
+            <div><span className="section-kicker">{view === 'assistant' ? 'SNOWFLEX AI' : 'PEOPLE OPERATIONS'}</span><h1>{view === 'overview' ? `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${user.fullName.split(' ')[0]}` : activeItem?.label}</h1><p>{view === 'overview' ? 'Here is what is happening across your workspace today.' : view === 'assistant' ? 'Ask about leave, attendance, teams and tasks across your workspace.' : `Manage ${activeItem?.label.toLowerCase()} in one place.`}</p></div>
             <div className="heading-actions">
               {view === 'attendance' && role === 'EMPLOYEE' && <><button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>Check in</button><button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>Check out</button></>}
               {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && <button className="primary-action" type="button" onClick={() => { setEditingRow(null); setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' }); setShowCreate((open) => !open) }}><Plus size={16} />{editingRow ? 'Cancel Edit' : view === 'leaves' ? 'Request leave' : `Add ${view === 'employees' ? 'employee' : view === 'departments' ? 'department' : 'task'}`}</button>}
@@ -442,7 +462,9 @@ export default function Dashboard() {
           </div>
         )}
 
-          {view === 'overview' ? (
+          {view === 'assistant' ? (
+            token && <AiAssistant token={token} onError={setError} />
+          ) : view === 'overview' ? (
             <>
               <div className="metric-grid">{metrics.map(([label,value,detail,Icon]) => <article className="metric-panel" key={label}><div className="metric-topline"><span>{label}</span><Icon size={17} /></div><strong>{value}</strong><small>{detail}</small></article>)}</div>
               <section className="overview-lower"><div className="panel-section"><div className="panel-title"><div><span className="section-kicker">DIRECTORY</span><h2>People at a glance</h2></div><button className="text-action" type="button" onClick={() => setView('employees')}>View directory <ChevronRight size={15} /></button></div><p className="empty-copy">Your live employee directory is ready. Choose Employees to browse profiles and teams.</p></div><div className="panel-section pulse-panel"><div className="panel-title"><div><span className="section-kicker">YOUR ACCESS</span><h2>{role}</h2></div><Activity size={19} /></div><p className="empty-copy">Workspace data is loaded directly from Snowflake.</p></div></section>
@@ -457,7 +479,7 @@ export default function Dashboard() {
                       placeholder="Search..."
                       value={searchQuery}
                       onChange={(e) => { setSearchQuery(e.target.value); resetPagination() }}
-                      startAdornment={<Search sx={{ color: '#8a978e', fontSize: 18 }} />}
+                      startAdornment={<Search size={18} color="#8a978e" />}
                       sx={{ width: 280, '& .MuiInputBase-input': { padding: '8px 12px', fontSize: 13, color: '#293f34' }, '& .MuiInputBase-root': { background: 'white', border: '1px solid #dfe5dc', borderRadius: 5 } }}
                     />
                   )}
@@ -548,7 +570,7 @@ export default function Dashboard() {
                     onPageChange={(_, page) => setCurrentPage(page + 1)}
                     rowsPerPageOptions={[10, 25, 50, 100]}
                     labelRowsPerPage="Rows per page"
-                    labelDisplayedRows={(from, to, count) => `${from + 1}–${to} of ${count}`}
+                    labelDisplayedRows={({ from, to, count }) => `${from + 1}–${to} of ${count}`}
                     sx={{ '& .MuiTablePagination-toolbar': { padding: '16px 20px', borderTop: '1px solid #edf0eb' }, '& .MuiTablePagination-select': { color: '#243a33' }, '& .MuiTablePagination-selectIcon': { color: '#8a978e' } }}
                   />
                 </>
