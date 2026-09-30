@@ -110,3 +110,48 @@ export async function apiRequest<T>(path: string, token: string, method = 'GET',
   })
   return response.data
 }
+
+export interface AiConversation {
+  id: number
+  userId: number
+  title: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AiMessage {
+  id: number
+  conversationId: number
+  role: 'user' | 'assistant'
+  content: string
+  model?: string
+  createdAt: string
+}
+
+export interface AiChatResponse {
+  conversation: AiConversation
+  message: AiMessage
+}
+
+export async function listAiConversations(token: string): Promise<AiConversation[]> {
+  return apiRequest<AiConversation[]>('/ai-employee/conversations', token)
+}
+
+export async function createAiConversation(token: string, title?: string): Promise<AiConversation> {
+  return apiRequest<AiConversation>('/ai-employee/conversations', token, 'POST', { title })
+}
+
+export async function listAiMessages(token: string, conversationId: number): Promise<AiMessage[]> {
+  return apiRequest<AiMessage[]>(`/ai-employee/conversations/${conversationId}/messages`, token)
+}
+
+export async function deleteAiConversation(token: string, conversationId: number): Promise<void> {
+  await apiRequest<null>(`/ai-employee/conversations/${conversationId}`, token, 'DELETE')
+}
+
+export async function sendAiMessage(
+  token: string,
+  payload: { conversationId?: number; message: string },
+): Promise<AiChatResponse> {
+  return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
+}
