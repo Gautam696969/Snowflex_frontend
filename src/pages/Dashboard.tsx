@@ -2,14 +2,14 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
-  Activity, Building2, CalendarDays, CheckSquare2, ChevronRight, CircleHelp,
+  Activity, Building2, CalendarDays, Check, CheckSquare2, ChevronRight, CircleHelp,
   Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Users, X,
-  Edit, Trash2, Eye, Search, ChevronDown, MoreVertical, X as XIcon,
+  Edit, Trash2, Eye, Search, X as XIcon,
 } from 'lucide-react'
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
   TableSortLabel, Paper, InputBase, IconButton, Menu as MuiMenu, MenuItem, Divider,
-  Chip, FormControl, Select as MuiSelect,
+  FormControl, Select as MuiSelect,
 } from '@mui/material'
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
@@ -54,9 +54,8 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [menuRow, setMenuRow] = useState<Row | null>(null)
-  const anchorEl = useRef<HTMLElement | null>(null)
+  const [decidedRows, setDecidedRows] = useState<Set<string | number>>(new Set())
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
 
   async function loadData(currentToken: string, currentUser: SafeUser, currentView: View) {
     setLoading(true)
@@ -122,11 +121,34 @@ export default function Dashboard() {
     setNotice('')
     try {
       const result = await apiRequest(path, token, method, payload)
-      toast.success(editingRow ? 'Updated successfully' : method === 'POST' ? 'Created successfully' : 'Updated successfully')
-      
+
+      // Determine a friendly success message
+      let successMsg = 'Saved successfully'
+      if (method === 'POST') {
+        if (view === 'employees') successMsg = 'Employee created successfully'
+        else if (view === 'departments') successMsg = 'Department created successfully'
+        else if (view === 'tasks') successMsg = 'Task created successfully'
+        else if (view === 'leaves') successMsg = 'Leave request created successfully'
+      } else if (method === 'PATCH') {
+        if (path.includes('/approve')) successMsg = 'Leave approved successfully'
+        else if (path.includes('/reject')) successMsg = 'Leave rejected successfully'
+        else if (path.includes('/status')) successMsg = 'Task status updated successfully'
+        else successMsg = 'Updated successfully'
+      }
+      toast.success(successMsg)
+
       // Optimistically add/update the item in the list immediately
       if (method === 'POST' && result && typeof result === 'object' && 'id' in result) {
         setRows((prev) => [result as Row, ...prev])
+      } else if (method === 'POST' && payload && typeof payload === 'object') {
+        // Backend may return null data; create a temporary row from the payload
+        const tempRow: Row = { id: -Date.now(), ...(payload as Row) }
+        if (view === 'employees' && form.userId) {
+          tempRow.userId = Number(form.userId)
+          tempRow.employeeCode = form.employeeCode
+          tempRow.departmentId = Number(form.departmentId) || null
+        }
+        setRows((prev) => [tempRow, ...prev])
       } else if (method === 'PATCH' && result && typeof result === 'object' && 'id' in result) {
         setRows((prev) => prev.map((row) => (row.id === (result as Row).id ? { ...row, ...result } : row)))
       } else if (method === 'PATCH' && path.includes('/status') && payload && typeof payload === 'object' && 'status' in payload) {
@@ -138,8 +160,9 @@ export default function Dashboard() {
         const id = path.split('/')[2]
         const newStatus = path.includes('/approve') ? 'APPROVED' : 'REJECTED'
         setRows((prev) => prev.map((row) => (row.id === Number(id) ? { ...row, status: newStatus } : row)))
+        setDecidedRows((prev) => new Set(prev).add(Number(id)))
       }
-      
+
       setShowCreate(false)
       setEditingRow(null)
       setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
@@ -189,10 +212,14 @@ export default function Dashboard() {
   }
 
   async function handleDelete(row: Row) {
-    if (!window.confirm('Are you sure you want to delete this record?')) return
-    if (!token) return
+    setDeleteTarget(row)
+  }
+
+  async function confirmDelete() {
+    const row = deleteTarget
+    setDeleteTarget(null)
+    if (!row || !token) return
     try {
-      // Optimistically remove from list
       setRows((prev) => prev.filter((r) => r.id !== row.id))
       await apiRequest(`/${view}/${row.id}`, token, 'DELETE')
       toast.success('Deleted successfully')
@@ -200,7 +227,7 @@ export default function Dashboard() {
       await refresh()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete')
-      await refresh() // Refresh to restore correct state
+      await refresh()
     }
   }
 
@@ -314,6 +341,22 @@ export default function Dashboard() {
         </div>
       )}
 
+      {deleteTarget && (
+        <div className="modal-overlay" onClick={() => setDeleteTarget(null)} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 id="delete-modal-title">Delete record</h3>
+              <button className="modal-close" type="button" onClick={() => setDeleteTarget(null)} aria-label="Close"><X size={18} /></button>
+            </div>
+            <p className="modal-body">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <div className="modal-footer">
+              <button className="secondary-action" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="primary-action" type="button" onClick={confirmDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {viewingRow && (
         <div className="modal-overlay" onClick={() => setViewingRow(null)} role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
           <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
@@ -337,28 +380,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      <MuiMenu
-        anchorEl={anchorEl[0]}
-        open={menuOpen}
-        onClose={() => { setMenuOpen(false); setMenuRow(null); }}
-        PaperProps={{ sx: { minWidth: 160 } }}
-      >
-        {menuRow && (
-          <>
-            <MenuItem onClick={() => { handleView(menuRow); setMenuOpen(false); setMenuRow(null); }}>
-              <Eye fontSize="small" sx={{ mr: 1 }} />View
-            </MenuItem>
-            <MenuItem onClick={() => { handleEdit(menuRow); setMenuOpen(false); setMenuRow(null); }}>
-              <Edit fontSize="small" sx={{ mr: 1 }} />Edit
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={() => { handleDelete(menuRow); setMenuOpen(false); setMenuRow(null); }} sx={{ color: '#b83d32' }}>
-              <Trash2 fontSize="small" sx={{ mr: 1 }} />Delete
-            </MenuItem>
-          </>
-        )}
-      </MuiMenu>
 
       <section className="workbench-main">
         <header className="workbench-topbar">
@@ -449,12 +470,12 @@ export default function Dashboard() {
                 <Paper sx={{ p: 4, textAlign: 'center', color: '#89958c' }}>No records to show yet.</Paper>
               ) : (
                 <>
-                  <TableContainer sx={{ border: '1px solid #e2e8df', borderRadius: 6, overflow: 'hidden' }}>
-                    <Table stickyHeader aria-label={activeItem?.label}>
+                  <TableContainer sx={{ border: '1px solid #e2e8df', borderRadius: 6, overflow: 'hidden', width: '100%' }}>
+                    <Table stickyHeader aria-label={activeItem?.label} sx={{ width: '100%', tableLayout: 'auto' }}>
                       <TableHead>
                         <TableRow>
                           {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key)).slice(0, 7).map((key) => (
-                            <TableCell key={key} sortDirection={sortConfig?.key === key ? sortConfig.direction : false}>
+                            <TableCell key={key} sortDirection={sortConfig?.key === key ? sortConfig.direction : false} sx={{ minWidth: 150 }}>
                               <TableSortLabel
                                 active={sortConfig?.key === key}
                                 direction={sortConfig?.key === key ? sortConfig.direction : 'asc'}
@@ -464,9 +485,9 @@ export default function Dashboard() {
                               </TableSortLabel>
                             </TableCell>
                           ))}
-                          {view === 'tasks' && <TableCell>UPDATE</TableCell>}
-                          {view === 'leaves' && ['ADMIN','HR','MANAGER'].includes(role ?? '') && <TableCell>REVIEW</TableCell>}
-                          {showActions && <TableCell align="right">ACTIONS</TableCell>}
+                          {view === 'tasks' && <TableCell sx={{ minWidth: 160 }}>UPDATE</TableCell>}
+                          {view === 'leaves' && ['ADMIN','HR','MANAGER'].includes(role ?? '') && <TableCell sx={{ minWidth: 180 }}>REVIEW</TableCell>}
+                          {showActions && <TableCell align="right" sx={{ minWidth: 100 }}>ACTIONS</TableCell>}
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -493,17 +514,25 @@ export default function Dashboard() {
                             )}
                             {view === 'leaves' && ['ADMIN','HR','MANAGER'].includes(role ?? '') && (
                               <TableCell>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                  <button className="primary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/approve`, 'PATCH')}>Approve</button>
-                                  <button className="secondary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/reject`, 'PATCH', { reason: 'Not approved' })}>Reject</button>
-                                </div>
+                                {decidedRows.has(Number(row.id)) || row.status === 'APPROVED' || row.status === 'REJECTED' ? (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2e7d4d', fontSize: 12, fontWeight: 600, padding: '6px 10px' }}>
+                                    <Check size={14} /> {row.status === 'APPROVED' ? 'Approved' : row.status === 'REJECTED' ? 'Rejected' : 'Decided'}
+                                  </span>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <button className="primary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/approve`, 'PATCH')}>Approve</button>
+                                    <button className="secondary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/reject`, 'PATCH', { reason: 'Not approved' })}>Reject</button>
+                                  </div>
+                                )}
                               </TableCell>
                             )}
                             {showActions && (
                               <TableCell align="right">
-                                <IconButton size="small" aria-label="More actions" onClick={(e) => { e.stopPropagation(); anchorEl.current = e.currentTarget; setMenuRow(row); setMenuOpen(true); }}>
-                                  <MoreVertical fontSize="small" />
-                                </IconButton>
+                                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                                  <IconButton size="small" aria-label="View" title="View" onClick={() => handleView(row)}><Eye size={16} /></IconButton>
+                                  <IconButton size="small" aria-label="Edit" title="Edit" onClick={() => handleEdit(row)}><Edit size={16} /></IconButton>
+                                  <IconButton size="small" aria-label="Delete" title="Delete" onClick={() => void handleDelete(row)}><Trash2 size={16} /></IconButton>
+                                </div>
                               </TableCell>
                             )}
                           </TableRow>
