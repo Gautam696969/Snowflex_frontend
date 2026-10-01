@@ -157,17 +157,19 @@ export async function sendAiMessage(
   return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
 }
 
-export async function transcribeVoiceAudio(token: string, blob: Blob): Promise<string> {
+export async function transcribeVoiceAudio(token: string, blob: Blob, language?: string, mimeType?: string): Promise<string> {
   const form = new FormData()
-  form.append('audio', blob, 'audio.webm')
+  const extension = (mimeType || blob.type).includes('mp4') ? 'mp4' : 'webm'
+  form.append('audio', blob, `audio.${extension}`)
+  if (language) form.append('language', language.split('-')[0])
   const response = await fetch(`${apiBase}/voice/transcribe`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
-  const body = (await response.json().catch(() => null)) as ApiResponse & { data?: { text?: string } } | null
+  const body = (await response.json().catch(() => null)) as ApiResponse & { text?: string; data?: { text?: string } } | null
   if (!response.ok || !body?.success) {
     throw new Error(body?.message || 'Transcription failed.')
   }
-  return body.data?.text ?? ''
+  return body.text ?? body.data?.text ?? ''
 }
