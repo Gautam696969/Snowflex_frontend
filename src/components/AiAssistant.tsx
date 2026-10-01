@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Bot, MessageSquarePlus, MessagesSquare, Send, Sparkles, Trash2, User } from 'lucide-react'
+import { Bot, Mic, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, User, X, Square } from 'lucide-react'
+import { useVoiceInput } from '../hooks/useVoiceInput'
+import Waveform from './Waveform'
 import {
   createAiConversation,
   deleteAiConversation,
@@ -93,12 +95,34 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
   const [activeId, setActiveId] = useState<number | null>(null)
   const [messages, setMessages] = useState<AiMessage[]>([])
   const [draft, setDraft] = useState('')
+  const [search, setSearch] = useState('')
   const [loadingConversations, setLoadingConversations] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<AiConversation | null>(null)
   const [historyVisible, setHistoryVisible] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const draftRef = useRef(draft)
+  const searchRef = useRef(search)
+
+  useEffect(() => { draftRef.current = draft }, [draft])
+  useEffect(() => { searchRef.current = search }, [search])
+
+  const voice = useVoiceInput(
+    (text) => setDraft(text),
+    undefined,
+    { token, lang: 'en-IN' },
+  )
+
+  const searchVoice = useVoiceInput(
+    (text) => setSearch(text),
+    undefined,
+    { token, lang: 'en-IN' },
+  )
+
+  const recording = voice.state === 'listening'
+  const searchRecording = searchVoice.state === 'listening'
+  const supported = voice.supported
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeId) ?? null,
@@ -158,16 +182,18 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
     const content = text.trim()
     if (!content || sending) return
 
+    const userMessageId = `user-${crypto.randomUUID()}`
     setDraft('')
     setSending(true)
     setMessages((current) => [
       ...current,
       {
-        id: -Date.now(),
+        id: userMessageId,
         conversationId: activeId ?? -1,
         role: 'user',
         content,
         createdAt: new Date().toISOString(),
+        status: 'sending',
       },
     ])
 
@@ -179,13 +205,19 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
       })
       setActiveId(result.conversation.id)
       setMessages((current) => [
-        ...current.filter((message) => message.id > 0 || message.role === 'assistant'),
-        result.message,
+        ...current.map((message) =>
+          message.id === userMessageId ? { ...message, status: 'sent' as const } : message,
+        ),
+        { ...result.message, id: `ai-${result.message.id}`, status: 'sent' as const },
       ])
     } catch (error) {
       const message = error instanceof Error ? error.message : 'The assistant could not respond.'
       onError(message)
-      setMessages((current) => [...current, { id: -Date.now() - 1, conversationId: activeId ?? -1, role: 'assistant', content: message, createdAt: new Date().toISOString() }])
+      setMessages((current) =>
+        current.map((msg) =>
+          msg.id === userMessageId ? { ...msg, status: 'error' as const } : msg,
+        ),
+      )
     } finally {
       setSending(false)
     }
@@ -211,6 +243,11 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
   const trimmedDraft = draft.trim()
   const canSend = trimmedDraft.length > 0 && trimmedDraft.length <= MAX_MESSAGE_LENGTH && !sending
   const showEmptyState = messages.length === 0 && !loadingMessages && !sending
+  const query = search.trim().toLowerCase()
+  const filteredConversations = useMemo(() => {
+    if (!query) return conversations
+    return conversations.filter((conversation) => conversation.title.toLowerCase().includes(query))
+  }, [conversations, query])
 
   return (
     <section className="ai-panel">
@@ -225,9 +262,11 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
           <p className="ai-history-empty">Loading conversations…</p>
         ) : conversations.length === 0 ? (
           <p className="ai-history-empty">No conversations yet. Start one to get help.</p>
+        ) : filteredConversations.length === 0 ? (
+          <p className="ai-history-empty">No conversations match “{search}”</p>
         ) : (
           <ul className="ai-history-list">
-            {conversations.map((conversation) => (
+            {filteredConversations.map((conversation) => (
               <li key={conversation.id}>
                 <button
                   type="button"
@@ -273,14 +312,34 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
             </div>
           </div>
           <div className="ai-thread-actions">
-            <button className="secondary-action ai-history-toggle" type="button" onClick={() => setHistoryVisible((open) => !open)}>
-              <MessagesSquare size={15} />History
-            </button>
-            <button className="secondary-action" type="button" onClick={() => void startNewConversation()}>
-              <MessageSquarePlus size={15} />New chat
+<div className="ai-search">
+            <Search size={14} className="ai-search-icon" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={searchRecording ? 'Listening…' : 'Search conversations…'}
+              aria-label="Search conversations"
+            />
+            {search && <button type="button" className="ai-search-clear" aria-label="Clear search" onClick={() => setSearch('')}><X size={13} /></button>}
+            <button
+              type="button"
+              className={`ai-search-mic ${searchRecording ? 'is-recording' : ''}`}
+              onClick={searchVoice.state === 'listening' ? searchVoice.handlers.stop : searchVoice.handlers.start}
+              disabled={!searchVoice.supported || sending}
+              title={searchRecording ? 'Stop recording' : searchVoice.supported ? 'Voice search' : 'Voice search unavailable'}
+              aria-label={searchRecording ? 'Stop recording' : 'Voice search'}
+            >
+              <Mic size={13} />
             </button>
           </div>
-        </header>
+          <button className="secondary-action ai-history-toggle" type="button" onClick={() => setHistoryVisible((open) => !open)}>
+            <MessagesSquare size={15} />History
+          </button>
+          <button className="secondary-action" type="button" onClick={() => void startNewConversation()}>
+            <MessageSquarePlus size={15} />New chat
+          </button>
+        </div>
+      </header>
 
         <div className="ai-messages" ref={scrollRef} role="log" aria-live="polite" aria-busy={sending}>
           {showEmptyState && (
@@ -305,7 +364,11 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
                   {message.role === 'assistant' ? 'Snowflex AI Employee' : 'You'}
                   {message.createdAt ? ` · ${formatClock(message.createdAt)}` : ''}
                   {message.model ? ` · ${message.model}` : ''}
+                  {message.role === 'user' && message.status === 'error' && ' · Failed'}
                 </small>
+                {message.role === 'user' && message.status === 'error' && (
+                  <button type="button" className="ai-retry" onClick={() => void submit(message.content)}>Retry</button>
+                )}
               </div>
             </article>
           ))}
@@ -322,32 +385,77 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
           )}
         </div>
 
-        <form
+<form
           className="ai-composer"
           onSubmit={(event) => { event.preventDefault(); void submit(draft) }}
         >
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                void submit(draft)
-              }
-            }}
-            rows={2}
-            maxLength={MAX_MESSAGE_LENGTH}
-            placeholder="Ask about attendance, leave, teams or tasks…"
-            aria-label="Message the Snowflex AI Employee"
-          />
-          <div className="ai-composer-foot">
-            <small>{draft.length}/{MAX_MESSAGE_LENGTH}</small>
-            {sending ? (
-              <span className="primary-action is-busy" aria-live="polite"><span className="spinner" />Thinking</span>
+          <div className="ai-composer-box">
+            {voice.error && <small className="ai-voice-error">{voice.error}</small>}
+            {voice.state === 'listening' ? (
+              <>
+                <div className="ai-voice-ui">
+                  <Waveform analyserRef={voice.analyserRef} active={voice.state === 'listening'} color="#2f4a3f" />
+                  {voice.transcript && <small className="ai-voice-transcript">{voice.transcript}</small>}
+                </div>
+                <button
+                  type="button"
+                  className="ai-action-btn is-stop"
+                  onClick={voice.handlers.stop}
+                  aria-label="Stop and confirm"
+                  title="Stop and confirm"
+                >
+                  <Square size={16} fill="#2f4a3f" />
+                </button>
+                <button
+                  type="button"
+                  className="ai-action-btn is-cancel"
+                  onClick={voice.handlers.cancel}
+                  aria-label="Cancel"
+                  title="Cancel"
+                >
+                  <X size={16} />
+                </button>
+              </>
             ) : (
-              <button className="primary-action" type="submit" disabled={!canSend}>
-                <Send size={14} />Send
-              </button>
+              <>
+                <textarea
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault()
+                      void submit(draft)
+                    }
+                  }}
+                  rows={2}
+                  maxLength={MAX_MESSAGE_LENGTH}
+                  placeholder={voice.state === 'processing' ? 'Processing…' : supported ? 'Type a message or tap the mic' : 'Ask about attendance, leave, teams or tasks…'}
+                  aria-label="Message the Snowflex AI Employee"
+                />
+                {trimmedDraft.length > 0 ? (
+                  <button
+                    type="submit"
+                    className="ai-action-btn is-send"
+                    disabled={!canSend}
+                    aria-label="Send"
+                    title="Send"
+                  >
+                    <SendHorizontal size={18} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={`ai-action-btn is-mic ${recording ? 'is-recording' : ''}`}
+                    onClick={voice.handlers.start}
+                    disabled={!supported || sending}
+                    title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
+                    aria-label={recording ? 'Stop recording' : 'Voice input'}
+                  >
+                    <Mic size={18} />
+                  </button>
+                )}
+                {draft.length > 3000 && <small className="ai-counter">{draft.length}/{MAX_MESSAGE_LENGTH}</small>}
+              </>
             )}
           </div>
         </form>
