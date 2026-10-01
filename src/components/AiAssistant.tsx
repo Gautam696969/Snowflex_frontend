@@ -102,6 +102,7 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
   const [pendingDelete, setPendingDelete] = useState<AiConversation | null>(null)
   const [historyVisible, setHistoryVisible] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const draftRef = useRef(draft)
   const searchRef = useRef(search)
 
@@ -119,6 +120,10 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
     undefined,
     { token, lang: 'en-IN' },
   )
+
+  useEffect(() => {
+    if (voice.state === 'idle' && voice.transcript) textareaRef.current?.focus()
+  }, [voice.state, voice.transcript])
 
   const recording = voice.state === 'listening'
   const searchRecording = searchVoice.state === 'listening'
@@ -241,7 +246,7 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
   }
 
   const trimmedDraft = draft.trim()
-  const canSend = trimmedDraft.length > 0 && trimmedDraft.length <= MAX_MESSAGE_LENGTH && !sending
+  const canSend = trimmedDraft.length > 0 && trimmedDraft.length <= MAX_MESSAGE_LENGTH && !sending && voice.state !== 'processing'
   const showEmptyState = messages.length === 0 && !loadingMessages && !sending
   const query = search.trim().toLowerCase()
   const filteredConversations = useMemo(() => {
@@ -390,7 +395,12 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
           onSubmit={(event) => { event.preventDefault(); void submit(draft) }}
         >
           <div className="ai-composer-box">
-            {voice.error && <small className="ai-voice-error">{voice.error}</small>}
+            {voice.error && (
+              <small className="ai-voice-error" role="alert">
+                {voice.error}
+                <button type="button" className="ai-voice-retry" onClick={() => voice.handlers.start()}>Retry</button>
+              </small>
+            )}
             {voice.state === 'listening' ? (
               <>
                 <div className="ai-voice-ui">
@@ -419,8 +429,10 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
             ) : (
               <>
                 <textarea
+                  ref={textareaRef}
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
+                  disabled={voice.state === 'processing'}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && !event.shiftKey) {
                       event.preventDefault()
@@ -447,7 +459,7 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
                     type="button"
                     className={`ai-action-btn is-mic ${recording ? 'is-recording' : ''}`}
                     onClick={voice.handlers.start}
-                    disabled={!supported || sending}
+                    disabled={!supported || sending || voice.state === 'processing'}
                     title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
                     aria-label={recording ? 'Stop recording' : 'Voice input'}
                   >
