@@ -315,8 +315,19 @@ a { color: inherit; }
 .ai-identity small { overflow: hidden; color: #8a978e; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .ai-avatar, .ai-welcome-mark { display: grid; flex: 0 0 auto; place-items: center; color: #193c33; background: #d9ed74; }
 .ai-avatar { width: 32px; height: 32px; border-radius: 6px 6px 6px 2px; }
-.ai-thread-actions { display: flex; flex: 0 0 auto; gap: 7px; }
+.ai-thread-actions { display: flex; flex: 0 0 auto; gap: 7px; flex-wrap: wrap; }
 .ai-thread-actions .secondary-action { min-height: 32px; padding: 0 11px; font-size: 10px; }
+
+.ai-search { position: relative; display: flex; align-items: center; }
+.ai-search input { width: 180px; min-height: 32px; padding: 0 56px 0 10px; border: 1px solid #dfe5dc; border-radius: 5px; color: #293f34; background: white; font: inherit; font-size: 11px; transition: width 180ms ease, border-color 140ms ease; }
+.ai-search input:focus { outline: none; width: 220px; border-color: #8aa357; box-shadow: 0 0 0 3px rgba(138,163,87,.16); }
+.ai-search-icon { position: absolute; left: 8px; color: #9aa49c; pointer-events: none; }
+.ai-search-clear { position: absolute; right: 30px; width: 20px; height: 20px; border: 0; border-radius: 4px; background: transparent; color: #9aa49c; cursor: pointer; display: grid; place-items: center; }
+.ai-search-clear:hover { color: #b83d32; background: #fff1ee; }
+.ai-search-mic { position: absolute; right: 6px; width: 24px; height: 24px; border: 0; border-radius: 4px; background: transparent; color: #9aa49c; cursor: pointer; display: grid; place-items: center; transition: background 140ms ease, color 140ms ease; }
+.ai-search-mic:hover:not(:disabled) { background: #eef3ec; color: #44594c; }
+.ai-search-mic:disabled { opacity: .4; cursor: not-allowed; }
+.ai-search-mic.is-recording { color: #b83d32; background: #fff5f3; animation: mic-pulse 900ms ease-in-out infinite; }
 .ai-history-toggle { display: none; }
 .ai-messages { display: flex; overflow-y: auto; max-height: 560px; padding: 20px 18px; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
 .ai-bubble { display: flex; max-width: 88%; gap: 10px; }
@@ -350,15 +361,30 @@ a { color: inherit; }
 .ai-typing i { width: 5px; height: 5px; border-radius: 50%; background: #8aa357; animation: typing 1.1s ease-in-out infinite; }
 .ai-typing i:nth-child(2) { animation-delay: 140ms; }
 .ai-typing i:nth-child(3) { animation-delay: 280ms; }
-.ai-composer { display: grid; padding: 12px 14px 13px; gap: 8px; border-top: 1px solid #e9ede7; background: #fafbf8; }
-.ai-composer textarea { width: 100%; min-height: 54px; max-height: 160px; padding: 10px 12px; border: 1px solid #dfe5dc; border-radius: 5px; color: #293f34; background: white; font: inherit; font-size: 12px; line-height: 1.55; resize: vertical; }
-.ai-composer textarea:focus { outline: none; border-color: #8aa357; box-shadow: 0 0 0 3px rgba(138,163,87,.16); }
-.ai-composer textarea::placeholder { color: #a6b0a8; }
-.ai-composer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.ai-composer-foot small { color: #9aa49c; font: 9px 'DM Mono', monospace; }
-.ai-composer-foot .primary-action { min-height: 32px; padding: 0 13px; font-size: 10px; }
-.ai-composer-foot .primary-action.is-busy { cursor: progress; }
-.ai-composer-foot .spinner { width: 12px; height: 12px; border-width: 2px; }
+.ai-composer { padding: 12px 14px 13px; border-top: 1px solid #e9ede7; background: #fafbf8; }
+  .ai-composer-box { display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 14px; border: 1px solid #dfe5dc; border-radius: 14px; background: white; transition: border-color 140ms ease, box-shadow 140ms ease; }
+  .ai-composer-box:focus-within { border-color: #8aa357; box-shadow: 0 0 0 3px rgba(138,163,87,.16); }
+  .ai-composer textarea { flex: 1; min-height: 24px; max-height: 160px; padding: 4px 0; border: 0; outline: none; resize: none; background: transparent; color: #293f34; font: inherit; font-size: 13px; line-height: 1.55; }
+  .ai-composer textarea::placeholder { color: #a6b0a8; }
+  .ai-action-btn { flex: 0 0 auto; width: 36px; height: 36px; border: 0; border-radius: 10px; cursor: pointer; display: grid; place-items: center; transition: opacity 140ms ease, background 140ms ease, transform 140ms ease; }
+  .ai-action-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .ai-action-btn.is-send { background: #2f4a3f; color: #fff; }
+  .ai-action-btn.is-send:hover:not(:disabled) { background: #243a33; }
+  .ai-action-btn.is-mic { background: transparent; color: #44594c; }
+  .ai-action-btn.is-mic:hover:not(:disabled) { background: #eef3ec; color: #243a33; }
+  .ai-action-btn.is-mic.is-recording { color: #b83d32; background: #fff5f3; animation: mic-pulse 900ms ease-in-out infinite; }
+  @keyframes mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(184,61,50,.35); } 50% { box-shadow: 0 0 0 8px rgba(184,61,50,0); } }
+  .ai-counter { flex: 0 0 auto; align-self: flex-end; margin: 0 8px 0 0; color: #9aa49c; font: 9px 'DM Mono', monospace; }
+  .ai-retry { margin-top: 8px; border: 0; background: transparent; color: #b83d32; font: 600 10px 'DM Mono', monospace; cursor: pointer; text-transform: uppercase; letter-spacing: .04em; }
+  .ai-retry:hover { text-decoration: underline; }
+  .ai-voice-ui { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
+  .ai-voice-transcript { color: #617166; font-size: 11px; line-height: 1.5; max-width: 70%; }
+  .ai-voice-error { display: block; color: #b83d32; font-size: 10px; padding: 0 14px; }
+  .ai-action-btn.is-stop { background: #2f4a3f; color: #fff; }
+  .ai-action-btn.is-stop:hover:not(:disabled) { background: #243a33; }
+  .ai-action-btn.is-cancel { background: transparent; color: #8a978e; }
+  .ai-action-btn.is-cancel:hover:not(:disabled) { background: #eef3ec; color: #44594c; }
+  .ai-waveform { display: block; flex: 1; min-width: 0; }
 
 .create-panel label { display: grid; min-width: 200px; flex: 1; gap: 5px; color: #617166; font-size: 10px; }
 .create-panel input, .create-panel textarea { width: 100%; padding: 8px 10px; border: 1px solid #dfe5dc; border-radius: 4px; color: #293f34; font-size: 11px; font-family: inherit; }

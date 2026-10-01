@@ -120,12 +120,13 @@ export interface AiConversation {
 }
 
 export interface AiMessage {
-  id: number
+  id: number | string
   conversationId: number
   role: 'user' | 'assistant'
   content: string
   model?: string
   createdAt: string
+  status?: 'sending' | 'sent' | 'error'
 }
 
 export interface AiChatResponse {
@@ -154,4 +155,19 @@ export async function sendAiMessage(
   payload: { conversationId?: number; message: string },
 ): Promise<AiChatResponse> {
   return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
+}
+
+export async function transcribeVoiceAudio(token: string, blob: Blob): Promise<string> {
+  const form = new FormData()
+  form.append('audio', blob, 'audio.webm')
+  const response = await fetch(`${apiBase}/voice/transcribe`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  })
+  const body = (await response.json().catch(() => null)) as ApiResponse & { data?: { text?: string } } | null
+  if (!response.ok || !body?.success) {
+    throw new Error(body?.message || 'Transcription failed.')
+  }
+  return body.data?.text ?? ''
 }
