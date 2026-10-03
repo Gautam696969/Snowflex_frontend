@@ -1,5 +1,6 @@
 import { ArrowUpRight, Check, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
+import ThemeToggle from '../components/ThemeToggle'
 
 type AuthLayoutProps = {
   title: string
@@ -48,6 +49,7 @@ export default function AuthLayout({ title, description, children }: AuthLayoutP
       </aside>
 
       <section className="auth-main" aria-labelledby="auth-title">
+        <ThemeToggle className="auth-theme-toggle" />
         <div className="auth-content">
           <header className="auth-heading">
             <h2 id="auth-title">{title}</h2>
