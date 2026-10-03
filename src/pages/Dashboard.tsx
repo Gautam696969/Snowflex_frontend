@@ -14,6 +14,7 @@ import {
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import AiAssistant from '../components/AiAssistant'
+import ThemeToggle from '../components/ThemeToggle'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
 type Row = Record<string, unknown>
@@ -42,7 +43,8 @@ export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<SafeUser | null>(null)
   const [view, setView] = useState<View>('overview')
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [stats, setStats] = useState<DashboardData>({})
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,34 +66,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSidebarOpen(false)
+      if (event.key === 'Escape') setMobileSidebarOpen(false)
     }
     window.addEventListener('keydown', handleEscape)
-    const handleResize = () => {
-      if (!window.matchMedia('(max-width: 768px)').matches) {
-        setIsSidebarOpen(true)
-        document.body.style.overflow = ''
-        return
-      }
-      setIsSidebarOpen(false)
-    }
-    window.addEventListener('resize', handleResize)
+    document.body.style.overflow = mobileSidebarOpen ? 'hidden' : ''
     return () => {
       window.removeEventListener('keydown', handleEscape)
-      window.removeEventListener('resize', handleResize)
       document.body.style.overflow = ''
     }
-  }, [])
-
-  function closeMobileSidebar() {
-    if (window.matchMedia('(max-width: 768px)').matches) setIsSidebarOpen(false)
-  }
-
-  useEffect(() => {
-    const mobileOpen = window.matchMedia('(max-width: 768px)').matches && isSidebarOpen
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [isSidebarOpen])
+  }, [mobileSidebarOpen])
 
   async function loadData(currentToken: string, currentUser: SafeUser, currentView: View) {
     setLoading(true)
@@ -370,12 +353,15 @@ export default function Dashboard() {
   )
 
   return (
-    <main className={`workbench ${isSidebarOpen ? 'is-sidebar-expanded' : 'is-sidebar-collapsed'}${view === 'assistant' ? ' is-chat-view' : ''}`}>
-      <aside className="workbench-sidebar" role={isSidebarOpen ? 'dialog' : undefined} aria-modal={isSidebarOpen ? true : undefined}>
+    <main className={`workbench${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}`}>
+      <aside className="workbench-sidebar" aria-label="Workspace sidebar">
         <div className="sidebar-brand-row">
           <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations"><Snowflake className="workbench-mark" size={20} strokeWidth={2.5} /><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
-          <button className="sidebar-toggle" type="button" title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen((open) => !open)}>
-            {isSidebarOpen ? <X size={19} /> : <PanelLeftOpen size={17} />}
+          <button className="sidebar-toggle" type="button" title={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={mobileSidebarOpen || !sidebarCollapsed} onClick={() => {
+            if (window.matchMedia('(max-width: 680px)').matches) setMobileSidebarOpen(false)
+            else setSidebarCollapsed((collapsed) => !collapsed)
+          }}>
+            {mobileSidebarOpen ? <X size={19} /> : sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
           </button>
         </div>
         <nav className="workbench-nav" aria-label="Workspace navigation">
@@ -383,7 +369,7 @@ export default function Dashboard() {
             <div className="nav-group" key={groupLabel}>
               <div className="workspace-label">{groupLabel}</div>
               {items.map(({ id, label, icon: Icon }) => (
-                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={label} aria-label={label} onClick={() => { setView(id); closeMobileSidebar() }} type="button">
+                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={sidebarCollapsed ? label : undefined} aria-label={label} onClick={() => { setView(id); setMobileSidebarOpen(false) }} type="button">
                   <Icon size={17} strokeWidth={1.8} /><span>{label}</span>{view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -400,7 +386,7 @@ export default function Dashboard() {
           </button>
         </div>
       </aside>
-      {isSidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)} />}
+      {mobileSidebarOpen && <button className="mobile-sidebar-backdrop" type="button" aria-label="Close navigation" onClick={() => setMobileSidebarOpen(false)} />}
 
       {showLogoutConfirm && (
         <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
@@ -460,11 +446,8 @@ export default function Dashboard() {
 
       <section className="workbench-main">
         <header className="workbench-topbar">
-          <button className="mobile-sidebar-toggle" type="button" title={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen((open) => !open)}>
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          <div className="workbench-breadcrumb"><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
-          <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()} disabled={refreshing}><RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} /></button></div>
+          <div className="topbar-location"><button className="mobile-sidebar-open-button" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}><Menu size={19} /></button><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
+          <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><ThemeToggle className="topbar-theme-toggle" /><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()} disabled={refreshing}><RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} /></button></div>
         </header>
 
         <div className={view === 'assistant' ? 'page-content ai-page-content' : 'page-content'}>
