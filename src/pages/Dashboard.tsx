@@ -14,6 +14,7 @@ import {
 import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import AiAssistant from '../components/AiAssistant'
+import AiChatWidget from '../components/AiChatWidget'
 import ThemeToggle from '../components/ThemeToggle'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
@@ -667,6 +668,7 @@ export default function Dashboard() {
           <footer className="content-foot"><span>Snowflex People Operations</span><span>Connected workspace <span className="connection-dot" /></span></footer>
         </div>
       </section>
+      {token && <AiChatWidget token={token} />}
     </main>
   )
 }
