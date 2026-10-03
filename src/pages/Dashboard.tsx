@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
-  Activity, Building2, CalendarDays, Check, CheckSquare2, ChevronRight, CircleHelp,
+  Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2, ChevronRight, CircleHelp,
   Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon,
 } from 'lucide-react'
@@ -42,7 +42,7 @@ export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<SafeUser | null>(null)
   const [view, setView] = useState<View>('overview')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches)
   const [stats, setStats] = useState<DashboardData>({})
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +61,37 @@ export default function Dashboard() {
   const [decidedRows, setDecidedRows] = useState<Set<string | number>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsSidebarOpen(false)
+    }
+    window.addEventListener('keydown', handleEscape)
+    const handleResize = () => {
+      if (!window.matchMedia('(max-width: 768px)').matches) {
+        setIsSidebarOpen(true)
+        document.body.style.overflow = ''
+        return
+      }
+      setIsSidebarOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+      window.removeEventListener('resize', handleResize)
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  function closeMobileSidebar() {
+    if (window.matchMedia('(max-width: 768px)').matches) setIsSidebarOpen(false)
+  }
+
+  useEffect(() => {
+    const mobileOpen = window.matchMedia('(max-width: 768px)').matches && isSidebarOpen
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [isSidebarOpen])
 
   async function loadData(currentToken: string, currentUser: SafeUser, currentView: View) {
     setLoading(true)
@@ -286,8 +317,8 @@ export default function Dashboard() {
     ? [
       ['Attendance this month', stats.attendanceThisMonth ?? 0, 'Recorded days', CalendarDays],
       ['Open tasks', stats.assignedTasks ?? 0, 'Assigned to you', CheckSquare2],
+      ['Leave balance', stats.leaveBalance ?? 0, 'Days remaining', CalendarDays],
       ['Completed tasks', stats.completedTasks ?? 0, 'All done', Activity],
-      ['Pending leave', stats.pendingLeaves ?? 0, 'Awaiting review', Clock3],
     ] as const
     : role === 'MANAGER'
       ? [
@@ -300,8 +331,33 @@ export default function Dashboard() {
         ['Total employees', stats.totalEmployees ?? 0, `${stats.activeEmployees ?? 0} active`, Users],
         ['Present today', stats.presentToday ?? 0, `${stats.lateToday ?? 0} arrived late`, Clock3],
         ['Absent today', stats.absentToday ?? 0, 'Active workforce', CalendarDays],
-        ['Pending leaves', stats.pendingLeaves ?? 0, `${stats.pendingTasks ?? 0} open tasks`, CheckSquare2],
+        ['Pending leaves', stats.pendingLeaves ?? 0, 'Awaiting review', CheckSquare2],
       ] as const
+    const isEmployee = role === 'EMPLOYEE'
+    const attendanceTotal = role === 'MANAGER'
+      ? stats.teamSize ?? 0
+      : stats.activeEmployees ?? stats.totalEmployees ?? 0
+    const attendancePresent = role === 'MANAGER'
+      ? stats.teamPresentToday ?? 0
+      : stats.presentToday ?? 0
+    const attendanceAbsent = role === 'MANAGER'
+      ? stats.teamAbsentToday ?? 0
+      : stats.absentToday ?? 0
+    const attendanceLate = role === 'MANAGER' ? 0 : stats.lateToday ?? 0
+    const attendanceOnTime = Math.max(0, attendancePresent - attendanceLate)
+    const attendanceRate = attendanceTotal > 0
+      ? Math.min(100, Math.round((attendancePresent / attendanceTotal) * 100))
+      : 0
+    const actionItems = [
+      { label: 'Leave requests', count: stats.pendingLeaves ?? stats.pendingLeaveRequests ?? 0, view: 'leaves' as View, icon: CalendarDays },
+      { label: 'Open tasks', count: isEmployee ? stats.assignedTasks ?? 0 : stats.pendingTasks ?? 0, view: 'tasks' as View, icon: CheckSquare2 },
+    ]
+    const shortcuts = [
+      { label: 'Attendance', view: 'attendance' as View, icon: Clock3 },
+      { label: isEmployee ? 'Request leave' : 'Leave requests', view: 'leaves' as View, icon: CalendarDays },
+      { label: 'Tasks', view: 'tasks' as View, icon: CheckSquare2 },
+      ...(canManage ? [{ label: 'Employee directory', view: 'employees' as View, icon: Users }] : []),
+    ]
 
   if (!user) return (
     <main className="dashboard-loading">
@@ -314,12 +370,12 @@ export default function Dashboard() {
   )
 
   return (
-    <main className={sidebarCollapsed ? 'workbench is-sidebar-collapsed' : 'workbench'}>
-      <aside className="workbench-sidebar">
+    <main className={`workbench ${isSidebarOpen ? 'is-sidebar-expanded' : 'is-sidebar-collapsed'}${view === 'assistant' ? ' is-chat-view' : ''}`}>
+      <aside className="workbench-sidebar" role={isSidebarOpen ? 'dialog' : undefined} aria-modal={isSidebarOpen ? true : undefined}>
         <div className="sidebar-brand-row">
           <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations"><Snowflake className="workbench-mark" size={20} strokeWidth={2.5} /><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
-          <button className="sidebar-toggle" type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!sidebarCollapsed} onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}>
-            {sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
+          <button className="sidebar-toggle" type="button" title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen((open) => !open)}>
+            {isSidebarOpen ? <X size={19} /> : <PanelLeftOpen size={17} />}
           </button>
         </div>
         <nav className="workbench-nav" aria-label="Workspace navigation">
@@ -327,7 +383,7 @@ export default function Dashboard() {
             <div className="nav-group" key={groupLabel}>
               <div className="workspace-label">{groupLabel}</div>
               {items.map(({ id, label, icon: Icon }) => (
-                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={sidebarCollapsed ? label : undefined} aria-label={label} onClick={() => setView(id)} type="button">
+                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={label} aria-label={label} onClick={() => { setView(id); closeMobileSidebar() }} type="button">
                   <Icon size={17} strokeWidth={1.8} /><span>{label}</span>{view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -344,6 +400,7 @@ export default function Dashboard() {
           </button>
         </div>
       </aside>
+      {isSidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Close navigation" onClick={() => setIsSidebarOpen(false)} />}
 
       {showLogoutConfirm && (
         <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
@@ -403,11 +460,14 @@ export default function Dashboard() {
 
       <section className="workbench-main">
         <header className="workbench-topbar">
-          <div><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
+          <button className="mobile-sidebar-toggle" type="button" title={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'} aria-expanded={isSidebarOpen} onClick={() => setIsSidebarOpen((open) => !open)}>
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <div className="workbench-breadcrumb"><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
           <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()} disabled={refreshing}><RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} /></button></div>
         </header>
 
-        <div className="page-content">
+        <div className={view === 'assistant' ? 'page-content ai-page-content' : 'page-content'}>
           <div className="page-heading">
             <div><span className="section-kicker">{view === 'assistant' ? 'SNOWFLEX AI' : 'PEOPLE OPERATIONS'}</span><h1>{view === 'overview' ? `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${user.fullName.split(' ')[0]}` : activeItem?.label}</h1><p>{view === 'overview' ? 'Here is what is happening across your workspace today.' : view === 'assistant' ? 'Ask about leave, attendance, teams and tasks across your workspace.' : `Manage ${activeItem?.label.toLowerCase()} in one place.`}</p></div>
             <div className="heading-actions">
@@ -467,7 +527,51 @@ export default function Dashboard() {
           ) : view === 'overview' ? (
             <>
               <div className="metric-grid">{metrics.map(([label,value,detail,Icon]) => <article className="metric-panel" key={label}><div className="metric-topline"><span>{label}</span><Icon size={17} /></div><strong>{value}</strong><small>{detail}</small></article>)}</div>
-              <section className="overview-lower"><div className="panel-section"><div className="panel-title"><div><span className="section-kicker">DIRECTORY</span><h2>People at a glance</h2></div><button className="text-action" type="button" onClick={() => setView('employees')}>View directory <ChevronRight size={15} /></button></div><p className="empty-copy">Your live employee directory is ready. Choose Employees to browse profiles and teams.</p></div><div className="panel-section pulse-panel"><div className="panel-title"><div><span className="section-kicker">YOUR ACCESS</span><h2>{role}</h2></div><Activity size={19} /></div><p className="empty-copy">Workspace data is loaded directly from Snowflake.</p></div></section>
+              <section className="overview-workspace" aria-label="Workspace overview">
+                <article className="overview-panel attendance-panel">
+                  <div className="overview-panel-head">
+                    <div><span className="section-kicker">{isEmployee ? 'PERSONAL SNAPSHOT' : 'WORKFORCE PULSE'}</span><h2>{isEmployee ? 'Your month at a glance' : 'Attendance today'}</h2></div>
+                    <span className="overview-date">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  {isEmployee ? (
+                    <div className="personal-pulse">
+                      <div className="personal-pulse-main"><strong>{stats.attendanceThisMonth ?? 0}</strong><span>attendance records this month</span></div>
+                      <div className="personal-pulse-divider" />
+                      <div className="personal-pulse-detail"><span>Leave balance</span><strong>{stats.leaveBalance ?? 0} days</strong></div>
+                      <div className="personal-pulse-detail"><span>Tasks completed</span><strong>{stats.completedTasks ?? 0}</strong></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="attendance-summary"><strong>{attendancePresent}<span> / {attendanceTotal}</span></strong><span>{role === 'MANAGER' ? 'team members present' : 'active employees present'}</span></div>
+                      <div className="attendance-track" role="img" aria-label={`${attendanceRate}% attendance recorded`}><span style={{ width: `${attendanceRate}%` }} /></div>
+                      <div className="attendance-legend">
+                        <div><i className="legend-present" /><span>On time</span><strong>{attendanceOnTime}</strong></div>
+                        <div><i className="legend-absent" /><span>Absent</span><strong>{attendanceAbsent}</strong></div>
+                        {role !== 'MANAGER' && <div><i className="legend-late" /><span>Late</span><strong>{attendanceLate}</strong></div>}
+                      </div>
+                    </>
+                  )}
+                </article>
+                <article className="overview-panel attention-panel">
+                  <div className="overview-panel-head"><div><span className="section-kicker">IN PROGRESS</span><h2>Needs attention</h2></div><Activity size={18} /></div>
+                  <div className="attention-list">
+                    {actionItems.map(({ label, count, view: targetView, icon: Icon }) => (
+                      <button className="attention-item" key={label} type="button" onClick={() => setView(targetView)}>
+                        <span className="attention-icon"><Icon size={16} /></span><span className="attention-label">{label}</span><strong>{count}</strong><ArrowUpRight size={15} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="attention-note">Counts reflect the latest workspace data.</p>
+                </article>
+              </section>
+              <section className="overview-shortcuts" aria-label="Quick access">
+                <div className="shortcuts-heading"><span className="section-kicker">QUICK ACCESS</span><h2>Go to</h2></div>
+                <div className="shortcut-list">
+                  {shortcuts.map(({ label, view: targetView, icon: Icon }) => (
+                    <button className="shortcut-button" key={label} type="button" onClick={() => setView(targetView)}><Icon size={16} /><span>{label}</span><ChevronRight size={15} /></button>
+                  ))}
+                </div>
+              </section>
             </>
           ) : (
             <section className="table-panel">
