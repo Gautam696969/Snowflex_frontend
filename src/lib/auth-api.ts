@@ -128,11 +128,68 @@ export async function getDepartments(token: string): Promise<Record<string, unkn
   return response.data
 }
 
+export interface AdminSystemInfo {
+  database: {
+    status: string
+    database: string
+    schema: string
+    warehouse: string
+    account: string
+  }
+  email: {
+    configured: boolean
+    host: string
+    port: number
+    user: string
+    from: string
+  }
+  server: {
+    uptimeSeconds: number
+    nodeVersion: string
+    environment: string
+    port: number | string
+    frontendUrl: string
+  }
+  counts: {
+    users: number
+    admins: number
+    hr: number
+    managers: number
+    employees: number
+    employeeProfiles: number
+    departments: number
+  }
+}
+
 export async function getUsers(token: string): Promise<SafeUser[]> {
   const response = await request<ApiResponse & { data: SafeUser[] }>('/admin/users', {
     headers: { Authorization: `Bearer ${token}` },
   })
   return response.data
+}
+
+export async function updateUserRole(token: string, userId: number, role: string): Promise<SafeUser> {
+  const response = await request<ApiResponse & { data: SafeUser }>(`/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ role }),
+  })
+  return response.data
+}
+
+export async function getAdminSystemInfo(token: string): Promise<AdminSystemInfo> {
+  const response = await request<ApiResponse & { data: AdminSystemInfo }>('/admin/system', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function sendAdminTestEmail(token: string, to?: string): Promise<void> {
+  await request('/admin/test-email', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to }),
+  })
 }
 
 export async function apiRequest<T>(path: string, token: string, method = 'GET', input?: unknown): Promise<T> {

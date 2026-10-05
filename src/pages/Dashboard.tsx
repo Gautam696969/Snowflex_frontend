@@ -6,37 +6,24 @@ import {
   ChevronRight, CircleHelp, Clock3, LayoutDashboard, LogOut, Menu,
   PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck,
-  Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown
+  Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
+  Server, ShieldCheck
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
-  getDepartments, getEmployees, getUsers, logout, readToken
+  getDepartments, getEmployees, getUsers, logout, readToken,
+  getAdminSystemInfo, type AdminSystemInfo
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import AiAssistant from '../components/AiAssistant'
 import AiChatWidget from '../components/AiChatWidget'
 import ThemeToggle from '../components/ThemeToggle'
+import AdminUsersView from '../components/AdminUsersView'
+import AdminSystemView from '../components/AdminSystemView'
 
-type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
+type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system'
 type Row = Record<string, unknown>
 type ViewMode = 'table' | 'cards'
-
-const navGroups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
-  { label: 'OVERVIEW', items: [
-    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'assistant', label: 'AI Employee', icon: Sparkles },
-  ] },
-  { label: 'MANAGEMENT', items: [
-    { id: 'employees', label: 'Employees', icon: Users },
-    { id: 'departments', label: 'Departments', icon: Building2 },
-  ] },
-  { label: 'TIME & WORK', items: [
-    { id: 'attendance', label: 'Attendance', icon: Clock3 },
-    { id: 'leaves', label: 'Leave requests', icon: CalendarDays },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare2 },
-  ] },
-]
-const viewItems = navGroups.flatMap((group) => group.items)
 
 const formatDate = (value: unknown) => {
   if (!value) return '—'
@@ -94,6 +81,8 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
   const [availableUsers, setAvailableUsers] = useState<SafeUser[]>([])
   const [availableDepartments, setAvailableDepartments] = useState<Row[]>([])
+  const [adminUsers, setAdminUsers] = useState<SafeUser[]>([])
+  const [adminSystemInfo, setAdminSystemInfo] = useState<AdminSystemInfo | null>(null)
   const [form, setForm] = useState({
     name: '', userId: '', employeeCode: '', departmentId: '',
     phone: '', designation: '', joiningDate: '', fullName: '', email: '',
@@ -156,6 +145,14 @@ export default function Dashboard() {
         const deptData = await getDepartments(currentToken)
         setRows(deptData)
         setAvailableDepartments(deptData)
+      } else if (currentView === 'users') {
+        const users = await getUsers(currentToken)
+        setAdminUsers(users)
+        setRows(users as unknown as Row[])
+      } else if (currentView === 'system') {
+        const sys = await getAdminSystemInfo(currentToken)
+        setAdminSystemInfo(sys)
+        setRows([])
       } else {
         const path = currentView === 'attendance'
           ? currentUser.role === 'EMPLOYEE' ? '/attendance/me' : '/attendance'
@@ -429,6 +426,38 @@ export default function Dashboard() {
 
   const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role
   const canManage = role === 'ADMIN' || role === 'HR'
+
+  const navGroups = useMemo(() => {
+    const groups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
+      { label: 'OVERVIEW', items: [
+        { id: 'overview' as View, label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'assistant' as View, label: 'AI Employee', icon: Sparkles },
+      ] },
+      { label: 'MANAGEMENT', items: [
+        { id: 'employees' as View, label: 'Employees', icon: Users },
+        { id: 'departments' as View, label: 'Departments', icon: Building2 },
+      ] },
+      { label: 'TIME & WORK', items: [
+        { id: 'attendance' as View, label: 'Attendance', icon: Clock3 },
+        { id: 'leaves' as View, label: 'Leave requests', icon: CalendarDays },
+        { id: 'tasks' as View, label: 'Tasks', icon: CheckSquare2 },
+      ] },
+    ]
+
+    if (role === 'ADMIN') {
+      groups.push({
+        label: 'ADMINISTRATION',
+        items: [
+          { id: 'users' as View, label: 'Users & Roles', icon: ShieldCheck as unknown as typeof LayoutDashboard },
+          { id: 'system' as View, label: 'System Diagnostics', icon: Server as unknown as typeof LayoutDashboard },
+        ],
+      })
+    }
+
+    return groups
+  }, [role])
+
+  const viewItems = useMemo(() => navGroups.flatMap((group) => group.items), [navGroups])
   const activeItem = viewItems.find((item) => item.id === view)
   const isManagementView = view === 'employees' || view === 'departments'
   const showActions = canManage && isManagementView
@@ -488,6 +517,10 @@ export default function Dashboard() {
     ...(canManage ? [
       { label: 'Employee Directory', desc: 'Profiles, codes & status', view: 'employees' as View, icon: Users },
       { label: 'Departments', desc: 'Organizational teams', view: 'departments' as View, icon: Building2 },
+    ] : []),
+    ...(role === 'ADMIN' ? [
+      { label: 'User Roles & Governance', desc: 'Access level governance', view: 'users' as View, icon: ShieldCheck },
+      { label: 'System Diagnostics', desc: 'Snowflake & SMTP health', view: 'system' as View, icon: Server },
     ] : []),
     { label: 'AI Workspace Agent', desc: 'Ask natural questions', view: 'assistant' as View, icon: Sparkles },
   ]
@@ -721,7 +754,13 @@ export default function Dashboard() {
             <div className="dash-hero-content">
               <div className="dash-hero-topline">
                 <span className="dash-kicker">
-                  {view === 'overview' ? 'SNOWFLEX PEOPLE PLATFORM' : view === 'assistant' ? 'AI PEOPLE ASSISTANT' : 'PEOPLE OPERATIONS'}
+                  {view === 'overview'
+                    ? 'SNOWFLEX PEOPLE PLATFORM'
+                    : view === 'assistant'
+                      ? 'AI PEOPLE ASSISTANT'
+                      : view === 'users' || view === 'system'
+                        ? 'ADMINISTRATION PORTAL'
+                        : 'PEOPLE OPERATIONS'}
                 </span>
                 <span className={`dash-role-badge role-${(role || 'employee').toLowerCase()}`}>
                   {role === 'ADMIN' ? <Shield size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
@@ -742,7 +781,11 @@ export default function Dashboard() {
                       : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
                   : view === 'assistant'
                     ? 'Natural language queries across employee records, team status, and corporate policies.'
-                    : `Centralized registry and workflows for ${activeItem?.label.toLowerCase()}.`}
+                    : view === 'users'
+                      ? 'Governance console: configure user access levels, manage role promotions, and audit registered accounts.'
+                      : view === 'system'
+                        ? 'Telemetry console: monitor live Snowflake cloud connections, runtime status, and test SMTP email delivery.'
+                        : `Centralized registry and workflows for ${activeItem?.label.toLowerCase()}.`}
               </p>
             </div>
 
@@ -980,6 +1023,25 @@ export default function Dashboard() {
           {/* VIEW SWITCHER CONTENT */}
           {view === 'assistant' ? (
             token && <AiAssistant token={token} onError={setError} />
+          ) : view === 'users' ? (
+            <AdminUsersView
+              users={adminUsers}
+              token={token || ''}
+              currentUserId={user?.id ?? 0}
+              onRefresh={() => {
+                if (token && user) void loadData(token, user, 'users')
+              }}
+            />
+          ) : view === 'system' ? (
+            <AdminSystemView
+              systemInfo={adminSystemInfo}
+              token={token || ''}
+              adminEmail={user?.email || ''}
+              onRefresh={() => {
+                if (token && user) void loadData(token, user, 'system')
+              }}
+              loading={loading}
+            />
           ) : view === 'overview' ? (
             <>
               {/* 4 Premium Metric Cards */}
