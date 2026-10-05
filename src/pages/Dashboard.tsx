@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
   Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2,
@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
-  Server, ShieldCheck
+  Server, ShieldCheck, UserCircle2
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
@@ -15,13 +15,15 @@ import {
   getAdminSystemInfo, type AdminSystemInfo
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
+import { getFullAvatarUrl } from '../lib/avatar'
 import AiAssistant from '../components/AiAssistant'
 import AiChatWidget from '../components/AiChatWidget'
 import ThemeToggle from '../components/ThemeToggle'
 import AdminUsersView from '../components/AdminUsersView'
 import AdminSystemView from '../components/AdminSystemView'
+import TopProfileDropdown from '../components/TopProfileDropdown'
 
-type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system'
+type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
 type ViewMode = 'table' | 'cards'
 
@@ -66,9 +68,18 @@ function getInitials(name: string) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialView = (searchParams.get('view') as View) || 'overview'
   const [token, setToken] = useState<string | null>(null)
   const [user, setUser] = useState<SafeUser | null>(null)
-  const [view, setView] = useState<View>('overview')
+  const [view, setView] = useState<View>(initialView)
+
+  useEffect(() => {
+    const qView = searchParams.get('view') as View | null
+    if (qView && qView !== view) {
+      setView(qView)
+    }
+  }, [searchParams])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [stats, setStats] = useState<DashboardData>({})
@@ -454,6 +465,13 @@ export default function Dashboard() {
       })
     }
 
+    groups.push({
+      label: 'ACCOUNT',
+      items: [
+        { id: 'profile' as View, label: 'My Profile', icon: UserCircle2 as unknown as typeof LayoutDashboard },
+      ],
+    })
+
     return groups
   }, [role])
 
@@ -523,6 +541,7 @@ export default function Dashboard() {
       { label: 'System Diagnostics', desc: 'Snowflake & SMTP health', view: 'system' as View, icon: Server },
     ] : []),
     { label: 'AI Workspace Agent', desc: 'Ask natural questions', view: 'assistant' as View, icon: Sparkles },
+    { label: 'My Profile & Security', desc: 'Account credentials & avatar', view: 'profile' as View, icon: UserCircle2 },
   ]
 
   function renderStatusPill(statusValue: unknown) {
@@ -615,7 +634,14 @@ export default function Dashboard() {
                   className={view === id ? 'nav-item selected' : 'nav-item'}
                   title={sidebarCollapsed ? label : undefined}
                   aria-label={label}
-                  onClick={() => { setView(id); setMobileSidebarOpen(false) }}
+                  onClick={() => {
+                    if (id === 'profile') {
+                      navigate('/profile')
+                    } else {
+                      setView(id)
+                    }
+                    setMobileSidebarOpen(false)
+                  }}
                   type="button"
                 >
                   <Icon size={17} strokeWidth={1.8} />
@@ -633,16 +659,39 @@ export default function Dashboard() {
             <CircleHelp size={16} />
             <span>Snowflake DB v2.4</span>
           </div>
-          <button className="profile-chip" type="button" onClick={handleLogout} title="Sign out">
-            <span className="profile-avatar" style={{ background: getAvatarBackground(user.fullName) }}>
-              {getInitials(user.fullName)}
-            </span>
+          <div
+            className="profile-chip"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate('/profile')}
+            title="My Profile & Security"
+          >
+            {user.avatarUrl ? (
+              <img
+                src={getFullAvatarUrl(user.avatarUrl) || ''}
+                alt={user.fullName}
+                className="profile-avatar-img"
+              />
+            ) : (
+              <span className="profile-avatar" style={{ background: getAvatarBackground(user.fullName) }}>
+                {getInitials(user.fullName)}
+              </span>
+            )}
             <span className="profile-copy">
               <strong>{user.fullName}</strong>
               <small>{role}</small>
             </span>
-            <LogOut size={16} aria-label="Sign out" />
-          </button>
+            <button
+              type="button"
+              className="sidebar-logout-icon-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleLogout()
+              }}
+              title="Sign out"
+            >
+              <LogOut size={16} aria-label="Sign out" />
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -745,6 +794,7 @@ export default function Dashboard() {
             >
               <RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} />
             </button>
+            <TopProfileDropdown user={user} />
           </div>
         </header>
 
@@ -1190,9 +1240,18 @@ export default function Dashboard() {
                         {recentLeaves.slice(0, 2).map((item) => (
                           <div key={String(item.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span className="avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px', background: getAvatarBackground(String(item.fullName || 'User')) }}>
-                                {getInitials(String(item.fullName || 'User'))}
-                              </span>
+                              {item.avatarUrl ? (
+                                <img
+                                  src={getFullAvatarUrl(String(item.avatarUrl)) || ''}
+                                  alt={String(item.fullName || 'User')}
+                                  className="avatar-circle-img"
+                                  style={{ width: '26px', height: '26px', borderRadius: '50%' }}
+                                />
+                              ) : (
+                                <span className="avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px', background: getAvatarBackground(String(item.fullName || 'User')) }}>
+                                  {getInitials(String(item.fullName || 'User'))}
+                                </span>
+                              )}
                               <strong style={{ color: '#2b3f34' }}>{String(item.fullName || 'Employee')}</strong>
                             </div>
                             {renderStatusPill(item.status)}
@@ -1213,7 +1272,13 @@ export default function Dashboard() {
                       className="quick-launch-card"
                       key={label}
                       type="button"
-                      onClick={() => setView(targetView)}
+                      onClick={() => {
+                        if (targetView === 'profile') {
+                          navigate('/profile')
+                        } else {
+                          setView(targetView)
+                        }
+                      }}
                     >
                       <div className="quick-launch-icon">
                         <Icon size={20} strokeWidth={2} />
@@ -1356,9 +1421,18 @@ export default function Dashboard() {
                         <article className="emp-profile-card" key={String(row.id)}>
                           <div className="emp-card-top">
                             <div className="emp-card-identity">
-                              <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
-                                {getInitials(String(row.fullName || 'User'))}
-                              </span>
+                              {row.avatarUrl ? (
+                                <img
+                                  src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
+                                  alt={String(row.fullName || 'User')}
+                                  className="avatar-circle-img"
+                                  style={{ width: '38px', height: '38px', borderRadius: '50%' }}
+                                />
+                              ) : (
+                                <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
+                                  {getInitials(String(row.fullName || 'User'))}
+                                </span>
+                              )}
                               <div className="emp-card-name">
                                 <strong>{String(row.fullName || 'Unnamed')}</strong>
                                 <small>{String(row.email || 'No email')}</small>
@@ -1474,9 +1548,18 @@ export default function Dashboard() {
                               <td key={key}>
                                 {key.toLowerCase() === 'fullname' ? (
                                   <div className="avatar-user-cell">
-                                    <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
-                                      {getInitials(String(value || 'User'))}
-                                    </span>
+                                    {row.avatarUrl ? (
+                                      <img
+                                        src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
+                                        alt={String(value || 'User')}
+                                        className="avatar-circle-img"
+                                        style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                                      />
+                                    ) : (
+                                      <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
+                                        {getInitials(String(value || 'User'))}
+                                      </span>
+                                    )}
                                     <div className="avatar-info-copy">
                                       <strong>{String(value || '—')}</strong>
                                       {row.email ? <small>{String(row.email)}</small> : null}

@@ -3,6 +3,7 @@ export interface SafeUser {
   fullName: string
   email: string
   role: string
+  avatarUrl?: string | null
 }
 
 interface ApiResponse {
