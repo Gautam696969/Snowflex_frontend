@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
-  getDepartments, getEmployees, logout, readToken
+  getDepartments, getEmployees, getUsers, logout, readToken
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import AiAssistant from '../components/AiAssistant'
@@ -92,8 +92,11 @@ export default function Dashboard() {
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState<SafeUser[]>([])
+  const [availableDepartments, setAvailableDepartments] = useState<Row[]>([])
   const [form, setForm] = useState({
     name: '', userId: '', employeeCode: '', departmentId: '',
+    phone: '', designation: '', joiningDate: '', fullName: '', email: '',
     title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
   })
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -140,9 +143,19 @@ export default function Dashboard() {
       } else if (currentView === 'assistant') {
         setRows([])
       } else if (currentView === 'employees') {
-        setRows(await getEmployees(currentToken))
+        const [empData, deptData] = await Promise.all([
+          getEmployees(currentToken),
+          getDepartments(currentToken).catch(() => []),
+        ])
+        setRows(empData)
+        setAvailableDepartments(deptData)
+        if (currentUser.role === 'ADMIN' || currentUser.role === 'HR') {
+          getUsers(currentToken).then(setAvailableUsers).catch(() => {})
+        }
       } else if (currentView === 'departments') {
-        setRows(await getDepartments(currentToken))
+        const deptData = await getDepartments(currentToken)
+        setRows(deptData)
+        setAvailableDepartments(deptData)
       } else {
         const path = currentView === 'attendance'
           ? currentUser.role === 'EMPLOYEE' ? '/attendance/me' : '/attendance'
@@ -210,6 +223,12 @@ export default function Dashboard() {
     try {
       const result = await apiRequest(path, token, method, payload)
 
+      if (method === 'POST' && view === 'employees') {
+        if (!result || typeof result !== 'object' || !('id' in result)) {
+          throw new Error('Employee creation failed: No valid record returned from server.')
+        }
+      }
+
       let successMsg = 'Saved successfully'
       if (method === 'POST') {
         if (path.includes('check-in')) successMsg = 'Checked in successfully! Have a great day.'
@@ -218,7 +237,7 @@ export default function Dashboard() {
         else if (view === 'departments') successMsg = 'Department created successfully'
         else if (view === 'tasks') successMsg = 'Task assigned successfully'
         else if (view === 'leaves') successMsg = 'Leave request submitted successfully'
-      } else if (method === 'PATCH') {
+      } else if (method === 'PATCH' || method === 'PUT') {
         if (path.includes('/approve')) successMsg = 'Leave request approved'
         else if (path.includes('/reject')) successMsg = 'Leave request rejected'
         else if (path.includes('/status')) successMsg = 'Task status updated'
@@ -227,17 +246,11 @@ export default function Dashboard() {
       toast.success(successMsg)
 
       if (method === 'POST' && result && typeof result === 'object' && 'id' in result) {
-        setRows((prev) => [result as Row, ...prev])
+        setRows((prev) => [result as Row, ...prev.filter((r) => r.id !== (result as Row).id)])
       } else if (method === 'POST' && payload && typeof payload === 'object') {
         const tempRow: Row = { id: -Date.now(), ...(payload as Row) }
-        if (view === 'employees' && form.userId) {
-          tempRow.userId = Number(form.userId)
-          tempRow.employeeCode = form.employeeCode
-          tempRow.departmentId = Number(form.departmentId) || null
-          tempRow.status = 'ACTIVE'
-        }
         setRows((prev) => [tempRow, ...prev])
-      } else if (method === 'PATCH' && result && typeof result === 'object' && 'id' in result) {
+      } else if ((method === 'PATCH' || method === 'PUT') && result && typeof result === 'object' && 'id' in result) {
         setRows((prev) => prev.map((row) => (row.id === (result as Row).id ? { ...row, ...result } : row)))
       } else if (method === 'PATCH' && path.includes('/status') && payload && typeof payload === 'object' && 'status' in payload) {
         const id = path.split('/')[2]
@@ -251,14 +264,23 @@ export default function Dashboard() {
 
       setShowCreate(false)
       setEditingRow(null)
-      setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+      setForm({
+        name: '', userId: '', employeeCode: '', departmentId: '',
+        phone: '', designation: '', joiningDate: '', fullName: '', email: '',
+        title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
+      })
+      setSearchQuery('')
+      setStatusFilter('ALL')
       setCurrentPage(1)
-      await refresh()
+      setSortConfig(null)
+
+      if (token && user) {
+        void loadData(token, user, view)
+      }
     } catch (requestError) {
       const errMsg = requestError instanceof Error ? requestError.message : 'Could not save changes.'
       setError(errMsg)
       toast.error(errMsg)
-      await refresh()
     } finally {
       setSaving(false)
     }
@@ -285,11 +307,59 @@ export default function Dashboard() {
   function handleEdit(row: Row) {
     setEditingRow(row)
     if (view === 'employees') {
-      setForm({ name: '', userId: String(row.userId ?? ''), employeeCode: String(row.employeeCode ?? ''), departmentId: String(row.departmentId ?? ''), title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+      setForm({
+        name: '',
+        userId: String(row.userId ?? ''),
+        employeeCode: String(row.employeeCode ?? ''),
+        departmentId: String(row.departmentId ?? ''),
+        phone: String(row.phone ?? ''),
+        designation: String(row.designation ?? ''),
+        joiningDate: String(row.joiningDate ?? '').slice(0, 10),
+        fullName: String(row.fullName ?? ''),
+        email: String(row.email ?? ''),
+        title: '',
+        assignedTo: '',
+        leaveTypeId: '1',
+        startDate: '',
+        endDate: '',
+        reason: '',
+      })
     } else if (view === 'departments') {
-      setForm({ name: String(row.name ?? ''), userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+      setForm({
+        name: String(row.name ?? ''),
+        userId: '',
+        employeeCode: '',
+        departmentId: '',
+        phone: '',
+        designation: '',
+        joiningDate: '',
+        fullName: '',
+        email: '',
+        title: '',
+        assignedTo: '',
+        leaveTypeId: '1',
+        startDate: '',
+        endDate: '',
+        reason: '',
+      })
     } else if (view === 'tasks') {
-      setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: String(row.title ?? ''), assignedTo: String(row.assignedTo ?? ''), leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+      setForm({
+        name: '',
+        userId: '',
+        employeeCode: '',
+        departmentId: '',
+        phone: '',
+        designation: '',
+        joiningDate: '',
+        fullName: '',
+        email: '',
+        title: String(row.title ?? ''),
+        assignedTo: String(row.assignedTo ?? ''),
+        leaveTypeId: '1',
+        startDate: '',
+        endDate: '',
+        reason: '',
+      })
     }
     setShowCreate(true)
   }
@@ -694,7 +764,11 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => {
                     setEditingRow(null)
-                    setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+                    setForm({
+                      name: '', userId: '', employeeCode: '', departmentId: '',
+                      phone: '', designation: '', joiningDate: '', fullName: '', email: '',
+                      title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
+                    })
                     setShowCreate((open) => !open)
                   }}
                 >
@@ -733,10 +807,31 @@ export default function Dashboard() {
                     const path = editingRow ? `/${view}/${editingRow.id}` : `/${view}`
                     const method = editingRow ? 'PATCH' : 'POST'
                     let payload: Record<string, unknown> = {}
-                    if (view === 'departments') payload = { name: form.name }
-                    else if (view === 'employees') payload = { userId: Number(form.userId), employeeCode: form.employeeCode, departmentId: Number(form.departmentId) || null }
-                    else if (view === 'tasks') payload = { title: form.title, assignedTo: Number(form.assignedTo) }
-                    else payload = { leaveTypeId: Number(form.leaveTypeId), startDate: form.startDate, endDate: form.endDate, reason: form.reason }
+                    if (view === 'departments') payload = { name: form.name.trim() }
+                    else if (view === 'employees') {
+                      if (editingRow) {
+                        payload = {
+                          employeeCode: form.employeeCode.trim(),
+                          departmentId: Number(form.departmentId) || null,
+                          phone: form.phone.trim() || null,
+                          designation: form.designation.trim() || null,
+                          joiningDate: form.joiningDate || null,
+                        }
+                      } else {
+                        payload = {
+                          ...(form.userId ? { userId: Number(form.userId) } : {}),
+                          ...(form.fullName ? { fullName: form.fullName.trim() } : {}),
+                          ...(form.email ? { email: form.email.trim() } : {}),
+                          employeeCode: form.employeeCode.trim(),
+                          departmentId: Number(form.departmentId) || null,
+                          phone: form.phone.trim() || null,
+                          designation: form.designation.trim() || null,
+                          joiningDate: form.joiningDate || null,
+                        }
+                      }
+                    }
+                    else if (view === 'tasks') payload = { title: form.title.trim(), assignedTo: Number(form.assignedTo) }
+                    else payload = { leaveTypeId: Number(form.leaveTypeId), startDate: form.startDate, endDate: form.endDate, reason: form.reason.trim() }
                     void perform(path, method, payload)
                   }}
                 >
@@ -748,9 +843,115 @@ export default function Dashboard() {
                   )}
                   {view === 'employees' && (
                     <>
-                      <label>User ID (Existing Account)<input required min="1" type="number" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} placeholder="e.g. 101" /></label>
-                      <label>Employee Code<input required value={form.employeeCode} onChange={(event) => setForm({ ...form, employeeCode: event.target.value })} placeholder="e.g., EMP-000101" /></label>
-                      <label>Department ID (Optional)<input type="number" min="1" value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} placeholder="Optional ID" /></label>
+                      {!editingRow && availableUsers.length > 0 && (
+                        <label style={{ width: '100%' }}>
+                          Select User Account (Auto-links Snowflake User)
+                          <select
+                            value={form.userId}
+                            onChange={(e) => {
+                              const selectedId = e.target.value
+                              const selectedUser = availableUsers.find(u => String(u.id) === selectedId)
+                              setForm(prev => ({
+                                ...prev,
+                                userId: selectedId,
+                                fullName: selectedUser ? selectedUser.fullName : prev.fullName,
+                                email: selectedUser ? selectedUser.email : prev.email,
+                                employeeCode: prev.employeeCode || (selectedId ? `EMP-${String(selectedId).padStart(6, '0')}` : ''),
+                              }))
+                            }}
+                          >
+                            <option value="">-- Choose User Account (or enter User ID below) --</option>
+                            {availableUsers.map((u) => {
+                              const alreadyLinked = rows.some((r) => Number(r.userId) === u.id)
+                              return (
+                                <option key={u.id} value={String(u.id)}>
+                                  {u.fullName} ({u.email}) [User #{u.id}]{alreadyLinked ? ' — Already Linked' : ''}
+                                </option>
+                              )
+                            })}
+                          </select>
+                        </label>
+                      )}
+                      {!editingRow && (
+                        <label>
+                          User ID {availableUsers.length > 0 ? '(Selected or Custom)' : '(Existing Account)'}
+                          <input
+                            required={!form.fullName}
+                            min="1"
+                            type="number"
+                            value={form.userId}
+                            onChange={(event) => {
+                              const val = event.target.value
+                              setForm(prev => ({
+                                ...prev,
+                                userId: val,
+                                employeeCode: prev.employeeCode || (val ? `EMP-${String(val).padStart(6, '0')}` : '')
+                              }))
+                            }}
+                            placeholder="e.g. 101"
+                          />
+                        </label>
+                      )}
+                      <label>
+                        Employee Code
+                        <input
+                          required
+                          value={form.employeeCode}
+                          onChange={(event) => setForm({ ...form, employeeCode: event.target.value })}
+                          placeholder="e.g., EMP-000101"
+                        />
+                      </label>
+                      {availableDepartments.length > 0 ? (
+                        <label>
+                          Department (Optional)
+                          <select
+                            value={form.departmentId}
+                            onChange={(event) => setForm({ ...form, departmentId: event.target.value })}
+                          >
+                            <option value="">Unassigned</option>
+                            {availableDepartments.map((dept) => (
+                              <option key={String(dept.id)} value={String(dept.id)}>
+                                {String(dept.name)} (ID: #{String(dept.id)})
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : (
+                        <label>
+                          Department ID (Optional)
+                          <input
+                            type="number"
+                            min="1"
+                            value={form.departmentId}
+                            onChange={(event) => setForm({ ...form, departmentId: event.target.value })}
+                            placeholder="Optional ID"
+                          />
+                        </label>
+                      )}
+                      <label>
+                        Designation (Optional)
+                        <input
+                          value={form.designation}
+                          onChange={(event) => setForm({ ...form, designation: event.target.value })}
+                          placeholder="e.g. Senior Software Engineer"
+                        />
+                      </label>
+                      <label>
+                        Phone Number (Optional)
+                        <input
+                          value={form.phone}
+                          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                          placeholder="e.g. +1 555-0199"
+                        />
+                      </label>
+                      <label>
+                        Joining Date (Optional)
+                        <input
+                          type="date"
+                          value={form.joiningDate}
+                          onChange={(event) => setForm({ ...form, joiningDate: event.target.value })}
+                        />
+                      </label>
                     </>
                   )}
                   {view === 'tasks' && (

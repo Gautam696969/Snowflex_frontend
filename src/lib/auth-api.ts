@@ -16,6 +16,7 @@ const tokenKey = 'snowflex.auth.token'
 
 async function request<T extends ApiResponse>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
+    cache: 'no-store',
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
   })
@@ -114,6 +115,13 @@ export async function getEmployees(token: string): Promise<Record<string, unknow
 
 export async function getDepartments(token: string): Promise<Record<string, unknown>[]> {
   const response = await request<ApiResponse & { data: Record<string, unknown>[] }>('/departments', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function getUsers(token: string): Promise<SafeUser[]> {
+  const response = await request<ApiResponse & { data: SafeUser[] }>('/admin/users', {
     headers: { Authorization: `Bearer ${token}` },
   })
   return response.data
