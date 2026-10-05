@@ -61,6 +61,7 @@ export async function logout(token: string): Promise<void> {
 export function storeToken(token: string, remember: boolean): void {
   clearToken()
   ;(remember ? localStorage : sessionStorage).setItem(tokenKey, token)
+  window.dispatchEvent(new Event('auth-token-changed'))
 }
 
 export function readToken(): string | null {
@@ -70,6 +71,7 @@ export function readToken(): string | null {
 export function clearToken(): void {
   sessionStorage.removeItem(tokenKey)
   localStorage.removeItem(tokenKey)
+  window.dispatchEvent(new Event('auth-token-changed'))
 }
 
 export interface DashboardData {
