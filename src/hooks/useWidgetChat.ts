@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { sendAiMessage } from '../lib/auth-api'
+import { useRef, useState } from 'react'
+import { sendWidgetMessage } from '../lib/auth-api'
 
 export interface ChatEntry {
   id: string | number
@@ -12,16 +12,17 @@ export interface ChatEntry {
 interface FailedMessage {
   id: string
   content: string
+  history: Array<{ role: 'user' | 'assistant'; content: string }>
 }
 
-export function useAiChat(token: string) {
-  const [conversationId, setConversationId] = useState<number | null>(null)
+export function useWidgetChat(token: string) {
   const [messages, setMessages] = useState<ChatEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(null)
+  const requestVersion = useRef(0)
 
-  async function deliver(content: string, messageId: string) {
+  async function deliver(content: string, messageId: string, history: FailedMessage['history'], version: number) {
     setLoading(true)
     setError('')
     setFailedMessage(null)
@@ -30,10 +31,8 @@ export function useAiChat(token: string) {
     ))
 
     try {
-      const response = await sendAiMessage(token, conversationId === null
-        ? { message: content }
-        : { conversationId, message: content })
-      setConversationId(response.conversation.id)
+      const response = await sendWidgetMessage(token, { source: 'widget', message: content, history })
+      if (version !== requestVersion.current) return
       setMessages((current) => [
         ...current.map((message) => message.id === messageId ? { ...message, status: 'sent' as const } : message),
         {
@@ -45,13 +44,14 @@ export function useAiChat(token: string) {
         },
       ])
     } catch {
+      if (version !== requestVersion.current) return
       setMessages((current) => current.map((message) =>
         message.id === messageId ? { ...message, status: 'failed' as const } : message,
       ))
-      setFailedMessage({ id: messageId, content })
+      setFailedMessage({ id: messageId, content, history })
       setError('Something went wrong. Please try again.')
     } finally {
-      setLoading(false)
+      if (version === requestVersion.current) setLoading(false)
     }
   }
 
@@ -60,6 +60,8 @@ export function useAiChat(token: string) {
     if (!content || loading) return
 
     const id = `widget-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const history = messages.map(({ role, content: messageContent }) => ({ role, content: messageContent }))
+    const version = requestVersion.current
     setMessages((current) => [...current, {
       id,
       role: 'user',
@@ -67,13 +69,21 @@ export function useAiChat(token: string) {
       createdAt: new Date().toISOString(),
       status: 'sending',
     }])
-    await deliver(content, id)
+    await deliver(content, id, history, version)
   }
 
   async function retry() {
     if (!failedMessage || loading) return
-    await deliver(failedMessage.content, failedMessage.id)
+    await deliver(failedMessage.content, failedMessage.id, failedMessage.history, requestVersion.current)
   }
 
-  return { messages, loading, error, sendMessage, retry }
+  function clearChat() {
+    requestVersion.current += 1
+    setMessages([])
+    setLoading(false)
+    setError('')
+    setFailedMessage(null)
+  }
+
+  return { messages, loading, error, sendMessage, retry, clearChat }
 }

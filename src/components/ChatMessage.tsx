@@ -1,5 +1,6 @@
 import { Bot, Check, Clock3, User, X } from 'lucide-react'
-import type { ChatEntry } from '../hooks/useAiChat'
+import type { ChatEntry } from '../hooks/useWidgetChat'
+import { renderMarkdown } from '../lib/render-markdown'
 
 function formatTime(value: string) {
   const date = new Date(value)
@@ -15,7 +16,9 @@ export default function ChatMessage({ message }: { message: ChatEntry }) {
     <article className={`floating-chat-message ${isUser ? 'from-user' : 'from-ai'}`}>
       {!isUser && <span className="floating-chat-avatar" aria-hidden="true"><Bot size={14} /></span>}
       <div className="floating-chat-message-stack">
-        <div className="floating-chat-bubble">{message.content}</div>
+        <div className="floating-chat-bubble">
+          {isUser ? message.content : renderMarkdown(message.content)}
+        </div>
         <small className="floating-chat-timestamp">
           {isUser && message.status === 'sending' && <Clock3 size={11} aria-label="Sending" />}
           {isUser && message.status === 'sent' && <Check size={11} aria-label="Sent" />}

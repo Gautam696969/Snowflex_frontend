@@ -2,16 +2,16 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
-  Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2, ChevronRight, CircleHelp,
-  Clock3, LayoutDashboard, LogOut, Menu, PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
-  Edit, Trash2, Eye, Search, X as XIcon,
+  Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2,
+  ChevronRight, CircleHelp, Clock3, LayoutDashboard, LogOut, Menu,
+  PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
+  Edit, Trash2, Eye, Search, X as XIcon, UserCheck,
+  Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown
 } from 'lucide-react'
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination,
-  TableSortLabel, Paper, InputBase, IconButton, MenuItem,
-  FormControl, Select as MuiSelect,
-} from '@mui/material'
-import { apiRequest, clearToken, getCurrentUser, getDashboard, getDepartments, getEmployees, logout, readToken } from '../lib/auth-api'
+  apiRequest, clearToken, getCurrentUser, getDashboard,
+  getDepartments, getEmployees, logout, readToken
+} from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import AiAssistant from '../components/AiAssistant'
 import AiChatWidget from '../components/AiChatWidget'
@@ -19,6 +19,7 @@ import ThemeToggle from '../components/ThemeToggle'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks'
 type Row = Record<string, unknown>
+type ViewMode = 'table' | 'cards'
 
 const navGroups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
   { label: 'OVERVIEW', items: [
@@ -37,7 +38,44 @@ const navGroups: { label: string; items: { id: View; label: string; icon: typeof
 ]
 const viewItems = navGroups.flatMap((group) => group.items)
 
-const formatDate = (value: unknown) => value ? new Date(String(value)).toLocaleDateString() : '—'
+const formatDate = (value: unknown) => {
+  if (!value) return '—'
+  const date = new Date(String(value))
+  return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const formatDateTime = (value: unknown) => {
+  if (!value) return '—'
+  const date = new Date(String(value))
+  return isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+// Generate consistent avatar colors
+const avatarColors = [
+  'linear-gradient(135deg, #10b981, #047857)',
+  'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+  'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+  'linear-gradient(135deg, #f59e0b, #b45309)',
+  'linear-gradient(135deg, #ec4899, #be185d)',
+  'linear-gradient(135deg, #06b6d4, #0e7490)',
+  'linear-gradient(135deg, #14b8a6, #0f766e)',
+]
+
+function getAvatarBackground(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash) % avatarColors.length
+  return avatarColors[index]
+}
+
+function getInitials(name: string) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -48,22 +86,28 @@ export default function Dashboard() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [stats, setStats] = useState<DashboardData>({})
   const [rows, setRows] = useState<Row[]>([])
+  const [recentLeaves, setRecentLeaves] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+  const [form, setForm] = useState({
+    name: '', userId: '', employeeCode: '', departmentId: '',
+    title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
+  })
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [editingRow, setEditingRow] = useState<Row | null>(null)
   const [viewingRow, setViewingRow] = useState<Row | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(10)
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null)
   const [decidedRows, setDecidedRows] = useState<Set<string | number>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -82,8 +126,17 @@ export default function Dashboard() {
     setError('')
     try {
       if (currentView === 'overview') {
-        setStats(await getDashboard(currentToken, currentUser.role))
+        const dashboardStats = await getDashboard(currentToken, currentUser.role)
+        setStats(dashboardStats)
         setRows([])
+        // Concurrently fetch recent leaves for overview intelligence feed
+        try {
+          const leavesPath = currentUser.role === 'EMPLOYEE' ? '/leaves/me' : '/leaves'
+          const leavesData = await apiRequest<Row[]>(leavesPath, currentToken)
+          setRecentLeaves(leavesData.slice(0, 4))
+        } catch {
+          // Non-critical if recent leaves fail to load
+        }
       } else if (currentView === 'assistant') {
         setRows([])
       } else if (currentView === 'employees') {
@@ -129,7 +182,12 @@ export default function Dashboard() {
   }, [navigate])
 
   useEffect(() => {
-    if (token && user) void loadData(token, user, view)
+    if (token && user) {
+      void loadData(token, user, view)
+      setSearchQuery('')
+      setStatusFilter('ALL')
+      setCurrentPage(1)
+    }
   }, [view])
 
   async function refresh() {
@@ -137,6 +195,7 @@ export default function Dashboard() {
       setRefreshing(true)
       try {
         await loadData(token, user, view)
+        toast.success('Workspace updated from Snowflake')
       } finally {
         setRefreshing(false)
       }
@@ -151,41 +210,39 @@ export default function Dashboard() {
     try {
       const result = await apiRequest(path, token, method, payload)
 
-      // Determine a friendly success message
       let successMsg = 'Saved successfully'
       if (method === 'POST') {
-        if (view === 'employees') successMsg = 'Employee created successfully'
+        if (path.includes('check-in')) successMsg = 'Checked in successfully! Have a great day.'
+        else if (path.includes('check-out')) successMsg = 'Checked out successfully! See you tomorrow.'
+        else if (view === 'employees') successMsg = 'Employee profile created successfully'
         else if (view === 'departments') successMsg = 'Department created successfully'
-        else if (view === 'tasks') successMsg = 'Task created successfully'
-        else if (view === 'leaves') successMsg = 'Leave request created successfully'
+        else if (view === 'tasks') successMsg = 'Task assigned successfully'
+        else if (view === 'leaves') successMsg = 'Leave request submitted successfully'
       } else if (method === 'PATCH') {
-        if (path.includes('/approve')) successMsg = 'Leave approved successfully'
-        else if (path.includes('/reject')) successMsg = 'Leave rejected successfully'
-        else if (path.includes('/status')) successMsg = 'Task status updated successfully'
-        else successMsg = 'Updated successfully'
+        if (path.includes('/approve')) successMsg = 'Leave request approved'
+        else if (path.includes('/reject')) successMsg = 'Leave request rejected'
+        else if (path.includes('/status')) successMsg = 'Task status updated'
+        else successMsg = 'Record updated successfully'
       }
       toast.success(successMsg)
 
-      // Optimistically add/update the item in the list immediately
       if (method === 'POST' && result && typeof result === 'object' && 'id' in result) {
         setRows((prev) => [result as Row, ...prev])
       } else if (method === 'POST' && payload && typeof payload === 'object') {
-        // Backend may return null data; create a temporary row from the payload
         const tempRow: Row = { id: -Date.now(), ...(payload as Row) }
         if (view === 'employees' && form.userId) {
           tempRow.userId = Number(form.userId)
           tempRow.employeeCode = form.employeeCode
           tempRow.departmentId = Number(form.departmentId) || null
+          tempRow.status = 'ACTIVE'
         }
         setRows((prev) => [tempRow, ...prev])
       } else if (method === 'PATCH' && result && typeof result === 'object' && 'id' in result) {
         setRows((prev) => prev.map((row) => (row.id === (result as Row).id ? { ...row, ...result } : row)))
       } else if (method === 'PATCH' && path.includes('/status') && payload && typeof payload === 'object' && 'status' in payload) {
-        // Handle task status update
         const id = path.split('/')[2]
         setRows((prev) => prev.map((row) => (row.id === Number(id) ? { ...row, status: (payload as { status: string }).status } : row)))
       } else if (method === 'PATCH' && (path.includes('/approve') || path.includes('/reject'))) {
-        // Handle leave approve/reject
         const id = path.split('/')[2]
         const newStatus = path.includes('/approve') ? 'APPROVED' : 'REJECTED'
         setRows((prev) => prev.map((row) => (row.id === Number(id) ? { ...row, status: newStatus } : row)))
@@ -195,12 +252,13 @@ export default function Dashboard() {
       setShowCreate(false)
       setEditingRow(null)
       setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
-      resetPagination()
+      setCurrentPage(1)
       await refresh()
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Could not save changes.')
-      toast.error(requestError instanceof Error ? requestError.message : 'Could not save changes.')
-      await refresh() // Refresh to restore correct state on error
+      const errMsg = requestError instanceof Error ? requestError.message : 'Could not save changes.'
+      setError(errMsg)
+      toast.error(errMsg)
+      await refresh()
     } finally {
       setSaving(false)
     }
@@ -251,11 +309,11 @@ export default function Dashboard() {
     try {
       setRows((prev) => prev.filter((r) => r.id !== row.id))
       await apiRequest(`/${view}/${row.id}`, token, 'DELETE')
-      toast.success('Deleted successfully')
-      resetPagination()
+      toast.success('Record deleted successfully')
+      setCurrentPage(1)
       await refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete record')
       await refresh()
     }
   }
@@ -269,10 +327,21 @@ export default function Dashboard() {
 
   const filteredRows = useMemo(() => {
     let result = [...rows]
+
+    // Status filter
+    if (statusFilter !== 'ALL') {
+      result = result.filter((row) => String(row.status || '').toUpperCase() === statusFilter)
+    }
+
+    // Query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      result = result.filter((row) => Object.values(row).some((val) => String(val).toLowerCase().includes(query)))
+      result = result.filter((row) =>
+        Object.values(row).some((val) => String(val ?? '').toLowerCase().includes(query))
+      )
     }
+
+    // Sorting
     if (sortConfig) {
       result.sort((a, b) => {
         const aVal = String(a[sortConfig.key] ?? '')
@@ -281,159 +350,258 @@ export default function Dashboard() {
       })
     }
     return result
-  }, [rows, searchQuery, sortConfig])
+  }, [rows, searchQuery, statusFilter, sortConfig])
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize
     return filteredRows.slice(start, start + pageSize)
   }, [filteredRows, currentPage, pageSize])
 
-  function resetPagination() {
-    setCurrentPage(1)
-  }
-
   const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role
   const canManage = role === 'ADMIN' || role === 'HR'
   const activeItem = viewItems.find((item) => item.id === view)
   const isManagementView = view === 'employees' || view === 'departments'
   const showActions = canManage && isManagementView
+  const isEmployee = role === 'EMPLOYEE'
+
+  // Workforce Pulse Calculations
+  const attendanceTotal = role === 'MANAGER'
+    ? (stats.teamSize ?? 0)
+    : (stats.activeEmployees ?? stats.totalEmployees ?? 0)
+  const attendancePresent = role === 'MANAGER'
+    ? (stats.teamPresentToday ?? 0)
+    : (stats.presentToday ?? 0)
+  const attendanceAbsent = role === 'MANAGER'
+    ? (stats.teamAbsentToday ?? 0)
+    : (stats.absentToday ?? 0)
+  const attendanceLate = role === 'MANAGER' ? 0 : (stats.lateToday ?? 0)
+  const attendanceOnTime = Math.max(0, attendancePresent - attendanceLate)
+  const attendanceRate = attendanceTotal > 0
+    ? Math.min(100, Math.round((attendancePresent / attendanceTotal) * 100))
+    : 0
+
+  const onTimePercent = attendanceTotal > 0 ? (attendanceOnTime / attendanceTotal) * 100 : 0
+  const latePercent = attendanceTotal > 0 ? (attendanceLate / attendanceTotal) * 100 : 0
+  const absentPercent = attendanceTotal > 0 ? (attendanceAbsent / attendanceTotal) * 100 : 0
+
+  // Metrics configurations
   const metrics = role === 'EMPLOYEE'
     ? [
-      ['Attendance this month', stats.attendanceThisMonth ?? 0, 'Recorded days', CalendarDays],
-      ['Open tasks', stats.assignedTasks ?? 0, 'Assigned to you', CheckSquare2],
-      ['Leave balance', stats.leaveBalance ?? 0, 'Days remaining', CalendarDays],
-      ['Completed tasks', stats.completedTasks ?? 0, 'All done', Activity],
-    ] as const
+      { label: 'Attendance', value: stats.attendanceThisMonth ?? 0, detail: 'Recorded days this month', icon: CalendarDays, iconClass: 'kpi-icon-emerald', trend: 'Monthly Log', trendClass: 'kpi-trend-emerald' },
+      { label: 'Open Tasks', value: stats.assignedTasks ?? 0, detail: 'Active deliverables', icon: CheckSquare2, iconClass: 'kpi-icon-amber', trend: 'Assigned', trendClass: 'kpi-trend-amber' },
+      { label: 'Leave Balance', value: `${stats.leaveBalance ?? 0} d`, detail: 'Days remaining in quota', icon: Clock3, iconClass: 'kpi-icon-cyan', trend: 'Quota', trendClass: 'kpi-trend-cyan' },
+      { label: 'Completed', value: stats.completedTasks ?? 0, detail: 'Tasks finished', icon: Activity, iconClass: 'kpi-icon-purple', trend: 'All Done', trendClass: 'kpi-trend-emerald' },
+    ]
     : role === 'MANAGER'
       ? [
-        ['Team members', stats.teamSize ?? 0, 'Direct reports', Users],
-        ['Present today', stats.teamPresentToday ?? 0, 'Team attendance', Clock3],
-        ['Leave requests', stats.pendingLeaveRequests ?? 0, 'Awaiting review', CalendarDays],
-        ['Open tasks', stats.pendingTasks ?? 0, 'Across your team', CheckSquare2],
-      ] as const
+        { label: 'Team Size', value: stats.teamSize ?? 0, detail: 'Direct reporting members', icon: Users, iconClass: 'kpi-icon-emerald', trend: 'Team Staff', trendClass: 'kpi-trend-emerald' },
+        { label: 'Present Today', value: stats.teamPresentToday ?? 0, detail: 'Team active today', icon: Clock3, iconClass: 'kpi-icon-cyan', trend: `${attendanceRate}% Turnout`, trendClass: 'kpi-trend-cyan' },
+        { label: 'Leave Petitions', value: stats.pendingLeaveRequests ?? 0, detail: 'Awaiting manager review', icon: CalendarDays, iconClass: 'kpi-icon-amber', trend: 'Pending', trendClass: 'kpi-trend-amber' },
+        { label: 'Open Tasks', value: stats.pendingTasks ?? 0, detail: 'Across entire team', icon: CheckSquare2, iconClass: 'kpi-icon-purple', trend: 'In Progress', trendClass: 'kpi-trend-amber' },
+      ]
       : [
-        ['Total employees', stats.totalEmployees ?? 0, `${stats.activeEmployees ?? 0} active`, Users],
-        ['Present today', stats.presentToday ?? 0, `${stats.lateToday ?? 0} arrived late`, Clock3],
-        ['Absent today', stats.absentToday ?? 0, 'Active workforce', CalendarDays],
-        ['Pending leaves', stats.pendingLeaves ?? 0, 'Awaiting review', CheckSquare2],
-      ] as const
-    const isEmployee = role === 'EMPLOYEE'
-    const attendanceTotal = role === 'MANAGER'
-      ? stats.teamSize ?? 0
-      : stats.activeEmployees ?? stats.totalEmployees ?? 0
-    const attendancePresent = role === 'MANAGER'
-      ? stats.teamPresentToday ?? 0
-      : stats.presentToday ?? 0
-    const attendanceAbsent = role === 'MANAGER'
-      ? stats.teamAbsentToday ?? 0
-      : stats.absentToday ?? 0
-    const attendanceLate = role === 'MANAGER' ? 0 : stats.lateToday ?? 0
-    const attendanceOnTime = Math.max(0, attendancePresent - attendanceLate)
-    const attendanceRate = attendanceTotal > 0
-      ? Math.min(100, Math.round((attendancePresent / attendanceTotal) * 100))
-      : 0
-    const actionItems = [
-      { label: 'Leave requests', count: stats.pendingLeaves ?? stats.pendingLeaveRequests ?? 0, view: 'leaves' as View, icon: CalendarDays },
-      { label: 'Open tasks', count: isEmployee ? stats.assignedTasks ?? 0 : stats.pendingTasks ?? 0, view: 'tasks' as View, icon: CheckSquare2 },
-    ]
-    const shortcuts = [
-      { label: 'Attendance', view: 'attendance' as View, icon: Clock3 },
-      { label: isEmployee ? 'Request leave' : 'Leave requests', view: 'leaves' as View, icon: CalendarDays },
-      { label: 'Tasks', view: 'tasks' as View, icon: CheckSquare2 },
-      ...(canManage ? [{ label: 'Employee directory', view: 'employees' as View, icon: Users }] : []),
-    ]
+        { label: 'Total Workforce', value: stats.totalEmployees ?? 0, detail: `${stats.activeEmployees ?? 0} active in directory`, icon: Users, iconClass: 'kpi-icon-emerald', trend: 'Enterprise Staff', trendClass: 'kpi-trend-emerald' },
+        { label: 'Present Today', value: stats.presentToday ?? 0, detail: `${stats.lateToday ?? 0} arrived after 09:00`, icon: Clock3, iconClass: 'kpi-icon-cyan', trend: `${attendanceRate}% Turnout`, trendClass: 'kpi-trend-cyan' },
+        { label: 'Absent Today', value: stats.absentToday ?? 0, detail: 'Capacity unavailable', icon: UserCheck, iconClass: 'kpi-icon-rose', trend: stats.absentToday ? 'Requires Attention' : 'Full Team', trendClass: stats.absentToday ? 'kpi-trend-rose' : 'kpi-trend-emerald' },
+        { label: 'Pending Leaves', value: stats.pendingLeaves ?? 0, detail: 'Time-off requests to review', icon: CalendarDays, iconClass: 'kpi-icon-amber', trend: 'Action Needed', trendClass: 'kpi-trend-amber' },
+      ]
+
+  const actionItems = [
+    { label: 'Leave requests to review', count: stats.pendingLeaves ?? stats.pendingLeaveRequests ?? 0, view: 'leaves' as View, icon: CalendarDays },
+    { label: 'Active tasks in progress', count: isEmployee ? stats.assignedTasks ?? 0 : stats.pendingTasks ?? 0, view: 'tasks' as View, icon: CheckSquare2 },
+  ]
+
+  const shortcuts = [
+    { label: 'Attendance Tracking', desc: 'Manage check-ins & shifts', view: 'attendance' as View, icon: Clock3 },
+    { label: isEmployee ? 'Request Leave' : 'Leave Administration', desc: 'Petitions & annual balance', view: 'leaves' as View, icon: CalendarDays },
+    { label: 'Task Assignments', desc: 'Priorities & deliverables', view: 'tasks' as View, icon: CheckSquare2 },
+    ...(canManage ? [
+      { label: 'Employee Directory', desc: 'Profiles, codes & status', view: 'employees' as View, icon: Users },
+      { label: 'Departments', desc: 'Organizational teams', view: 'departments' as View, icon: Building2 },
+    ] : []),
+    { label: 'AI Workspace Agent', desc: 'Ask natural questions', view: 'assistant' as View, icon: Sparkles },
+  ]
+
+  function renderStatusPill(statusValue: unknown) {
+    const raw = String(statusValue || '').toUpperCase()
+    if (raw === 'ACTIVE' || raw === 'APPROVED' || raw === 'COMPLETED') {
+      return (
+        <span className="status-pill status-active">
+          <span className="status-pill-dot" />
+          {raw === 'APPROVED' ? <Check size={12} strokeWidth={2.5} /> : null}
+          {raw}
+        </span>
+      )
+    }
+    if (raw === 'PENDING' || raw === 'HALF_DAY' || raw === 'LATE') {
+      return (
+        <span className="status-pill status-pending">
+          <span className="status-pill-dot" />
+          <Clock3 size={12} />
+          {raw}
+        </span>
+      )
+    }
+    if (raw === 'REJECTED' || raw === 'ABSENT' || raw === 'CANCELLED') {
+      return (
+        <span className="status-pill status-rejected">
+          <span className="status-pill-dot" />
+          <X size={12} />
+          {raw}
+        </span>
+      )
+    }
+    if (raw === 'IN_PROGRESS' || raw === 'TODO' || raw === 'PRESENT') {
+      return (
+        <span className="status-pill status-todo">
+          <span className="status-pill-dot" />
+          {raw}
+        </span>
+      )
+    }
+    return <span className="status-pill">{raw || '—'}</span>
+  }
 
   if (!user) return (
     <main className="dashboard-loading">
       <div className="live-loader" role="status" aria-live="polite">
         <span className="live-loader-ring"><i /><i /><i /><i /></span>
         <strong>Loading your workspace…</strong>
-        <small>Authenticating and fetching your Snowflake data</small>
+        <small>Connecting to Snowflake People Operations Data Warehouse</small>
       </div>
     </main>
   )
 
+  const currentHour = new Date().getHours()
+  const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
+
   return (
     <main className={`workbench${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}`}>
+      {/* Sidebar Navigation */}
       <aside className="workbench-sidebar" aria-label="Workspace sidebar">
         <div className="sidebar-brand-row">
-          <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations"><Snowflake className="workbench-mark" size={20} strokeWidth={2.5} /><span className="sidebar-brand-copy">snowflex<span className="brand-caption">PEOPLE OPERATIONS</span></span></a>
-          <button className="sidebar-toggle" type="button" title={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={mobileSidebarOpen || !sidebarCollapsed} onClick={() => {
-            if (window.matchMedia('(max-width: 680px)').matches) setMobileSidebarOpen(false)
-            else setSidebarCollapsed((collapsed) => !collapsed)
-          }}>
+          <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations">
+            <Snowflake className="workbench-mark" size={20} strokeWidth={2.5} />
+            <span className="sidebar-brand-copy">
+              snowflex
+              <span className="brand-caption">PEOPLE OPERATIONS</span>
+            </span>
+          </a>
+          <button
+            className="sidebar-toggle"
+            type="button"
+            title={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={mobileSidebarOpen || !sidebarCollapsed}
+            onClick={() => {
+              if (window.matchMedia('(max-width: 680px)').matches) setMobileSidebarOpen(false)
+              else setSidebarCollapsed((collapsed) => !collapsed)
+            }}
+          >
             {mobileSidebarOpen ? <X size={19} /> : sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
           </button>
         </div>
+
         <nav className="workbench-nav" aria-label="Workspace navigation">
           {navGroups.map(({ label: groupLabel, items }, groupIndex) => (
             <div className="nav-group" key={groupLabel}>
               <div className="workspace-label">{groupLabel}</div>
               {items.map(({ id, label, icon: Icon }) => (
-                <button key={id} className={view === id ? 'nav-item selected' : 'nav-item'} title={sidebarCollapsed ? label : undefined} aria-label={label} onClick={() => { setView(id); setMobileSidebarOpen(false) }} type="button">
-                  <Icon size={17} strokeWidth={1.8} /><span>{label}</span>{view === id && <ChevronRight className="nav-chevron" size={15} />}
+                <button
+                  key={id}
+                  className={view === id ? 'nav-item selected' : 'nav-item'}
+                  title={sidebarCollapsed ? label : undefined}
+                  aria-label={label}
+                  onClick={() => { setView(id); setMobileSidebarOpen(false) }}
+                  type="button"
+                >
+                  <Icon size={17} strokeWidth={1.8} />
+                  <span>{label}</span>
+                  {view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
               {groupIndex < navGroups.length - 1 && <div className="nav-separator" />}
             </div>
           ))}
         </nav>
+
         <div className="sidebar-bottom">
-          <div className="help-row" title="Help & Support"><CircleHelp size={16} /><span>People operations</span></div>
+          <div className="help-row" title="Snowflake Connected Workspace">
+            <CircleHelp size={16} />
+            <span>Snowflake DB v2.4</span>
+          </div>
           <button className="profile-chip" type="button" onClick={handleLogout} title="Sign out">
-            <span className="profile-avatar">{user.fullName.slice(0, 1).toUpperCase()}</span>
-            <span className="profile-copy"><strong>{user.fullName}</strong><small>{role}</small></span>
+            <span className="profile-avatar" style={{ background: getAvatarBackground(user.fullName) }}>
+              {getInitials(user.fullName)}
+            </span>
+            <span className="profile-copy">
+              <strong>{user.fullName}</strong>
+              <small>{role}</small>
+            </span>
             <LogOut size={16} aria-label="Sign out" />
           </button>
         </div>
       </aside>
-      {mobileSidebarOpen && <button className="mobile-sidebar-backdrop" type="button" aria-label="Close navigation" onClick={() => setMobileSidebarOpen(false)} />}
 
+      {mobileSidebarOpen && (
+        <button
+          className="mobile-sidebar-backdrop"
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Logout Modal */}
       {showLogoutConfirm && (
         <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 id="logout-modal-title">Sign out</h3>
+              <h3 id="logout-modal-title">Sign Out</h3>
               <button className="modal-close" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Close"><X size={18} /></button>
             </div>
-            <p className="modal-body">Are you sure you want to sign out?</p>
+            <p className="modal-body">Are you sure you want to end your Snowflex session?</p>
             <div className="modal-footer">
               <button className="secondary-action" type="button" onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
-              <button className="primary-action" type="button" onClick={confirmLogout}>Sign out</button>
+              <button className="primary-action" type="button" onClick={confirmLogout}>Sign Out</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Delete Record Confirmation Modal */}
       {deleteTarget && (
         <div className="modal-overlay" onClick={() => setDeleteTarget(null)} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 id="delete-modal-title">Delete record</h3>
+              <h3 id="delete-modal-title">Delete Record</h3>
               <button className="modal-close" type="button" onClick={() => setDeleteTarget(null)} aria-label="Close"><X size={18} /></button>
             </div>
-            <p className="modal-body">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <p className="modal-body">Are you sure you want to delete this record from Snowflake? This action is permanent and cannot be undone.</p>
             <div className="modal-footer">
               <button className="secondary-action" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="primary-action" type="button" onClick={confirmDelete}>Delete</button>
+              <button className="primary-action" style={{ background: '#dc2626', borderColor: '#dc2626' }} type="button" onClick={confirmDelete}>Delete Record</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* View Record Details Modal */}
       {viewingRow && (
         <div className="modal-overlay" onClick={() => setViewingRow(null)} role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
           <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 id="view-modal-title">{view === 'employees' ? 'Employee Details' : view === 'departments' ? 'Department Details' : 'Details'}</h3>
+              <h3 id="view-modal-title">
+                {view === 'employees' ? 'Employee Profile' : view === 'departments' ? 'Department Info' : 'Record Details'}
+              </h3>
               <button className="modal-close" type="button" onClick={() => setViewingRow(null)} aria-label="Close"><XIcon size={18} /></button>
             </div>
-            <div className="modal-body" style={{ padding: '20px', maxHeight: '60vh', overflow: 'auto' }}>
+            <div className="modal-body" style={{ padding: '24px', maxHeight: '65vh', overflow: 'auto' }}>
               <dl className="detail-grid">
                 {Object.entries(viewingRow).filter(([key]) => !['description', 'createdAt', 'updatedAt'].includes(key)).map(([key, value]) => (
                   <div key={key} className="detail-item">
                     <dt>{key.replace(/[A-Z]/g, letter => ` ${letter}`).replace(/Id$/, ' ID').toUpperCase()}</dt>
-                    <dd>{key.toLowerCase().includes('date') ? formatDate(value) : String(value ?? '—')}</dd>
+                    <dd>{key.toLowerCase().includes('date') ? formatDate(value) : key.toLowerCase().includes('status') ? renderStatusPill(value) : String(value ?? '—')}</dd>
                   </div>
                 ))}
               </dl>
@@ -445,229 +613,737 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Main Workspace Body */}
       <section className="workbench-main">
         <header className="workbench-topbar">
-          <div className="topbar-location"><button className="mobile-sidebar-open-button" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}><Menu size={19} /></button><span className="breadcrumb">Workspace</span><span className="breadcrumb-divider">/</span><strong>{activeItem?.label}</strong></div>
-          <div className="topbar-actions"><span className="today-label">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><ThemeToggle className="topbar-theme-toggle" /><button className="icon-button" type="button" title="Refresh" onClick={() => void refresh()} disabled={refreshing}><RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} /></button></div>
+          <div className="topbar-location">
+            <button className="mobile-sidebar-open-button" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
+              <Menu size={19} />
+            </button>
+            <span className="breadcrumb">Workspace</span>
+            <span className="breadcrumb-divider">/</span>
+            <strong>{activeItem?.label}</strong>
+          </div>
+          <div className="topbar-actions">
+            <div className="dash-snowflake-pill" title="Live Snowflake Connection">
+              <span className="dash-pulse-dot" />
+              <span>Snowflake Live</span>
+            </div>
+            <span className="today-label">
+              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+            </span>
+            <ThemeToggle className="topbar-theme-toggle" />
+            <button
+              className="icon-button"
+              type="button"
+              title="Refresh Workspace"
+              onClick={() => void refresh()}
+              disabled={refreshing}
+            >
+              <RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} />
+            </button>
+          </div>
         </header>
 
         <div className={view === 'assistant' ? 'page-content ai-page-content' : 'page-content'}>
-          <div className="page-heading">
-            <div><span className="section-kicker">{view === 'assistant' ? 'SNOWFLEX AI' : 'PEOPLE OPERATIONS'}</span><h1>{view === 'overview' ? `Good ${new Date().getHours() < 12 ? 'morning' : 'afternoon'}, ${user.fullName.split(' ')[0]}` : activeItem?.label}</h1><p>{view === 'overview' ? 'Here is what is happening across your workspace today.' : view === 'assistant' ? 'Ask about leave, attendance, teams and tasks across your workspace.' : `Manage ${activeItem?.label.toLowerCase()} in one place.`}</p></div>
-            <div className="heading-actions">
-              {view === 'attendance' && role === 'EMPLOYEE' && <><button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>Check in</button><button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>Check out</button></>}
-              {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && <button className="primary-action" type="button" onClick={() => { setEditingRow(null); setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' }); setShowCreate((open) => !open) }}><Plus size={16} />{editingRow ? 'Cancel Edit' : view === 'leaves' ? 'Request leave' : `Add ${view === 'employees' ? 'employee' : view === 'departments' ? 'department' : 'task'}`}</button>}
+          {/* Executive Hero Banner */}
+          <section className="dash-hero">
+            <div className="dash-hero-content">
+              <div className="dash-hero-topline">
+                <span className="dash-kicker">
+                  {view === 'overview' ? 'SNOWFLEX PEOPLE PLATFORM' : view === 'assistant' ? 'AI PEOPLE ASSISTANT' : 'PEOPLE OPERATIONS'}
+                </span>
+                <span className={`dash-role-badge role-${(role || 'employee').toLowerCase()}`}>
+                  {role === 'ADMIN' ? <Shield size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
+                  {role}
+                </span>
+              </div>
+              <h1 className="dash-hero-title">
+                {view === 'overview'
+                  ? `Good ${greetingTime}, ${user.fullName.split(' ')[0]}`
+                  : activeItem?.label}
+              </h1>
+              <p className="dash-hero-sub">
+                {view === 'overview'
+                  ? role === 'ADMIN'
+                    ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
+                    : role === 'MANAGER'
+                      ? 'Team Operations Hub • Monitor attendance, review team leave petitions, and drive deliverables.'
+                      : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
+                  : view === 'assistant'
+                    ? 'Natural language queries across employee records, team status, and corporate policies.'
+                    : `Centralized registry and workflows for ${activeItem?.label.toLowerCase()}.`}
+              </p>
             </div>
-          </div>
+
+            <div className="dash-hero-actions">
+              {view === 'attendance' && role === 'EMPLOYEE' && (
+                <>
+                  <button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
+                    Check In
+                  </button>
+                  <button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
+                    Check Out
+                  </button>
+                </>
+              )}
+
+              {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && (
+                <button
+                  className="primary-action"
+                  type="button"
+                  onClick={() => {
+                    setEditingRow(null)
+                    setForm({ name: '', userId: '', employeeCode: '', departmentId: '', title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: '' })
+                    setShowCreate((open) => !open)
+                  }}
+                >
+                  <Plus size={16} />
+                  {view === 'leaves' ? 'Request Leave' : `Add ${view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}`}
+                </button>
+              )}
+
+              <div className="dash-time-chip" title="Current Time">
+                <Clock3 size={15} color="#517154" />
+                <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </div>
+          </section>
 
           {error && <div className="notice error-notice" role="alert">{error}</div>}
           {notice && <div className="notice success-notice" role="status">{notice}</div>}
 
+          {/* Create / Edit Modal Form */}
           {showCreate && (
-          <div className="modal-overlay" onClick={() => { setShowCreate(false); setEditingRow(null); }} role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
-            <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3 id="create-modal-title">{editingRow ? 'Edit' : 'Add'} {view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : view === 'tasks' ? 'Task' : 'Leave Request'}</h3>
-                <button className="modal-close" type="button" onClick={() => { setShowCreate(false); setEditingRow(null); }} aria-label="Close"><XIcon size={18} /></button>
-              </div>
-              <form className="create-panel" onSubmit={(event) => { event.preventDefault(); const path = editingRow ? `/${view}/${editingRow.id}` : `/${view}`; const method = editingRow ? 'PATCH' : 'POST'; let payload: Record<string, unknown> = {}; if (view === 'departments') payload = { name: form.name }; else if (view === 'employees') payload = { userId: Number(form.userId), employeeCode: form.employeeCode, departmentId: Number(form.departmentId) || null }; else if (view === 'tasks') payload = { title: form.title, assignedTo: Number(form.assignedTo) }; else payload = { leaveTypeId: Number(form.leaveTypeId), startDate: form.startDate, endDate: form.endDate, reason: form.reason }; void perform(path, method, payload) }}>
-                {view === 'departments' && (
-                  <>
-                    <label>Department Name<input required value={form.name} onChange={(event) => setForm({...form, name: event.target.value})} placeholder="Enter department name" /></label>
-                  </>
-                )}
-                {view === 'employees' && (
-                  <>
-                    <label>User ID<input required min="1" type="number" value={form.userId} onChange={(event) => setForm({...form, userId: event.target.value})} placeholder="Existing user ID" /></label>
-                    <label>Employee Code<input required value={form.employeeCode} onChange={(event) => setForm({...form, employeeCode: event.target.value})} placeholder="e.g., EMP001" /></label>
-                    <label>Department ID<input type="number" min="1" value={form.departmentId} onChange={(event) => setForm({...form, departmentId: event.target.value})} placeholder="Department ID (optional)" /></label>
-                  </>
-                )}
-                {view === 'tasks' && (
-                  <>
-                    <label>Task Title<input required value={form.title} onChange={(event) => setForm({...form, title: event.target.value})} placeholder="Enter task title" /></label>
-                    <label>Assigned To (Employee ID)<input required min="1" type="number" value={form.assignedTo} onChange={(event) => setForm({...form, assignedTo: event.target.value})} placeholder="Employee ID" /></label>
-                  </>
-                )}
-                {view === 'leaves' && (
-                  <>
-                    <label>Leave Type ID<input required min="1" type="number" value={form.leaveTypeId} onChange={(event) => setForm({...form, leaveTypeId: event.target.value})} placeholder="Leave type ID" /></label>
-                    <label>Start Date<input required type="date" value={form.startDate} onChange={(event) => setForm({...form, startDate: event.target.value})} /></label>
-                    <label>End Date<input required type="date" value={form.endDate} onChange={(event) => setForm({...form, endDate: event.target.value})} /></label>
-                    <label>Reason<textarea required value={form.reason} onChange={(event) => setForm({...form, reason: event.target.value})} placeholder="Reason for leave" rows={3} /></label>
-                  </>
-                )}
-                <div className="modal-footer">
-                  <button type="button" className="secondary-action" onClick={() => { setShowCreate(false); setEditingRow(null); }}>Cancel</button>
-                  <button className="primary-action" disabled={saving} type="submit">{saving ? 'Saving…' : editingRow ? 'Update' : 'Create'}</button>
+            <div className="modal-overlay" onClick={() => { setShowCreate(false); setEditingRow(null) }} role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+              <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3 id="create-modal-title">
+                    {editingRow ? 'Edit' : 'Add New'} {view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : view === 'tasks' ? 'Task' : 'Leave Request'}
+                  </h3>
+                  <button className="modal-close" type="button" onClick={() => { setShowCreate(false); setEditingRow(null) }} aria-label="Close">
+                    <XIcon size={18} />
+                  </button>
                 </div>
-              </form>
+                <form
+                  className="create-panel"
+                  style={{ border: 'none', margin: 0, padding: '24px' }}
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    const path = editingRow ? `/${view}/${editingRow.id}` : `/${view}`
+                    const method = editingRow ? 'PATCH' : 'POST'
+                    let payload: Record<string, unknown> = {}
+                    if (view === 'departments') payload = { name: form.name }
+                    else if (view === 'employees') payload = { userId: Number(form.userId), employeeCode: form.employeeCode, departmentId: Number(form.departmentId) || null }
+                    else if (view === 'tasks') payload = { title: form.title, assignedTo: Number(form.assignedTo) }
+                    else payload = { leaveTypeId: Number(form.leaveTypeId), startDate: form.startDate, endDate: form.endDate, reason: form.reason }
+                    void perform(path, method, payload)
+                  }}
+                >
+                  {view === 'departments' && (
+                    <label style={{ width: '100%' }}>
+                      Department Name
+                      <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g., Engineering, People Ops, Marketing" />
+                    </label>
+                  )}
+                  {view === 'employees' && (
+                    <>
+                      <label>User ID (Existing Account)<input required min="1" type="number" value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })} placeholder="e.g. 101" /></label>
+                      <label>Employee Code<input required value={form.employeeCode} onChange={(event) => setForm({ ...form, employeeCode: event.target.value })} placeholder="e.g., EMP-000101" /></label>
+                      <label>Department ID (Optional)<input type="number" min="1" value={form.departmentId} onChange={(event) => setForm({ ...form, departmentId: event.target.value })} placeholder="Optional ID" /></label>
+                    </>
+                  )}
+                  {view === 'tasks' && (
+                    <>
+                      <label style={{ width: '100%' }}>Task Title<input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Enter deliverable description" /></label>
+                      <label style={{ width: '100%' }}>Assigned Employee ID<input required min="1" type="number" value={form.assignedTo} onChange={(event) => setForm({ ...form, assignedTo: event.target.value })} placeholder="Employee record ID" /></label>
+                    </>
+                  )}
+                  {view === 'leaves' && (
+                    <>
+                      <label>Leave Type ID<input required min="1" type="number" value={form.leaveTypeId} onChange={(event) => setForm({ ...form, leaveTypeId: event.target.value })} placeholder="1 = Casual, 2 = Sick, 3 = Annual" /></label>
+                      <label>Start Date<input required type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} /></label>
+                      <label>End Date<input required type="date" value={form.endDate} onChange={(event) => setForm({ ...form, endDate: event.target.value })} /></label>
+                      <label style={{ width: '100%' }}>Reason for Absence<textarea required value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} placeholder="Describe details for approval..." rows={3} /></label>
+                    </>
+                  )}
+                  <div className="modal-footer" style={{ width: '100%', marginTop: '20px', padding: '16px 0 0' }}>
+                    <button type="button" className="secondary-action" onClick={() => { setShowCreate(false); setEditingRow(null) }}>Cancel</button>
+                    <button className="primary-action" disabled={saving} type="submit">{saving ? 'Saving to Snowflake…' : editingRow ? 'Update Record' : 'Create Record'}</button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
+          {/* VIEW SWITCHER CONTENT */}
           {view === 'assistant' ? (
             token && <AiAssistant token={token} onError={setError} />
           ) : view === 'overview' ? (
             <>
-              <div className="metric-grid">{metrics.map(([label,value,detail,Icon]) => <article className="metric-panel" key={label}><div className="metric-topline"><span>{label}</span><Icon size={17} /></div><strong>{value}</strong><small>{detail}</small></article>)}</div>
-              <section className="overview-workspace" aria-label="Workspace overview">
-                <article className="overview-panel attendance-panel">
-                  <div className="overview-panel-head">
-                    <div><span className="section-kicker">{isEmployee ? 'PERSONAL SNAPSHOT' : 'WORKFORCE PULSE'}</span><h2>{isEmployee ? 'Your month at a glance' : 'Attendance today'}</h2></div>
-                    <span className="overview-date">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+              {/* 4 Premium Metric Cards */}
+              <div className="kpi-metric-grid">
+                {metrics.map(({ label, value, detail, icon: Icon, iconClass, trend, trendClass }) => (
+                  <article className="kpi-card" key={label}>
+                    <div className="kpi-head">
+                      <span className="kpi-label">{label}</span>
+                      <div className={`kpi-icon-box ${iconClass}`}>
+                        <Icon size={20} strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="kpi-value-row">
+                      <strong className="kpi-value">{value}</strong>
+                    </div>
+                    <div className="kpi-foot">
+                      <span className="kpi-detail">{detail}</span>
+                      <span className={`kpi-trend-pill ${trendClass}`}>
+                        {trend}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* Overview Workspace Main Grid */}
+              <div className="overview-dashboard-grid">
+                {/* Workforce Pulse Widget */}
+                <article className="overview-card">
+                  <div className="overview-card-header">
+                    <div>
+                      <span className="dash-kicker">{isEmployee ? 'PERSONAL SNAPSHOT' : 'WORKFORCE METRICS'}</span>
+                      <h2>{isEmployee ? 'Your Monthly Overview' : 'Live Attendance Pulse'}</h2>
+                      <p>{isEmployee ? 'Time tracking & leave status for the current billing cycle.' : 'Daily active status of employees synchronized in real time.'}</p>
+                    </div>
+                    <button className="icon-button" type="button" onClick={() => setView('attendance')} title="View detailed attendance">
+                      <ArrowUpRight size={17} />
+                    </button>
                   </div>
+
                   {isEmployee ? (
-                    <div className="personal-pulse">
-                      <div className="personal-pulse-main"><strong>{stats.attendanceThisMonth ?? 0}</strong><span>attendance records this month</span></div>
-                      <div className="personal-pulse-divider" />
-                      <div className="personal-pulse-detail"><span>Leave balance</span><strong>{stats.leaveBalance ?? 0} days</strong></div>
-                      <div className="personal-pulse-detail"><span>Tasks completed</span><strong>{stats.completedTasks ?? 0}</strong></div>
+                    <div className="pulse-rate-box">
+                      <div className="pulse-rate-primary">
+                        <strong>{stats.attendanceThisMonth ?? 0}</strong>
+                        <span>days recorded this month</span>
+                      </div>
+                      <div className="pulse-rate-badge">
+                        <CalendarDays size={16} />
+                        <span>{stats.leaveBalance ?? 0} days remaining</span>
+                      </div>
                     </div>
                   ) : (
                     <>
-                      <div className="attendance-summary"><strong>{attendancePresent}<span> / {attendanceTotal}</span></strong><span>{role === 'MANAGER' ? 'team members present' : 'active employees present'}</span></div>
-                      <div className="attendance-track" role="img" aria-label={`${attendanceRate}% attendance recorded`}><span style={{ width: `${attendanceRate}%` }} /></div>
-                      <div className="attendance-legend">
-                        <div><i className="legend-present" /><span>On time</span><strong>{attendanceOnTime}</strong></div>
-                        <div><i className="legend-absent" /><span>Absent</span><strong>{attendanceAbsent}</strong></div>
-                        {role !== 'MANAGER' && <div><i className="legend-late" /><span>Late</span><strong>{attendanceLate}</strong></div>}
+                      <div className="pulse-rate-box">
+                        <div className="pulse-rate-primary">
+                          <strong>{attendancePresent}</strong>
+                          <span>/ {attendanceTotal} Active</span>
+                        </div>
+                        <div className="pulse-rate-badge">
+                          <CheckCircle2 size={16} color="#10b981" />
+                          <span>{attendanceRate}% Attendance Rate</span>
+                        </div>
+                      </div>
+
+                      {/* Segmented multi-color progress track */}
+                      <div className="pulse-multi-track" role="img" aria-label={`Attendance progress: ${attendanceRate}%`}>
+                        <div className="pulse-track-segment pulse-seg-ontime" style={{ width: `${onTimePercent}%` }} title={`On time: ${attendanceOnTime}`} />
+                        <div className="pulse-track-segment pulse-seg-late" style={{ width: `${latePercent}%` }} title={`Late: ${attendanceLate}`} />
+                        <div className="pulse-track-segment pulse-seg-absent" style={{ width: `${absentPercent}%` }} title={`Absent: ${attendanceAbsent}`} />
+                      </div>
+
+                      <div className="pulse-legend-cards">
+                        <div className="pulse-mini-card">
+                          <div className="pulse-mini-head">
+                            <span className="pulse-indicator-dot dot-ontime" />
+                            <span>On Time</span>
+                          </div>
+                          <strong>{attendanceOnTime}</strong>
+                          <small>{Math.round(onTimePercent)}% on schedule</small>
+                        </div>
+
+                        <div className="pulse-mini-card">
+                          <div className="pulse-mini-head">
+                            <span className="pulse-indicator-dot dot-late" />
+                            <span>Late Arrival</span>
+                          </div>
+                          <strong>{attendanceLate}</strong>
+                          <small>{Math.round(latePercent)}% after 09:00</small>
+                        </div>
+
+                        <div className="pulse-mini-card">
+                          <div className="pulse-mini-head">
+                            <span className="pulse-indicator-dot dot-absent" />
+                            <span>Absent / Leave</span>
+                          </div>
+                          <strong>{attendanceAbsent}</strong>
+                          <small>{Math.round(absentPercent)}% out today</small>
+                        </div>
                       </div>
                     </>
                   )}
                 </article>
-                <article className="overview-panel attention-panel">
-                  <div className="overview-panel-head"><div><span className="section-kicker">IN PROGRESS</span><h2>Needs attention</h2></div><Activity size={18} /></div>
-                  <div className="attention-list">
+
+                {/* Priority Needs Attention Card */}
+                <article className="overview-card">
+                  <div className="overview-card-header">
+                    <div>
+                      <span className="dash-kicker">ACTION REQUIRED</span>
+                      <h2>Needs Attention</h2>
+                      <p>Outstanding operational petitions awaiting decision.</p>
+                    </div>
+                    <Activity size={18} color="#10b981" />
+                  </div>
+
+                  <div className="priority-list">
                     {actionItems.map(({ label, count, view: targetView, icon: Icon }) => (
-                      <button className="attention-item" key={label} type="button" onClick={() => setView(targetView)}>
-                        <span className="attention-icon"><Icon size={16} /></span><span className="attention-label">{label}</span><strong>{count}</strong><ArrowUpRight size={15} />
+                      <button
+                        className="priority-item-btn"
+                        key={label}
+                        type="button"
+                        onClick={() => setView(targetView)}
+                      >
+                        <div className="priority-item-left">
+                          <div className="priority-item-icon">
+                            <Icon size={18} />
+                          </div>
+                          <div className="priority-item-info">
+                            <strong>{label}</strong>
+                            <small>{count > 0 ? 'Requires immediate action' : 'All caught up'}</small>
+                          </div>
+                        </div>
+                        <div className="priority-item-right">
+                          <span className={`priority-count-pill ${count === 0 ? 'priority-count-zero' : ''}`}>
+                            {count}
+                          </span>
+                          <ArrowUpRight size={16} />
+                        </div>
                       </button>
                     ))}
                   </div>
-                  <p className="attention-note">Counts reflect the latest workspace data.</p>
+
+                  {recentLeaves.length > 0 && (
+                    <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #edf1eb' }}>
+                      <span className="dash-kicker" style={{ fontSize: '10px' }}>RECENT TIME-OFF ACTIVITY</span>
+                      <div style={{ display: 'grid', gap: '8px', marginTop: '10px' }}>
+                        {recentLeaves.slice(0, 2).map((item) => (
+                          <div key={String(item.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className="avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px', background: getAvatarBackground(String(item.fullName || 'User')) }}>
+                                {getInitials(String(item.fullName || 'User'))}
+                              </span>
+                              <strong style={{ color: '#2b3f34' }}>{String(item.fullName || 'Employee')}</strong>
+                            </div>
+                            {renderStatusPill(item.status)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </article>
-              </section>
-              <section className="overview-shortcuts" aria-label="Quick access">
-                <div className="shortcuts-heading"><span className="section-kicker">QUICK ACCESS</span><h2>Go to</h2></div>
-                <div className="shortcut-list">
-                  {shortcuts.map(({ label, view: targetView, icon: Icon }) => (
-                    <button className="shortcut-button" key={label} type="button" onClick={() => setView(targetView)}><Icon size={16} /><span>{label}</span><ChevronRight size={15} /></button>
+              </div>
+
+              {/* Quick Launch Shortcuts Hub */}
+              <section className="quick-launch-section">
+                <span className="dash-kicker">WORKPLACE TOOLS</span>
+                <div className="quick-launch-grid">
+                  {shortcuts.map(({ label, desc, view: targetView, icon: Icon }) => (
+                    <button
+                      className="quick-launch-card"
+                      key={label}
+                      type="button"
+                      onClick={() => setView(targetView)}
+                    >
+                      <div className="quick-launch-icon">
+                        <Icon size={20} strokeWidth={2} />
+                      </div>
+                      <div className="quick-launch-text">
+                        <strong>{label}</strong>
+                        <small>{desc}</small>
+                      </div>
+                    </button>
                   ))}
                 </div>
               </section>
             </>
           ) : (
-            <section className="table-panel">
-              <div className="table-toolbar">
-                <div><span className="section-kicker">LIVE FROM SNOWFLAKE</span><h2>{activeItem?.label}</h2></div>
-                <div className="toolbar-right">
-                  {isManagementView && (
-                    <InputBase
-                      placeholder="Search..."
+            /* SaaS Modern Data Table / Cards Grid */
+            <section className="saas-table-card">
+              <div className="saas-table-top">
+                <div className="saas-table-title-area">
+                  <span className="dash-kicker">LIVE FROM SNOWFLAKE</span>
+                  <h2>{activeItem?.label} Directory</h2>
+                </div>
+
+                <div className="saas-table-actions">
+                  {/* Search Bar */}
+                  <div className="saas-search-box">
+                    <Search size={16} />
+                    <input
+                      placeholder={`Search ${activeItem?.label.toLowerCase()}…`}
                       value={searchQuery}
-                      onChange={(e) => { setSearchQuery(e.target.value); resetPagination() }}
-                      startAdornment={<Search size={18} color="#8a978e" />}
-                      sx={{ width: 280, '& .MuiInputBase-input': { padding: '8px 12px', fontSize: 13, color: '#293f34' }, '& .MuiInputBase-root': { background: 'white', border: '1px solid #dfe5dc', borderRadius: 5 } }}
+                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
                     />
+                    {searchQuery && (
+                      <button className="saas-search-clear" type="button" onClick={() => setSearchQuery('')} aria-label="Clear search">
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Status Filter for Attendance / Tasks / Leaves */}
+                  {['leaves', 'tasks', 'attendance'].includes(view) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}
+                        style={{
+                          height: '38px', padding: '0 12px', borderRadius: '8px',
+                          border: '1px solid #dbe2d8', background: 'white', color: '#193c33',
+                          fontSize: '12px', fontWeight: 600
+                        }}
+                      >
+                        <option value="ALL">All Statuses</option>
+                        {view === 'leaves' && (
+                          <>
+                            <option value="PENDING">Pending</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="REJECTED">Rejected</option>
+                          </>
+                        )}
+                        {view === 'tasks' && (
+                          <>
+                            <option value="TODO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                          </>
+                        )}
+                        {view === 'attendance' && (
+                          <>
+                            <option value="PRESENT">Present</option>
+                            <option value="HALF_DAY">Half Day</option>
+                            <option value="LATE">Late</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
                   )}
-                  <span className="record-count">{filteredRows.length} records</span>
+
+                  {/* View Mode Toggle (Table vs Cards) for Employees & Departments */}
+                  {isManagementView && (
+                    <div className="view-mode-toggle" title="Switch layout mode">
+                      <button
+                        className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setViewMode('table')}
+                        aria-label="Table view"
+                      >
+                        <List size={16} />
+                      </button>
+                      <button
+                        className={`view-mode-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => setViewMode('cards')}
+                        aria-label="Grid cards view"
+                      >
+                        <LayoutGrid size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  <span className="saas-record-counter">{filteredRows.length} records</span>
                 </div>
               </div>
+
               {loading ? (
-                <Paper sx={{ p: 4, textAlign: 'center', color: '#89958c' }}>Loading records…</Paper>
+                <div className="saas-empty-box">
+                  <div className="live-loader-ring" style={{ width: '38px', height: '38px' }}><i /><i /><i /></div>
+                  <h3 style={{ marginTop: '14px' }}>Loading {activeItem?.label} records…</h3>
+                  <p>Streaming from Snowflake cloud warehouse</p>
+                </div>
               ) : filteredRows.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center', color: '#89958c' }}>No records to show yet.</Paper>
-              ) : (
+                <div className="saas-empty-box">
+                  <div className="empty-icon-wrap">
+                    {view === 'employees' ? <Users size={30} /> : view === 'departments' ? <Building2 size={30} /> : view === 'tasks' ? <CheckSquare2 size={30} /> : <CalendarDays size={30} />}
+                  </div>
+                  <h3>No {activeItem?.label.toLowerCase()} found</h3>
+                  <p>
+                    {searchQuery
+                      ? `No results match "${searchQuery}". Try adjusting your search or filters.`
+                      : `Get started by creating your first ${activeItem?.label.toLowerCase()} record in Snowflake.`}
+                  </p>
+                  {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && (
+                    <button
+                      className="primary-action"
+                      type="button"
+                      style={{ marginTop: '8px' }}
+                      onClick={() => {
+                        setEditingRow(null)
+                        setShowCreate(true)
+                      }}
+                    >
+                      <Plus size={16} /> Add {view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}
+                    </button>
+                  )}
+                </div>
+              ) : viewMode === 'cards' && isManagementView ? (
+                /* Card Grid View */
                 <>
-                  <TableContainer sx={{ border: '1px solid #e2e8df', borderRadius: 6, overflow: 'hidden', width: '100%' }}>
-                    <Table stickyHeader aria-label={activeItem?.label} sx={{ width: '100%', tableLayout: 'auto' }}>
-                      <TableHead>
-                        <TableRow>
+                  <div className="saas-cards-grid">
+                    {paginatedRows.map((row) => (
+                      view === 'employees' ? (
+                        <article className="emp-profile-card" key={String(row.id)}>
+                          <div className="emp-card-top">
+                            <div className="emp-card-identity">
+                              <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
+                                {getInitials(String(row.fullName || 'User'))}
+                              </span>
+                              <div className="emp-card-name">
+                                <strong>{String(row.fullName || 'Unnamed')}</strong>
+                                <small>{String(row.email || 'No email')}</small>
+                              </div>
+                            </div>
+                            {renderStatusPill(row.status || 'ACTIVE')}
+                          </div>
+
+                          <div className="emp-card-meta-list">
+                            <div className="emp-meta-row">
+                              <span>Code</span>
+                              <strong>{String(row.employeeCode || '—')}</strong>
+                            </div>
+                            <div className="emp-meta-row">
+                              <span>User ID</span>
+                              <strong>#{String(row.userId || '—')}</strong>
+                            </div>
+                            <div className="emp-meta-row">
+                              <span>Department ID</span>
+                              <strong>{String(row.departmentId ?? 'Unassigned')}</strong>
+                            </div>
+                          </div>
+
+                          <div className="emp-card-footer">
+                            <span style={{ fontSize: '11px', color: '#798c80' }}>
+                              Created {formatDate(row.createdAt)}
+                            </span>
+                            <div className="table-action-btns">
+                              <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
+                              {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                              {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete"><Trash2 size={15} /></button>}
+                            </div>
+                          </div>
+                        </article>
+                      ) : (
+                        <article className="dept-card" key={String(row.id)}>
+                          <div className="dept-card-header">
+                            <div className="dept-card-icon">
+                              <Building2 size={24} />
+                            </div>
+                            <div className="dept-card-info">
+                              <h3>{String(row.name || 'Unnamed')}</h3>
+                              <span>ID #{String(row.id)}</span>
+                            </div>
+                          </div>
+                          <div className="emp-card-footer" style={{ border: 'none', padding: 0 }}>
+                            <span style={{ fontSize: '12px', color: '#798c80' }}>
+                              Updated {formatDate(row.updatedAt || row.createdAt)}
+                            </span>
+                            <div className="table-action-btns">
+                              <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
+                              {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit department"><Edit size={15} /></button>}
+                              {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete department"><Trash2 size={15} /></button>}
+                            </div>
+                          </div>
+                        </article>
+                      )
+                    ))}
+                  </div>
+
+                  {/* Pagination Bar */}
+                  <div className="saas-pagination-bar">
+                    <span>
+                      Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} records
+                    </span>
+                    <div className="pagination-controls">
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        aria-label="Previous page"
+                      >
+                        ‹
+                      </button>
+                      <span>Page {currentPage} of {Math.ceil(filteredRows.length / pageSize) || 1}</span>
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage * pageSize >= filteredRows.length}
+                        onClick={() => setCurrentPage((p) => p + 1)}
+                        aria-label="Next page"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Table View */
+                <>
+                  <div className="saas-table-container">
+                    <table className="saas-grid-table">
+                      <thead>
+                        <tr>
                           {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key)).slice(0, 7).map((key) => (
-                            <TableCell key={key} sortDirection={sortConfig?.key === key ? sortConfig.direction : false} sx={{ minWidth: 150 }}>
-                              <TableSortLabel
-                                active={sortConfig?.key === key}
-                                direction={sortConfig?.key === key ? sortConfig.direction : 'asc'}
-                                onClick={() => handleSort(key)}
-                              >
-                                {key.replace(/[A-Z]/g, letter => ` ${letter}`).toUpperCase()}
-                              </TableSortLabel>
-                            </TableCell>
+                            <th key={key} onClick={() => handleSort(key)} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{key.replace(/[A-Z]/g, letter => ` ${letter}`).toUpperCase()}</span>
+                                <ArrowUpDown size={12} color="#8a9c90" />
+                              </div>
+                            </th>
                           ))}
-                          {view === 'tasks' && <TableCell sx={{ minWidth: 160 }}>UPDATE</TableCell>}
-                          {view === 'leaves' && ['ADMIN','HR','MANAGER'].includes(role ?? '') && <TableCell sx={{ minWidth: 180 }}>REVIEW</TableCell>}
-                          {showActions && <TableCell align="right" sx={{ minWidth: 100 }}>ACTIONS</TableCell>}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+                          {view === 'tasks' && <th>STATUS UPDATE</th>}
+                          {view === 'leaves' && ['ADMIN', 'HR', 'MANAGER'].includes(role ?? '') && <th>DECISION</th>}
+                          {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
                         {paginatedRows.map((row, index) => (
-                          <TableRow key={String(row.id ?? index)} hover>
+                          <tr key={String(row.id ?? index)}>
                             {Object.entries(row).filter(([key]) => !['description'].includes(key)).slice(0, 7).map(([key, value]) => (
-                              <TableCell key={key}>{key.toLowerCase().includes('date') ? formatDate(value) : String(value ?? '—')}</TableCell>
-                            ))}
-                            {view === 'tasks' && (
-                              <TableCell>
-                                <FormControl size="small" sx={{ minWidth: 140 }}>
-                                  <MuiSelect
-                                    defaultValue={String(row.status ?? 'TODO')}
-                                    onChange={(event) => void perform(`/tasks/${row.id}/status`, 'PATCH', { status: event.target.value })}
-                                    label="Status"
-                                  >
-                                    <MenuItem value="TODO">TODO</MenuItem>
-                                    <MenuItem value="IN_PROGRESS">IN_PROGRESS</MenuItem>
-                                    <MenuItem value="COMPLETED">COMPLETED</MenuItem>
-                                    <MenuItem value="CANCELLED">CANCELLED</MenuItem>
-                                  </MuiSelect>
-                                </FormControl>
-                              </TableCell>
-                            )}
-                            {view === 'leaves' && ['ADMIN','HR','MANAGER'].includes(role ?? '') && (
-                              <TableCell>
-                                {decidedRows.has(Number(row.id)) || row.status === 'APPROVED' || row.status === 'REJECTED' ? (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2e7d4d', fontSize: 12, fontWeight: 600, padding: '6px 10px' }}>
-                                    <Check size={14} /> {row.status === 'APPROVED' ? 'Approved' : row.status === 'REJECTED' ? 'Rejected' : 'Decided'}
-                                  </span>
+                              <td key={key}>
+                                {key.toLowerCase() === 'fullname' ? (
+                                  <div className="avatar-user-cell">
+                                    <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
+                                      {getInitials(String(value || 'User'))}
+                                    </span>
+                                    <div className="avatar-info-copy">
+                                      <strong>{String(value || '—')}</strong>
+                                      {row.email ? <small>{String(row.email)}</small> : null}
+                                    </div>
+                                  </div>
+                                ) : key.toLowerCase().includes('status') ? (
+                                  renderStatusPill(value)
+                                ) : key.toLowerCase().includes('date') ? (
+                                  formatDate(value)
+                                ) : key.toLowerCase().includes('checkin') || key.toLowerCase().includes('checkout') ? (
+                                  formatDateTime(value)
                                 ) : (
-                                  <div style={{ display: 'flex', gap: 8 }}>
-                                    <button className="primary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/approve`, 'PATCH')}>Approve</button>
-                                    <button className="secondary-action" style={{ padding: '6px 10px', fontSize: 11, minHeight: 'auto' }} onClick={() => void perform(`/leaves/${row.id}/reject`, 'PATCH', { reason: 'Not approved' })}>Reject</button>
+                                  String(value ?? '—')
+                                )}
+                              </td>
+                            ))}
+
+                            {/* Task Status Selector */}
+                            {view === 'tasks' && (
+                              <td>
+                                <select
+                                  defaultValue={String(row.status ?? 'TODO')}
+                                  onChange={(event) => void perform(`/tasks/${row.id}/status`, 'PATCH', { status: event.target.value })}
+                                  style={{
+                                    padding: '5px 10px', borderRadius: '6px', border: '1px solid #d4ddd1',
+                                    fontSize: '12px', background: 'white', color: '#193c33'
+                                  }}
+                                >
+                                  <option value="TODO">TODO</option>
+                                  <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                  <option value="COMPLETED">COMPLETED</option>
+                                  <option value="CANCELLED">CANCELLED</option>
+                                </select>
+                              </td>
+                            )}
+
+                            {/* Leave Review Actions */}
+                            {view === 'leaves' && ['ADMIN', 'HR', 'MANAGER'].includes(role ?? '') && (
+                              <td>
+                                {decidedRows.has(Number(row.id)) || row.status === 'APPROVED' || row.status === 'REJECTED' ? (
+                                  renderStatusPill(row.status)
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                      className="primary-action"
+                                      style={{ padding: '4px 10px', fontSize: '11px', minHeight: 'auto', background: '#10b981', borderColor: '#10b981' }}
+                                      onClick={() => void perform(`/leaves/${row.id}/approve`, 'PATCH')}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="secondary-action"
+                                      style={{ padding: '4px 10px', fontSize: '11px', minHeight: 'auto', color: '#dc2626', borderColor: '#fca5a5' }}
+                                      onClick={() => void perform(`/leaves/${row.id}/reject`, 'PATCH', { reason: 'Not approved' })}
+                                    >
+                                      Reject
+                                    </button>
                                   </div>
                                 )}
-                              </TableCell>
+                              </td>
                             )}
+
+                            {/* Action Buttons */}
                             {showActions && (
-                              <TableCell align="right">
-                                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                                  <IconButton size="small" aria-label="View" title="View" onClick={() => handleView(row)}><Eye size={16} /></IconButton>
-                                  <IconButton size="small" aria-label="Edit" title="Edit" onClick={() => handleEdit(row)}><Edit size={16} /></IconButton>
-                                  <IconButton size="small" aria-label="Delete" title="Delete" onClick={() => void handleDelete(row)}><Trash2 size={16} /></IconButton>
+                              <td style={{ textAlign: 'right' }}>
+                                <div className="table-action-btns">
+                                  <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
+                                  <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit record"><Edit size={15} /></button>
+                                  <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>
                                 </div>
-                              </TableCell>
+                              </td>
                             )}
-                          </TableRow>
+                          </tr>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  <TablePagination
-                    component="div"
-                    count={filteredRows.length}
-                    rowsPerPage={pageSize}
-                    page={currentPage - 1}
-                    onPageChange={(_, page) => setCurrentPage(page + 1)}
-                    rowsPerPageOptions={[10, 25, 50, 100]}
-                    labelRowsPerPage="Rows per page"
-                    labelDisplayedRows={({ from, to, count }) => `${from + 1}–${to} of ${count}`}
-                    sx={{ '& .MuiTablePagination-toolbar': { padding: '16px 20px', borderTop: '1px solid #edf0eb' }, '& .MuiTablePagination-select': { color: '#243a33' }, '& .MuiTablePagination-selectIcon': { color: '#8a978e' } }}
-                  />
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Bar */}
+                  <div className="saas-pagination-bar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span>
+                        Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} records
+                      </span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1) }}
+                        style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid #dce2d7', fontSize: '12px' }}
+                      >
+                        <option value={10}>10 / page</option>
+                        <option value={25}>25 / page</option>
+                        <option value={50}>50 / page</option>
+                      </select>
+                    </div>
+
+                    <div className="pagination-controls">
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        aria-label="Previous page"
+                      >
+                        ‹
+                      </button>
+                      <span>Page {currentPage} of {Math.ceil(filteredRows.length / pageSize) || 1}</span>
+                      <button
+                        className="pagination-btn"
+                        type="button"
+                        disabled={currentPage * pageSize >= filteredRows.length}
+                        onClick={() => setCurrentPage((p) => p + 1)}
+                        aria-label="Next page"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </section>
           )}
-          <footer className="content-foot"><span>Snowflex People Operations</span><span>Connected workspace <span className="connection-dot" /></span></footer>
+
+          <footer className="content-foot">
+            <span>Snowflex People Operations Platform • Enterprise Data Warehouse Edition</span>
+            <span>Connected to Snowflake <span className="connection-dot" /></span>
+          </footer>
         </div>
       </section>
+
+      {/* Floating AI Chat Widget */}
       {token && <AiChatWidget token={token} />}
     </main>
   )
