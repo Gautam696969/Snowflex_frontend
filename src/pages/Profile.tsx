@@ -13,6 +13,9 @@ import ProfileForm from '../components/ProfileForm'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import LogoutButton from '../components/LogoutButton'
 import TopProfileDropdown from '../components/TopProfileDropdown'
+import NotificationBell from '../components/NotificationBell'
+import UnreadBadge from '../components/UnreadBadge'
+import { useNotifications } from '../hooks/useNotifications'
 import { clearToken, getCurrentUser, readToken, type SafeUser } from '../lib/auth-api'
 import { useProfile } from '../hooks/useProfile'
 import { getAvatarBackground, getInitials, getFullAvatarUrl } from '../lib/avatar'
@@ -25,6 +28,7 @@ export default function Profile() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const { leaveUnreadCount } = useNotifications()
 
   // Load profile via useProfile hook
   const {
@@ -174,6 +178,7 @@ export default function Profile() {
                 >
                   <Icon size={17} strokeWidth={1.8} />
                   <span>{label}</span>
+                  {id === 'leaves' && <UnreadBadge count={leaveUnreadCount} className="sidebar-leave-badge" />}
                   {id === 'profile' && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -266,6 +271,7 @@ export default function Profile() {
             <span className="today-label">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
+            <NotificationBell />
             <ThemeToggle className="topbar-theme-toggle" />
             <TopProfileDropdown user={currentUser} />
           </div>

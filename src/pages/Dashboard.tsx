@@ -22,6 +22,10 @@ import ThemeToggle from '../components/ThemeToggle'
 import AdminUsersView from '../components/AdminUsersView'
 import AdminSystemView from '../components/AdminSystemView'
 import TopProfileDropdown from '../components/TopProfileDropdown'
+import NotificationBell from '../components/NotificationBell'
+import UnreadBadge from '../components/UnreadBadge'
+import LeaveManagementView from '../components/LeaveManagementView'
+import { useNotifications } from '../hooks/useNotifications'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
@@ -107,10 +111,17 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null)
-  const [decidedRows, setDecidedRows] = useState<Set<string | number>>(new Set())
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('table')
+  const { leaveUnreadCount, markByTypeAsRead, clear: clearNotifications } = useNotifications()
+
+  // Mark leave notifications as read when opening Leave view
+  useEffect(() => {
+    if (view === 'leaves') {
+      void markByTypeAsRead('LEAVE')
+    }
+  }, [view, markByTypeAsRead])
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -267,7 +278,6 @@ export default function Dashboard() {
         const id = path.split('/')[2]
         const newStatus = path.includes('/approve') ? 'APPROVED' : 'REJECTED'
         setRows((prev) => prev.map((row) => (row.id === Number(id) ? { ...row, status: newStatus } : row)))
-        setDecidedRows((prev) => new Set(prev).add(Number(id)))
       }
 
       setShowCreate(false)
@@ -308,6 +318,7 @@ export default function Dashboard() {
       toast.error('Error during sign out')
     } finally {
       clearToken()
+      clearNotifications()
       navigate('/login', { replace: true })
     }
   }
@@ -646,6 +657,7 @@ export default function Dashboard() {
                 >
                   <Icon size={17} strokeWidth={1.8} />
                   <span>{label}</span>
+                  {id === 'leaves' && <UnreadBadge count={leaveUnreadCount} className="sidebar-leave-badge" />}
                   {view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -784,6 +796,7 @@ export default function Dashboard() {
             <span className="today-label">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
+            <NotificationBell />
             <ThemeToggle className="topbar-theme-toggle" />
             <button
               className="icon-button"
@@ -851,7 +864,7 @@ export default function Dashboard() {
                 </>
               )}
 
-              {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && (
+              {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
                 <button
                   className="primary-action"
                   type="button"
@@ -866,7 +879,7 @@ export default function Dashboard() {
                   }}
                 >
                   <Plus size={16} />
-                  {view === 'leaves' ? 'Request Leave' : `Add ${view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}`}
+                  {`Add ${view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}`}
                 </button>
               )}
 
@@ -1091,6 +1104,12 @@ export default function Dashboard() {
                 if (token && user) void loadData(token, user, 'system')
               }}
               loading={loading}
+            />
+          ) : view === 'leaves' ? (
+            <LeaveManagementView
+              userRole={role || 'EMPLOYEE'}
+              currentUserId={user?.id ?? 0}
+              token={token || ''}
             />
           ) : view === 'overview' ? (
             <>
@@ -1330,13 +1349,6 @@ export default function Dashboard() {
                         }}
                       >
                         <option value="ALL">All Statuses</option>
-                        {view === 'leaves' && (
-                          <>
-                            <option value="PENDING">Pending</option>
-                            <option value="APPROVED">Approved</option>
-                            <option value="REJECTED">Rejected</option>
-                          </>
-                        )}
                         {view === 'tasks' && (
                           <>
                             <option value="TODO">To Do</option>
@@ -1398,7 +1410,7 @@ export default function Dashboard() {
                       ? `No results match "${searchQuery}". Try adjusting your search or filters.`
                       : `Get started by creating your first ${activeItem?.label.toLowerCase()} record in Snowflake.`}
                   </p>
-                  {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE') || (view === 'leaves' && role === 'EMPLOYEE')) && (
+                  {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
                     <button
                       className="primary-action"
                       type="button"
@@ -1537,7 +1549,6 @@ export default function Dashboard() {
                             </th>
                           ))}
                           {view === 'tasks' && <th>STATUS UPDATE</th>}
-                          {view === 'leaves' && ['ADMIN', 'HR', 'MANAGER'].includes(role ?? '') && <th>DECISION</th>}
                           {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
                         </tr>
                       </thead>
@@ -1596,31 +1607,7 @@ export default function Dashboard() {
                               </td>
                             )}
 
-                            {/* Leave Review Actions */}
-                            {view === 'leaves' && ['ADMIN', 'HR', 'MANAGER'].includes(role ?? '') && (
-                              <td>
-                                {decidedRows.has(Number(row.id)) || row.status === 'APPROVED' || row.status === 'REJECTED' ? (
-                                  renderStatusPill(row.status)
-                                ) : (
-                                  <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                      className="primary-action"
-                                      style={{ padding: '4px 10px', fontSize: '11px', minHeight: 'auto', background: '#10b981', borderColor: '#10b981' }}
-                                      onClick={() => void perform(`/leaves/${row.id}/approve`, 'PATCH')}
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      className="secondary-action"
-                                      style={{ padding: '4px 10px', fontSize: '11px', minHeight: 'auto', color: '#dc2626', borderColor: '#fca5a5' }}
-                                      onClick={() => void perform(`/leaves/${row.id}/reject`, 'PATCH', { reason: 'Not approved' })}
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                )}
-                              </td>
-                            )}
+
 
                             {/* Action Buttons */}
                             {showActions && (
