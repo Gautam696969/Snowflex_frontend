@@ -25,6 +25,7 @@ import TopProfileDropdown from '../components/TopProfileDropdown'
 import NotificationBell from '../components/NotificationBell'
 import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
+import LeaveTypeBadge from '../components/LeaveTypeBadge'
 import { useNotifications } from '../hooks/useNotifications'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
@@ -1459,13 +1460,42 @@ export default function Dashboard() {
                               <strong>{String(row.employeeCode || '—')}</strong>
                             </div>
                             <div className="emp-meta-row">
-                              <span>User ID</span>
-                              <strong>#{String(row.userId || '—')}</strong>
+                              <span>Department</span>
+                              <strong>{String(row.departmentName || row.departmentId || 'Unassigned')}</strong>
                             </div>
                             <div className="emp-meta-row">
-                              <span>Department ID</span>
-                              <strong>{String(row.departmentId ?? 'Unassigned')}</strong>
+                              <span>Designation</span>
+                              <strong>{String(row.designation || '—')}</strong>
                             </div>
+                            {role === 'ADMIN' && (
+                              <div className="emp-meta-row">
+                                <span>Leave Status</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
+                                  {row.onLeaveToday ? (
+                                    <span className="on-leave-today-tag">
+                                      🌴 On Leave ({String(row.todayLeaveName || 'Approved')})
+                                    </span>
+                                  ) : null}
+                                  {Number(row.pendingLeaveCount) > 0 ? (
+                                    <div className="emp-leave-status-cell">
+                                      <LeaveTypeBadge
+                                        name={String(row.firstPendingName || 'Pending Leave')}
+                                        code={String(row.firstPendingCode || 'OTHER')}
+                                        isPaid={Boolean(row.firstPendingIsPaid)}
+                                        status="Pending"
+                                      />
+                                      {Number(row.pendingLeaveCount) > 1 && (
+                                        <span className="more-leaves-chip" title={`All pending requests: ${String(row.pendingTypeNames || '')}`}>
+                                          +{Number(row.pendingLeaveCount) - 1}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : !row.onLeaveToday ? (
+                                    <span style={{ color: '#8a9c90' }}>—</span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className="emp-card-footer">
@@ -1539,88 +1569,194 @@ export default function Dashboard() {
                   <div className="saas-table-container">
                     <table className="saas-grid-table">
                       <thead>
-                        <tr>
-                          {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key)).slice(0, 7).map((key) => (
-                            <th key={key} onClick={() => handleSort(key)} style={{ cursor: 'pointer' }}>
+                        {view === 'employees' ? (
+                          <tr>
+                            <th onClick={() => handleSort('fullName')} style={{ cursor: 'pointer' }}>
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                <span>{key.replace(/[A-Z]/g, letter => ` ${letter}`).toUpperCase()}</span>
+                                <span>EMPLOYEE</span>
                                 <ArrowUpDown size={12} color="#8a9c90" />
                               </div>
                             </th>
-                          ))}
-                          {view === 'tasks' && <th>STATUS UPDATE</th>}
-                          {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
-                        </tr>
+                            <th onClick={() => handleSort('employeeCode')} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span>CODE</span>
+                                <ArrowUpDown size={12} color="#8a9c90" />
+                              </div>
+                            </th>
+                            <th onClick={() => handleSort('departmentName')} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span>DEPARTMENT</span>
+                                <ArrowUpDown size={12} color="#8a9c90" />
+                              </div>
+                            </th>
+                            <th onClick={() => handleSort('designation')} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span>DESIGNATION</span>
+                                <ArrowUpDown size={12} color="#8a9c90" />
+                              </div>
+                            </th>
+                            <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <span>STATUS</span>
+                                <ArrowUpDown size={12} color="#8a9c90" />
+                              </div>
+                            </th>
+                            {role === 'ADMIN' && <th>LEAVE STATUS</th>}
+                            {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
+                          </tr>
+                        ) : (
+                          <tr>
+                            {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key)).slice(0, 7).map((key) => (
+                              <th key={key} onClick={() => handleSort(key)} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>{key.replace(/[A-Z]/g, letter => ` ${letter}`).toUpperCase()}</span>
+                                  <ArrowUpDown size={12} color="#8a9c90" />
+                                </div>
+                              </th>
+                            ))}
+                            {view === 'tasks' && <th>STATUS UPDATE</th>}
+                            {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
+                          </tr>
+                        )}
                       </thead>
                       <tbody>
-                        {paginatedRows.map((row, index) => (
-                          <tr key={String(row.id ?? index)}>
-                            {Object.entries(row).filter(([key]) => !['description'].includes(key)).slice(0, 7).map(([key, value]) => (
-                              <td key={key}>
-                                {key.toLowerCase() === 'fullname' ? (
-                                  <div className="avatar-user-cell">
-                                    {row.avatarUrl ? (
-                                      <img
-                                        src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
-                                        alt={String(value || 'User')}
-                                        className="avatar-circle-img"
-                                        style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                                      />
-                                    ) : (
-                                      <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
-                                        {getInitials(String(value || 'User'))}
-                                      </span>
-                                    )}
-                                    <div className="avatar-info-copy">
-                                      <strong>{String(value || '—')}</strong>
-                                      {row.email ? <small>{String(row.email)}</small> : null}
-                                    </div>
-                                  </div>
-                                ) : key.toLowerCase().includes('status') ? (
-                                  renderStatusPill(value)
-                                ) : key.toLowerCase().includes('date') ? (
-                                  formatDate(value)
-                                ) : key.toLowerCase().includes('checkin') || key.toLowerCase().includes('checkout') ? (
-                                  formatDateTime(value)
-                                ) : (
-                                  String(value ?? '—')
-                                )}
-                              </td>
-                            ))}
-
-                            {/* Task Status Selector */}
-                            {view === 'tasks' && (
+                        {view === 'employees' ? (
+                          paginatedRows.map((row, index) => (
+                            <tr key={String(row.id ?? index)}>
                               <td>
-                                <select
-                                  defaultValue={String(row.status ?? 'TODO')}
-                                  onChange={(event) => void perform(`/tasks/${row.id}/status`, 'PATCH', { status: event.target.value })}
-                                  style={{
-                                    padding: '5px 10px', borderRadius: '6px', border: '1px solid #d4ddd1',
-                                    fontSize: '12px', background: 'white', color: '#193c33'
-                                  }}
-                                >
-                                  <option value="TODO">TODO</option>
-                                  <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                  <option value="COMPLETED">COMPLETED</option>
-                                  <option value="CANCELLED">CANCELLED</option>
-                                </select>
-                              </td>
-                            )}
-
-
-
-                            {/* Action Buttons */}
-                            {showActions && (
-                              <td style={{ textAlign: 'right' }}>
-                                <div className="table-action-btns">
-                                  <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
-                                  <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit record"><Edit size={15} /></button>
-                                  <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>
+                                <div className="avatar-user-cell">
+                                  {row.avatarUrl ? (
+                                    <img
+                                      src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
+                                      alt={String(row.fullName || 'User')}
+                                      className="avatar-circle-img"
+                                      style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                                    />
+                                  ) : (
+                                    <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
+                                      {getInitials(String(row.fullName || 'User'))}
+                                    </span>
+                                  )}
+                                  <div className="avatar-info-copy">
+                                    <strong>{String(row.fullName || '—')}</strong>
+                                    {row.email ? <small>{String(row.email)}</small> : null}
+                                  </div>
                                 </div>
                               </td>
-                            )}
-                          </tr>
-                        ))}
+                              <td><strong>{String(row.employeeCode || '—')}</strong></td>
+                              <td>{String(row.departmentName || row.departmentId || 'Unassigned')}</td>
+                              <td>{String(row.designation || '—')}</td>
+                              <td>{renderStatusPill(row.status || 'ACTIVE')}</td>
+                              {role === 'ADMIN' && (
+                                <td>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                    {row.onLeaveToday ? (
+                                      <span className="on-leave-today-tag" title="Employee has an approved leave covering today">
+                                        🌴 On Leave Today ({String(row.todayLeaveName || 'Approved')})
+                                      </span>
+                                    ) : null}
+                                    {Number(row.pendingLeaveCount) > 0 ? (
+                                      <div className="emp-leave-status-cell">
+                                        <LeaveTypeBadge
+                                          name={String(row.firstPendingName || 'Pending Leave')}
+                                          code={String(row.firstPendingCode || 'OTHER')}
+                                          isPaid={Boolean(row.firstPendingIsPaid)}
+                                          status="Pending"
+                                        />
+                                        {Number(row.pendingLeaveCount) > 1 && (
+                                          <span
+                                            className="more-leaves-chip"
+                                            title={`All pending requests: ${String(row.pendingTypeNames || '')}`}
+                                          >
+                                            +{Number(row.pendingLeaveCount) - 1}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : !row.onLeaveToday ? (
+                                      <span style={{ color: '#8a9c90' }}>—</span>
+                                    ) : null}
+                                  </div>
+                                </td>
+                              )}
+                              {showActions && (
+                                <td style={{ textAlign: 'right' }}>
+                                  <div className="table-action-btns">
+                                    <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
+                                    {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                                    {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        ) : (
+                          paginatedRows.map((row, index) => (
+                            <tr key={String(row.id ?? index)}>
+                              {Object.entries(row).filter(([key]) => !['description'].includes(key)).slice(0, 7).map(([key, value]) => (
+                                <td key={key}>
+                                  {key.toLowerCase() === 'fullname' ? (
+                                    <div className="avatar-user-cell">
+                                      {row.avatarUrl ? (
+                                        <img
+                                          src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
+                                          alt={String(value || 'User')}
+                                          className="avatar-circle-img"
+                                          style={{ width: '28px', height: '28px', borderRadius: '50%' }}
+                                        />
+                                      ) : (
+                                        <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
+                                          {getInitials(String(value || 'User'))}
+                                        </span>
+                                      )}
+                                      <div className="avatar-info-copy">
+                                        <strong>{String(value || '—')}</strong>
+                                        {row.email ? <small>{String(row.email)}</small> : null}
+                                      </div>
+                                    </div>
+                                  ) : key.toLowerCase().includes('status') ? (
+                                    renderStatusPill(value)
+                                  ) : key.toLowerCase().includes('date') ? (
+                                    formatDate(value)
+                                  ) : key.toLowerCase().includes('checkin') || key.toLowerCase().includes('checkout') ? (
+                                    formatDateTime(value)
+                                  ) : (
+                                    String(value ?? '—')
+                                  )}
+                                </td>
+                              ))}
+
+                              {/* Task Status Selector */}
+                              {view === 'tasks' && (
+                                <td>
+                                  <select
+                                    defaultValue={String(row.status ?? 'TODO')}
+                                    onChange={(event) => void perform(`/tasks/${row.id}/status`, 'PATCH', { status: event.target.value })}
+                                    style={{
+                                      padding: '5px 10px', borderRadius: '6px', border: '1px solid #d4ddd1',
+                                      fontSize: '12px', background: 'white', color: '#193c33'
+                                    }}
+                                  >
+                                    <option value="TODO">TODO</option>
+                                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                    <option value="COMPLETED">COMPLETED</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                  </select>
+                                </td>
+                              )}
+
+                              {/* Action Buttons */}
+                              {showActions && (
+                                <td style={{ textAlign: 'right' }}>
+                                  <div className="table-action-btns">
+                                    <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
+                                    {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit record"><Edit size={15} /></button>}
+                                    {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

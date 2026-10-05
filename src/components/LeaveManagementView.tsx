@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   CalendarDays, Plus, Filter, Search, RefreshCw, Settings,
-  CheckCircle2, XCircle, Clock, FileText, Check, X
+  CheckCircle2, XCircle, Clock, FileText, Check, X, ArrowUpDown
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import {
@@ -39,6 +39,19 @@ export default function LeaveManagementView({
   const [typeFilter, setTypeFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
 
+  // Sorting
+  const [sortKey, setSortKey] = useState<'leaveType' | 'employee' | 'dates' | 'status' | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const handleSort = (key: 'leaveType' | 'employee' | 'dates' | 'status') => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
   // Modals state
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [selectedInitialTypeId, setSelectedInitialTypeId] = useState<number | null>(null)
@@ -53,9 +66,9 @@ export default function LeaveManagementView({
     try {
       setLoading(true)
       const [typesData, balancesData, leavesData] = await Promise.all([
-        fetchLeaveTypes(!isAdminOrHr), // active only for employees, all for admins
-        fetchMyLeaveBalances(),
-        canReview ? fetchAllLeaves() : fetchMyLeaves(),
+        fetchLeaveTypes(!isAdminOrHr).catch(() => []),
+        fetchMyLeaveBalances().catch(() => []),
+        (canReview ? fetchAllLeaves() : fetchMyLeaves()).catch(() => []),
       ])
 
       setLeaveTypes(typesData)
@@ -135,10 +148,14 @@ export default function LeaveManagementView({
 
   // Filtered leaves
   const filteredLeaves = useMemo(() => {
-    return leaves.filter((l) => {
+    const list = leaves.filter((l) => {
       // Type filter
-      if (typeFilter !== 'ALL' && String(l.leaveTypeId) !== typeFilter) {
-        return false
+      if (typeFilter !== 'ALL') {
+        if (typeFilter === 'UNSPECIFIED') {
+          if (l.leaveTypeId) return false
+        } else if (String(l.leaveTypeId) !== typeFilter) {
+          return false
+        }
       }
       // Status filter
       if (statusFilter !== 'ALL' && l.status !== statusFilter) {
@@ -149,12 +166,34 @@ export default function LeaveManagementView({
         const q = searchQuery.toLowerCase()
         const matchesName = l.fullName?.toLowerCase().includes(q)
         const matchesReason = l.reason?.toLowerCase().includes(q)
-        const matchesType = l.leaveType?.toLowerCase().includes(q)
+        const matchesType = (l.leaveType || l.leaveTypeName)?.toLowerCase().includes(q)
         if (!matchesName && !matchesReason && !matchesType) return false
       }
       return true
     })
-  }, [leaves, typeFilter, statusFilter, searchQuery])
+
+    if (!sortKey) return list
+
+    return [...list].sort((a, b) => {
+      let cmp = 0
+      if (sortKey === 'leaveType') {
+        const typeA = (a.leaveType || a.leaveTypeName || 'Not specified').toLowerCase()
+        const typeB = (b.leaveType || b.leaveTypeName || 'Not specified').toLowerCase()
+        cmp = typeA.localeCompare(typeB)
+      } else if (sortKey === 'employee') {
+        const empA = (a.fullName || '').toLowerCase()
+        const empB = (b.fullName || '').toLowerCase()
+        cmp = empA.localeCompare(empB)
+      } else if (sortKey === 'dates') {
+        const dateA = new Date(a.startDate || '').getTime() || 0
+        const dateB = new Date(b.startDate || '').getTime() || 0
+        cmp = dateA - dateB
+      } else if (sortKey === 'status') {
+        cmp = (a.status || '').localeCompare(b.status || '')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [leaves, typeFilter, statusFilter, searchQuery, sortKey, sortDir])
 
   // Status badge styling
   const renderStatus = (status: string) => {
@@ -274,6 +313,7 @@ export default function LeaveManagementView({
                   {t.name} ({t.code})
                 </option>
               ))}
+              <option value="UNSPECIFIED">Not specified</option>
             </select>
           </div>
 
@@ -315,12 +355,34 @@ export default function LeaveManagementView({
           <table className="saas-grid-table leave-grid-table">
             <thead>
               <tr>
-                {canReview && <th>EMPLOYEE</th>}
-                <th>LEAVE TYPE</th>
-                <th>DATES & DURATION</th>
+                {canReview && (
+                  <th onClick={() => handleSort('employee')} style={{ cursor: 'pointer' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span>EMPLOYEE</span>
+                      <ArrowUpDown size={12} color={sortKey === 'employee' ? '#10b981' : '#8a9c90'} />
+                    </div>
+                  </th>
+                )}
+                <th onClick={() => handleSort('leaveType')} style={{ cursor: 'pointer' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <span>LEAVE TYPE</span>
+                    <ArrowUpDown size={12} color={sortKey === 'leaveType' ? '#10b981' : '#8a9c90'} />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('dates')} style={{ cursor: 'pointer' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <span>DATES & DURATION</span>
+                    <ArrowUpDown size={12} color={sortKey === 'dates' ? '#10b981' : '#8a9c90'} />
+                  </div>
+                </th>
                 <th>REASON / DETAILS</th>
                 {canReview && <th>REMAINING BALANCE</th>}
-                <th>STATUS</th>
+                <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <span>STATUS</span>
+                    <ArrowUpDown size={12} color={sortKey === 'status' ? '#10b981' : '#8a9c90'} />
+                  </div>
+                </th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
@@ -357,7 +419,7 @@ export default function LeaveManagementView({
                     {/* Leave Type Badge */}
                     <td>
                       <LeaveTypeBadge
-                        name={l.leaveType || 'Leave'}
+                        name={l.leaveType || l.leaveTypeName || 'Not specified'}
                         code={l.leaveTypeCode}
                         isPaid={l.isPaid}
                       />

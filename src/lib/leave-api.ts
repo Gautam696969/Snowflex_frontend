@@ -36,6 +36,7 @@ export interface LeaveRecord {
   email?: string
   leaveTypeId: number
   leaveType: string
+  leaveTypeName?: string
   leaveTypeCode?: string
   isPaid?: boolean
   startDate: string
