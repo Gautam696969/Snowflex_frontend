@@ -88,13 +88,9 @@ export default function Login() {
             />
             Remember me
           </label>
-          <button
-            className="text-link"
-            type="button"
-            onClick={() => setHelpMessage('Password reset is not available yet.')}
-          >
+          <Link className="text-link" to="/forgot-password">
             Forgot password?
-          </button>
+          </Link>
         </div>
 
         {helpMessage && <p className="form-hint" role="status">{helpMessage}</p>}

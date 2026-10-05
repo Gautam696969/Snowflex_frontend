@@ -31,6 +31,14 @@ export function register(input: { fullName: string; email: string; password: str
   return request('/auth/register', { method: 'POST', body: JSON.stringify(input) })
 }
 
+export function forgotPassword(email: string): Promise<ApiResponse> {
+  return request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+export function resetPassword(input: { token: string; password: string }): Promise<ApiResponse> {
+  return request('/auth/reset-password', { method: 'POST', body: JSON.stringify(input) })
+}
+
 export async function login(input: { email: string; password: string }): Promise<{ token: string; user: SafeUser }> {
   const response = await request<ApiResponse & { data: { token: string; user: SafeUser } }>('/auth/login', {
     method: 'POST', body: JSON.stringify(input),
