@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Bot, Circle, X } from 'lucide-react'
-import type { ChatEntry } from '../hooks/useAiChat'
+import { Bot, Circle, MessageSquarePlus, X } from 'lucide-react'
+import type { ChatEntry } from '../hooks/useWidgetChat'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
 
@@ -16,10 +16,11 @@ interface ChatWindowProps {
   error: string
   onSend: (message: string) => Promise<void>
   onRetry: () => Promise<void>
+  onClear: () => void
   onClose: () => void
 }
 
-export default function ChatWindow({ messages, loading, error, onSend, onRetry, onClose }: ChatWindowProps) {
+export default function ChatWindow({ messages, loading, error, onSend, onRetry, onClear, onClose }: ChatWindowProps) {
   const messagesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function ChatWindow({ messages, loading, error, onSend, onRetry, 
           <strong>Snowflex AI Assistant</strong>
           <span><Circle size={7} fill="currentColor" /> Online</span>
         </div>
+        <button className="floating-chat-close" type="button" onClick={onClear} aria-label="Clear chat" title="Clear chat"><MessageSquarePlus size={16} /></button>
         <button className="floating-chat-close" type="button" onClick={onClose} aria-label="Close chat" title="Close chat"><X size={18} /></button>
       </header>
 

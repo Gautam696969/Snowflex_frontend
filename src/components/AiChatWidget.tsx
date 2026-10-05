@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useAiChat } from '../hooks/useAiChat'
+import { useWidgetChat } from '../hooks/useWidgetChat'
 import ChatLauncherButton from './ChatLauncherButton'
 import ChatWindow from './ChatWindow'
 
 export default function AiChatWidget({ token }: { token: string }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { messages, loading, error, sendMessage, retry } = useAiChat(token)
+  const { messages, loading, error, sendMessage, retry, clearChat } = useWidgetChat(token)
 
   useEffect(() => {
     if (!isOpen) return
@@ -25,6 +25,7 @@ export default function AiChatWidget({ token }: { token: string }) {
           error={error}
           onSend={sendMessage}
           onRetry={retry}
+          onClear={clearChat}
           onClose={() => setIsOpen(false)}
         />
       )}

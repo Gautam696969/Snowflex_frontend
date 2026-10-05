@@ -82,10 +82,27 @@ export interface DashboardData {
 
 export async function getDashboard(token: string, role: string): Promise<DashboardData> {
   const endpoint = role === 'ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
-  const response = await request<ApiResponse & { data: DashboardData }>(`/dashboard/${endpoint}`, {
+  const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/dashboard/${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
-  return response.data
+  const d = response.data || {}
+  return {
+    totalEmployees: Number(d.totalEmployees ?? d.TOTAL_EMPLOYEES ?? 0),
+    activeEmployees: Number(d.activeEmployees ?? d.ACTIVE_EMPLOYEES ?? 0),
+    presentToday: Number(d.presentToday ?? d.PRESENT_TODAY ?? 0),
+    absentToday: Number(d.absentToday ?? d.ABSENT_TODAY ?? 0),
+    lateToday: Number(d.lateToday ?? d.LATE_TODAY ?? 0),
+    pendingLeaves: Number(d.pendingLeaves ?? d.PENDING_LEAVES ?? 0),
+    pendingTasks: Number(d.pendingTasks ?? d.PENDING_TASKS ?? 0),
+    teamSize: Number(d.teamSize ?? d.TEAM_SIZE ?? 0),
+    teamPresentToday: Number(d.teamPresentToday ?? d.TEAM_PRESENT_TODAY ?? 0),
+    teamAbsentToday: Number(d.teamAbsentToday ?? d.TEAM_ABSENT_TODAY ?? 0),
+    pendingLeaveRequests: Number(d.pendingLeaveRequests ?? d.PENDING_LEAVE_REQUESTS ?? 0),
+    attendanceThisMonth: Number(d.attendanceThisMonth ?? d.ATTENDANCE_THIS_MONTH ?? 0),
+    leaveBalance: Number(d.leaveBalance ?? d.LEAVE_BALANCE ?? 0),
+    assignedTasks: Number(d.assignedTasks ?? d.ASSIGNED_TASKS ?? 0),
+    completedTasks: Number(d.completedTasks ?? d.COMPLETED_TASKS ?? 0),
+  }
 }
 
 export async function getEmployees(token: string): Promise<Record<string, unknown>[]> {
@@ -152,9 +169,28 @@ export async function deleteAiConversation(token: string, conversationId: number
 
 export async function sendAiMessage(
   token: string,
-  payload: { conversationId?: number; message: string },
+  payload: { source: 'ai-employee'; conversationId?: number; message: string },
 ): Promise<AiChatResponse> {
   return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
+}
+
+export interface AiWidgetMessage {
+  id: string
+  role: 'assistant'
+  content: string
+  model: string
+  createdAt: string
+}
+
+export async function sendWidgetMessage(
+  token: string,
+  payload: {
+    source: 'widget'
+    message: string
+    history: Array<{ role: 'user' | 'assistant'; content: string }>
+  },
+): Promise<{ message: AiWidgetMessage }> {
+  return apiRequest<{ message: AiWidgetMessage }>('/ai-employee/widget/chat', token, 'POST', payload)
 }
 
 export async function transcribeVoiceAudio(token: string, blob: Blob, language?: string, mimeType?: string): Promise<string> {
