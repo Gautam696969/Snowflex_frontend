@@ -34,6 +34,7 @@ export interface LeaveRecord {
   employeeId: number
   fullName?: string
   email?: string
+  avatarUrl?: string | null
   leaveTypeId: number
   leaveType: string
   leaveTypeName?: string
@@ -96,6 +97,7 @@ async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promis
 
   const res = await fetch(`${apiBase}${endpoint}`, {
     ...options,
+    cache: 'no-store',
     headers,
   })
 

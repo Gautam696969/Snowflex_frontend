@@ -9,11 +9,11 @@ import {
   fetchAllLeaves, approveLeave, rejectLeave, cancelLeave,
   type LeaveType, type LeaveBalance, type LeaveRecord
 } from '../lib/leave-api'
-import { getAvatarBackground, getInitials } from '../lib/avatar'
 import LeaveTypeBadge from './LeaveTypeBadge'
 import LeaveBalanceSummary from './LeaveBalanceSummary'
 import ApplyLeaveModal from './ApplyLeaveModal'
 import LeaveTypesAdminModal from './LeaveTypesAdminModal'
+import UserAvatar from './UserAvatar'
 
 interface LeaveManagementViewProps {
   userRole?: string
@@ -83,6 +83,18 @@ export default function LeaveManagementView({
 
   useEffect(() => {
     void loadAllData()
+    let refreshing = false
+    const refreshWhenVisible = () => {
+      if (document.visibilityState !== 'visible' || refreshing) return
+      refreshing = true
+      void loadAllData().finally(() => { refreshing = false })
+    }
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    return () => {
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
   }, [loadAllData])
 
   const handleRefresh = async () => {
@@ -402,12 +414,7 @@ export default function LeaveManagementView({
                     {canReview && (
                       <td>
                         <div className="avatar-user-cell">
-                          <span
-                            className="avatar-circle"
-                            style={{ background: getAvatarBackground(l.fullName || 'User') }}
-                          >
-                            {getInitials(l.fullName || 'User')}
-                          </span>
+                          <UserAvatar name={l.fullName || 'User'} avatarUrl={l.avatarUrl} size={34} className="avatar-circle" />
                           <div className="avatar-info-copy">
                             <strong>{l.fullName || 'Employee'}</strong>
                             {l.email && <small>{l.email}</small>}

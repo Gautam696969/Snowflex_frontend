@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, Mic, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, User, X, Square } from 'lucide-react'
+import { Bot, Mic, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, X, Square } from 'lucide-react'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import Waveform from './Waveform'
 import {
@@ -11,6 +11,7 @@ import {
 } from '../lib/auth-api'
 import type { AiConversation, AiMessage } from '../lib/auth-api'
 import { renderMarkdown } from '../lib/render-markdown'
+import UserAvatar from './UserAvatar'
 
 const MAX_MESSAGE_LENGTH = 4000
 
@@ -36,9 +37,11 @@ function formatClock(value: string): string {
 interface AiAssistantProps {
   token: string
   onError: (message: string) => void
+  userName: string
+  avatarUrl?: string | null
 }
 
-export default function AiAssistant({ token, onError }: AiAssistantProps) {
+export default function AiAssistant({ token, onError, userName, avatarUrl }: AiAssistantProps) {
   const [conversations, setConversations] = useState<AiConversation[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
   const [messages, setMessages] = useState<AiMessage[]>([])
@@ -312,7 +315,9 @@ export default function AiAssistant({ token, onError }: AiAssistantProps) {
 
           {messages.map((message) => (
             <article key={message.id} className={message.role === 'user' ? 'ai-bubble user' : 'ai-bubble assistant'}>
-              <span className="ai-bubble-avatar">{message.role === 'user' ? <User size={14} /> : <Sparkles size={14} />}</span>
+              {message.role === 'user'
+                ? <UserAvatar name={userName} avatarUrl={avatarUrl} size={27} className="ai-bubble-avatar" />
+                : <span className="ai-bubble-avatar"><Sparkles size={14} /></span>}
               <div className="ai-bubble-body">
                 <div className="ai-bubble-content">{renderMarkdown(message.content)}</div>
                 <small className="ai-bubble-meta">

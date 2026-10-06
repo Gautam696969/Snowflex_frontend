@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { User, Shield, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
 import type { SafeUser } from '../lib/auth-api'
-import { getAvatarBackground, getInitials, getFullAvatarUrl } from '../lib/avatar'
+import UserAvatar from './UserAvatar'
 import LogoutButton from './LogoutButton'
 
 interface TopProfileDropdownProps {
@@ -67,20 +67,7 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
         aria-label="User profile menu"
       >
         <div className="topbar-profile-avatar-wrap">
-          {user?.avatarUrl ? (
-            <img
-              src={getFullAvatarUrl(user.avatarUrl) || ''}
-              alt={displayName}
-              className="topbar-profile-avatar-img"
-            />
-          ) : (
-            <span
-              className="topbar-profile-avatar-initials"
-              style={{ background: getAvatarBackground(displayName) }}
-            >
-              {getInitials(displayName)}
-            </span>
-          )}
+          <UserAvatar name={displayName} avatarUrl={user?.avatarUrl} size={32} className="topbar-profile-avatar-initials" />
           <span className="topbar-profile-status-indicator" title="Online" />
         </div>
         <span className="topbar-profile-name">{displayName}</span>
@@ -101,20 +88,7 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
             title="Click to view full profile"
           >
             <div className="topbar-card-avatar-wrap">
-              {user?.avatarUrl ? (
-                <img
-                  src={getFullAvatarUrl(user.avatarUrl) || ''}
-                  alt={displayName}
-                  className="topbar-card-avatar-img"
-                />
-              ) : (
-                <span
-                  className="topbar-card-avatar-initials"
-                  style={{ background: getAvatarBackground(displayName) }}
-                >
-                  {getInitials(displayName)}
-                </span>
-              )}
+              <UserAvatar name={displayName} avatarUrl={user?.avatarUrl} size={38} className="topbar-card-avatar-initials" />
             </div>
             <div className="topbar-card-user-info">
               <div className="topbar-card-name-row">

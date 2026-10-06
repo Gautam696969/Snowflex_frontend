@@ -1,7 +1,7 @@
 import { useState, useRef, type ChangeEvent } from 'react'
 import { Camera, Trash2, Check, X, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { getInitials, getAvatarBackground, getFullAvatarUrl } from '../lib/avatar'
+import UserAvatar from './UserAvatar'
 
 interface AvatarUploaderProps {
   fullName: string
@@ -26,17 +26,17 @@ export default function AvatarUploader({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Allowed mime types
-    const validMimes = ['image/jpeg', 'image/png', 'image/webp']
-    if (!validMimes.includes(file.type.toLowerCase())) {
-      toast.error('Invalid image type. Please select a JPG, PNG, or WebP file.')
+    // Allow image MIME types or image file extensions
+    const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|svg|bmp|avif|heic|heif|tiff?|ico|jfif)$/i.test(file.name)
+    if (!isImage) {
+      toast.error('Invalid file type. Please select an image file.')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
 
-    // 2 MB max size
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size exceeds 2 MB. Please select a smaller photo.')
+    // 10 MB max size
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size exceeds 10 MB. Please select a smaller photo.')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
@@ -85,26 +85,12 @@ export default function AvatarUploader({
     }
   }
 
-  const currentDisplayUrl = previewUrl || getFullAvatarUrl(avatarUrl)
+  const currentDisplayUrl = previewUrl || avatarUrl
 
   return (
     <div className="avatar-uploader-container">
       <div className="avatar-preview-wrap">
-        {currentDisplayUrl ? (
-          <img
-            src={currentDisplayUrl}
-            alt={fullName}
-            className="avatar-photo-large"
-          />
-        ) : (
-          <div
-            className="avatar-initials-large"
-            style={{ background: getAvatarBackground(fullName) }}
-            aria-label={fullName}
-          >
-            {getInitials(fullName)}
-          </div>
-        )}
+        <UserAvatar name={fullName} avatarUrl={currentDisplayUrl} size={104} className="avatar-initials-large" />
 
         {/* Floating Quick Camera Button */}
         <button
@@ -120,7 +106,7 @@ export default function AvatarUploader({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           style={{ display: 'none' }}
           onChange={handleFileChange}
           aria-label="Upload profile photo"
@@ -190,7 +176,7 @@ export default function AvatarUploader({
         )}
       </div>
       <span className="avatar-guidance">
-        Allowed formats: JPG, PNG, WebP (Max 2 MB)
+        Allowed formats: Any image format (JPG, PNG, WebP, GIF, SVG, BMP, AVIF, etc. - Max 10 MB)
       </span>
     </div>
   )

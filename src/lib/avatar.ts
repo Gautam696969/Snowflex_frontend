@@ -29,3 +29,9 @@ export function getFullAvatarUrl(url?: string | null): string | null {
   const origin = apiBase.replace(/\/api\/?$/, '')
   return `${origin}${url.startsWith('/') ? '' : '/'}${url}`
 }
+
+export const AVATAR_UPDATED_EVENT = 'snowflex:avatar-updated'
+
+export function notifyAvatarUpdated(avatarUrl: string | null): void {
+  window.dispatchEvent(new CustomEvent(AVATAR_UPDATED_EVENT, { detail: { avatarUrl } }))
+}

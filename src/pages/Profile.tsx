@@ -15,10 +15,10 @@ import LogoutButton from '../components/LogoutButton'
 import TopProfileDropdown from '../components/TopProfileDropdown'
 import NotificationBell from '../components/NotificationBell'
 import UnreadBadge from '../components/UnreadBadge'
+import UserAvatar from '../components/UserAvatar'
 import { useNotifications } from '../hooks/useNotifications'
 import { clearToken, getCurrentUser, readToken, type SafeUser } from '../lib/auth-api'
 import { useProfile } from '../hooks/useProfile'
-import { getAvatarBackground, getInitials, getFullAvatarUrl } from '../lib/avatar'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -198,20 +198,7 @@ export default function Profile() {
             title="My Profile & Security"
             onClick={() => setActiveTab('info')}
           >
-            {currentUser?.avatarUrl ? (
-              <img
-                src={getFullAvatarUrl(currentUser.avatarUrl) || ''}
-                alt={currentUser.fullName}
-                className="profile-avatar-img"
-              />
-            ) : (
-              <span
-                className="profile-avatar"
-                style={{ background: getAvatarBackground(currentUser?.fullName || 'User') }}
-              >
-                {getInitials(currentUser?.fullName || 'User')}
-              </span>
-            )}
+            <UserAvatar name={currentUser?.fullName || 'User'} avatarUrl={currentUser?.avatarUrl} size={34} className="profile-avatar" />
             <span className="profile-copy">
               <strong>{currentUser?.fullName || 'User'}</strong>
               <small>{role}</small>

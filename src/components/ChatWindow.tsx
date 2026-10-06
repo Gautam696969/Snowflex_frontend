@@ -12,6 +12,8 @@ const suggestions = [
 
 interface ChatWindowProps {
   messages: ChatEntry[]
+  userName: string
+  avatarUrl?: string | null
   loading: boolean
   error: string
   onSend: (message: string) => Promise<void>
@@ -20,7 +22,7 @@ interface ChatWindowProps {
   onClose: () => void
 }
 
-export default function ChatWindow({ messages, loading, error, onSend, onRetry, onClear, onClose }: ChatWindowProps) {
+export default function ChatWindow({ messages, userName, avatarUrl, loading, error, onSend, onRetry, onClear, onClose }: ChatWindowProps) {
   const messagesRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function ChatWindow({ messages, loading, error, onSend, onRetry, 
               ))}
             </div>
           </div>
-        ) : messages.map((message) => <ChatMessage message={message} key={message.id} />)}
+        ) : messages.map((message) => <ChatMessage message={message} userName={userName} avatarUrl={avatarUrl} key={message.id} />)}
 
         {loading && (
           <div className="floating-chat-typing-row" role="status" aria-label="AI is typing">

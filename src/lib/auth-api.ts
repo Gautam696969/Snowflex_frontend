@@ -12,6 +12,19 @@ interface ApiResponse {
   data?: unknown
 }
 
+function normalizeAvatarFields<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => normalizeAvatarFields(item)) as T
+  if (!value || typeof value !== 'object') return value
+
+  const normalized = Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeAvatarFields(item)]),
+  )
+  const record = value as Record<string, unknown>
+  const avatar = record.avatarUrl ?? record.avatar_url ?? record.profileImage ?? record.profile_image ?? record.photo
+  if (avatar !== undefined) normalized.avatarUrl = avatar
+  return normalized as T
+}
+
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const tokenKey = 'snowflex.auth.token'
 
@@ -25,7 +38,7 @@ async function request<T extends ApiResponse>(path: string, options: RequestInit
   if (!response.ok || !body?.success) {
     throw new Error(body?.message || 'Unable to reach the authentication service.')
   }
-  return body
+  return { ...body, data: normalizeAvatarFields(body.data) } as T
 }
 
 export function register(input: { fullName: string; email: string; password: string }): Promise<ApiResponse> {
