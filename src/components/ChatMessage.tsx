@@ -2,6 +2,7 @@ import { Bot, Check, Clock3, X } from 'lucide-react'
 import type { ChatEntry } from '../hooks/useWidgetChat'
 import { renderMarkdown } from '../lib/render-markdown'
 import UserAvatar from './UserAvatar'
+import LeaveConfirmationCard from './LeaveConfirmationCard'
 
 function formatTime(value: string) {
   const date = new Date(value)
@@ -10,7 +11,23 @@ function formatTime(value: string) {
     : date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ChatMessage({ message, userName, avatarUrl }: { message: ChatEntry; userName: string; avatarUrl?: string | null }) {
+interface ChatMessageProps {
+  message: ChatEntry
+  userName: string
+  avatarUrl?: string | null
+  onConfirm?: (messageId: string | number, token: string) => void
+  onEdit?: (text: string) => void
+  onCancel?: (messageId: string | number) => void
+}
+
+export default function ChatMessage({
+  message,
+  userName,
+  avatarUrl,
+  onConfirm,
+  onEdit,
+  onCancel,
+}: ChatMessageProps) {
   const isUser = message.role === 'user'
 
   return (
@@ -19,6 +36,22 @@ export default function ChatMessage({ message, userName, avatarUrl }: { message:
       <div className="floating-chat-message-stack">
         <div className="floating-chat-bubble">
           {isUser ? message.content : renderMarkdown(message.content)}
+
+          {message.confirmation && (
+            <LeaveConfirmationCard
+              confirmation={message.confirmation}
+              status={message.confirmationStatus}
+              error={message.confirmationError}
+              result={message.confirmationResult}
+              onConfirm={() => onConfirm?.(message.id, message.confirmation!.token)}
+              onEdit={() => {
+                const conf = message.confirmation!
+                const editPrompt = `Apply ${conf.leaveTypeName} from ${conf.startDate} to ${conf.endDate}, reason: ${conf.reason}`
+                onEdit?.(editPrompt)
+              }}
+              onCancel={() => onCancel?.(message.id)}
+            />
+          )}
         </div>
         <small className="floating-chat-timestamp">
           {isUser && message.status === 'sending' && <Clock3 size={11} aria-label="Sending" />}

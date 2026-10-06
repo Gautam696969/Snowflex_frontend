@@ -5,7 +5,17 @@ import ChatWindow from './ChatWindow'
 
 export default function AiChatWidget({ token, userName, avatarUrl }: { token: string; userName: string; avatarUrl?: string | null }) {
   const [isOpen, setIsOpen] = useState(false)
-  const { messages, loading, error, sendMessage, retry, clearChat } = useWidgetChat(token)
+  const {
+    messages,
+    loading,
+    progressText,
+    error,
+    sendMessage,
+    confirmLeave,
+    cancelConfirmation,
+    retry,
+    clearChat,
+  } = useWidgetChat(token)
 
   useEffect(() => {
     if (!isOpen) return
@@ -24,8 +34,11 @@ export default function AiChatWidget({ token, userName, avatarUrl }: { token: st
           userName={userName}
           avatarUrl={avatarUrl}
           loading={loading}
+          progressText={progressText}
           error={error}
           onSend={sendMessage}
+          onConfirm={confirmLeave}
+          onCancel={cancelConfirmation}
           onRetry={retry}
           onClear={clearChat}
           onClose={() => setIsOpen(false)}

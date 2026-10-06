@@ -958,6 +958,224 @@ a { color: inherit; }
 :root[data-theme='dark'] .floating-chat-input-wrap textarea { color: #edf2ec; }
 :root[data-theme='dark'] .floating-chat-input-wrap textarea::placeholder { color: #87978b; }
 :root[data-theme='dark'] .floating-chat-send { color: #182119; background: #c6e65c; }
+
+/* AI Agent Leave Confirmation Card */
+.leave-confirmation-card {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #dce6d6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #243a33;
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(17,40,28,.04);
+}
+.leave-confirmation-card.confirmed {
+  border-color: #a7d9b7;
+  background: #f6fcf8;
+}
+.leave-confirmation-card.cancelled {
+  border-color: #e5eae3;
+  background: #fbfcfb;
+  opacity: 0.85;
+}
+.leave-confirmation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #edf2ea;
+}
+.leave-confirmation-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: #1f3629;
+  font-size: 11.5px;
+}
+.leave-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.badge-paid {
+  background: #eaf4e2;
+  color: #2c5938;
+  border: 1px solid #c9e3bc;
+}
+.badge-unpaid {
+  background: #f1f3f0;
+  color: #637367;
+  border: 1px solid #dfe5dc;
+}
+.leave-status-pill.pending {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #a0680d;
+  background: #fef7e6;
+  border: 1px solid #f6deb2;
+}
+.leave-confirmation-body {
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+}
+.leave-confirmation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.leave-confirmation-row .row-label {
+  color: #728177;
+  min-width: 78px;
+  flex-shrink: 0;
+}
+.leave-confirmation-row .row-value {
+  color: #22372c;
+  word-break: break-word;
+}
+.leave-confirmation-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  color: #934c3f;
+  background: #fff5f3;
+  border: 1px solid #efd4cc;
+  font-size: 10px;
+}
+.leave-confirmation-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.agent-btn-confirm {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 5px;
+  background: #24523c;
+  color: #f5f8ef;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.agent-btn-confirm:hover {
+  background: #193d2b;
+}
+.agent-btn-edit {
+  padding: 5px 10px;
+  border: 1px solid #d0dbcc;
+  border-radius: 5px;
+  background: #f5f8f3;
+  color: #384f40;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.agent-btn-edit:hover {
+  background: #e9efe5;
+}
+.agent-btn-cancel {
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #79897e;
+  font-size: 11px;
+  cursor: pointer;
+}
+.agent-btn-cancel:hover {
+  color: #b54738;
+}
+.leave-submitting-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #24523c;
+  font-size: 11px;
+  font-weight: 500;
+}
+.floating-chat-progress-text {
+  font-size: 10.5px;
+  color: #5d6f63;
+  margin-left: 2px;
+}
+.leave-confirmation-msg {
+  margin: 0;
+  color: #2b3f33;
+  font-size: 11px;
+}
+.leave-confirmation-subtext {
+  margin: 0;
+  color: #78877c;
+  font-size: 10.5px;
+}
+.leave-confirmation-footer {
+  margin-top: 2px;
+}
+.leave-confirmation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #24523c;
+  font-weight: 700;
+  font-size: 11px;
+  text-decoration: underline;
+}
+.leave-confirmation-link:hover {
+  color: #173827;
+}
+
+/* Dark mode for leave confirmation card */
+:root[data-theme='dark'] .leave-confirmation-card {
+  border-color: #38463c;
+  background: #202a24;
+  color: #e3eae4;
+}
+:root[data-theme='dark'] .leave-confirmation-card.confirmed {
+  border-color: #32583f;
+  background: #1b2e22;
+}
+:root[data-theme='dark'] .leave-confirmation-header {
+  border-bottom-color: #2c382f;
+}
+:root[data-theme='dark'] .leave-confirmation-title {
+  color: #e3eae4;
+}
+:root[data-theme='dark'] .leave-confirmation-row .row-label {
+  color: #8fa093;
+}
+:root[data-theme='dark'] .leave-confirmation-row .row-value {
+  color: #e5ece6;
+}
+:root[data-theme='dark'] .agent-btn-edit {
+  border-color: #445447;
+  background: #27342b;
+  color: #d8e4db;
+}
+:root[data-theme='dark'] .agent-btn-edit:hover {
+  background: #314236;
+}
+:root[data-theme='dark'] .leave-confirmation-link {
+  color: #80c49b;
+}
+:root[data-theme='dark'] .floating-chat-progress-text {
+  color: #9baa9f;
+}
 :root[data-theme='dark'] .floating-chat-send:disabled { color: #849188; background: #303a33; }
 :root[data-theme='dark'] .chat-launcher-tooltip { border-color: #435148; color: #e8efe9; background: #222c26; }
 
