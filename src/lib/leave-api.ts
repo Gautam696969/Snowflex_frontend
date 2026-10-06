@@ -32,6 +32,7 @@ export interface LeaveBalance {
 export interface LeaveRecord {
   id: number
   employeeId: number
+  requesterUserId?: number
   fullName?: string
   email?: string
   avatarUrl?: string | null
@@ -50,6 +51,10 @@ export interface LeaveRecord {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
   approvedBy?: number | null
   approvedAt?: string | null
+  approverName?: string | null
+  decidedAt?: string | null
+  decisionNote?: string | null
+  autoApproved?: boolean | null
   rejectionReason?: string | null
   createdAt: string
   quotaTotal?: number
@@ -81,6 +86,13 @@ interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
+  error?: string | null
+}
+
+export interface ApiError extends Error {
+  status?: number
+  currentStatus?: string
+  isConflict?: boolean
 }
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -101,9 +113,13 @@ async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promis
     headers,
   })
 
-  const json: ApiResponse<T> = await res.json().catch(() => ({ success: false, message: 'Invalid server response' }))
+  const json = await res.json().catch(() => ({ success: false, message: 'Invalid server response' })) as ApiResponse<T> & { currentStatus?: string }
   if (!res.ok || !json.success) {
-    throw new Error(json.message || 'Operation failed')
+    const error = new Error(json.error || json.message || 'Operation failed') as ApiError
+    error.status = res.status
+    error.currentStatus = json.currentStatus
+    error.isConflict = res.status === 409 || /already decided|not pending/i.test(error.message)
+    throw error
   }
 
   return json.data as T
@@ -161,25 +177,30 @@ export async function fetchMyLeaves(): Promise<LeaveRecord[]> {
   return authFetch<LeaveRecord[]>('/leaves/me')
 }
 
-export async function fetchAllLeaves(): Promise<LeaveRecord[]> {
-  return authFetch<LeaveRecord[]>('/leaves')
+export async function fetchAllLeaves(scope: 'team' | 'admin' = 'team'): Promise<LeaveRecord[]> {
+  return authFetch<LeaveRecord[]>(`/leaves?scope=${scope}`)
 }
 
-export async function approveLeave(id: number): Promise<void> {
-  return authFetch<void>(`/leaves/${id}/approve`, {
+export async function fetchLeaveActionCount(): Promise<number> {
+  const result = await authFetch<{ count: number }>('/leaves/badge-count')
+  return result.count
+}
+
+export async function approveLeave(id: number): Promise<LeaveRecord> {
+  return authFetch<LeaveRecord>(`/leaves/${id}/approve`, {
     method: 'PATCH',
   })
 }
 
-export async function rejectLeave(id: number, reason: string): Promise<void> {
-  return authFetch<void>(`/leaves/${id}/reject`, {
+export async function rejectLeave(id: number, reason?: string): Promise<LeaveRecord> {
+  return authFetch<LeaveRecord>(`/leaves/${id}/reject`, {
     method: 'PATCH',
-    body: JSON.stringify({ reason }),
+    body: JSON.stringify(reason ? { reason } : {}),
   })
 }
 
-export async function cancelLeave(id: number): Promise<void> {
-  return authFetch<void>(`/leaves/${id}/cancel`, {
+export async function cancelLeave(id: number): Promise<LeaveRecord | void> {
+  return authFetch<LeaveRecord | void>(`/leaves/${id}/cancel`, {
     method: 'PATCH',
   })
 }

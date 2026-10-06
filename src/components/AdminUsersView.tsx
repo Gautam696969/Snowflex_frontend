@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'react-hot-toast'
 import {
-  Shield, Users, Briefcase, User, Search, RefreshCw,
+  Shield, ShieldCheck, Users, Briefcase, User, Search, RefreshCw,
   CheckCircle2, X, ShieldAlert
 } from 'lucide-react'
 import { updateUserRole, type SafeUser } from '../lib/auth-api'
@@ -15,6 +15,7 @@ interface AdminUsersViewProps {
 }
 
 const roleDescriptions: Record<string, { desc: string; badgeClass: string }> = {
+  SUPER_ADMIN: { desc: 'Top-level authority: govern admin access and decide Admin and Super Admin leave requests.', badgeClass: 'role-super-admin' },
   ADMIN: { desc: 'Full authority: manage users, system settings, database diagnostics & mail engine.', badgeClass: 'role-admin' },
   HR: { desc: 'Workforce operations: employee directory, department administration & leave reviews.', badgeClass: 'role-hr' },
   MANAGER: { desc: 'Team management: supervise direct reports, task assignments & team leaves.', badgeClass: 'role-manager' },
@@ -31,11 +32,12 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
   // Calculations for role metrics
   const counts = useMemo(() => {
     const total = users.length
+    const superAdmins = users.filter((u) => u.role === 'SUPER_ADMIN').length
     const admins = users.filter((u) => u.role === 'ADMIN').length
     const hr = users.filter((u) => u.role === 'HR').length
     const managers = users.filter((u) => u.role === 'MANAGER').length
     const employees = users.filter((u) => u.role === 'EMPLOYEE' || u.role === 'USER').length
-    return { total, admins, hr, managers, employees }
+    return { total, superAdmins, admins, hr, managers, employees }
   }, [users])
 
   // Filtered users
@@ -57,7 +59,8 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
 
   async function handleSaveRole() {
     if (!editingUser) return
-    if (editingUser.id === currentUserId && selectedRole !== 'ADMIN') {
+    const currentRole = editingUser.role === 'USER' ? 'EMPLOYEE' : editingUser.role
+    if (editingUser.id === currentUserId && currentRole === 'ADMIN' && selectedRole !== 'ADMIN') {
       toast.error('You cannot demote yourself from the Administrator role.')
       return
     }
@@ -92,6 +95,14 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
           <div>
             <div className="admin-kpi-num">{counts.admins}</div>
             <div className="admin-kpi-label">Administrators</div>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card" onClick={() => setRoleFilter('SUPER_ADMIN')} style={{ cursor: 'pointer' }}>
+          <div className="admin-kpi-icon admin"><ShieldCheck size={18} /></div>
+          <div>
+            <div className="admin-kpi-num">{counts.superAdmins}</div>
+            <div className="admin-kpi-label">Super Admins</div>
           </div>
         </div>
 
@@ -139,7 +150,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
         </div>
 
         <div className="admin-filters">
-          {['ALL', 'ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'].map((r) => (
+          {['ALL', 'SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'].map((r) => (
             <button
               key={r}
               type="button"
@@ -196,8 +207,8 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
                     </td>
                     <td>
                       <span className={`dash-role-badge ${roleDescriptions[normalizedRole]?.badgeClass || 'role-employee'}`}>
-                        {normalizedRole === 'ADMIN' ? <Shield size={11} /> : normalizedRole === 'HR' ? <Users size={11} /> : normalizedRole === 'MANAGER' ? <Briefcase size={11} /> : <User size={11} />}
-                        {normalizedRole}
+                        {normalizedRole === 'SUPER_ADMIN' ? <ShieldCheck size={11} /> : normalizedRole === 'ADMIN' ? <Shield size={11} /> : normalizedRole === 'HR' ? <Users size={11} /> : normalizedRole === 'MANAGER' ? <Briefcase size={11} /> : <User size={11} />}
+                        {normalizedRole === 'SUPER_ADMIN' ? 'SUPER ADMIN' : normalizedRole}
                       </span>
                     </td>
                     <td>
@@ -241,7 +252,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
             <div className="admin-modal-body">
               <label className="admin-modal-label">Select System Role</label>
               <div className="admin-role-options">
-                {(['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] as const).map((r) => (
+                {(['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'] as const).map((r) => (
                   <div
                     key={r}
                     className={`admin-role-option-card ${selectedRole === r ? 'selected' : ''}`}
@@ -249,8 +260,8 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
                   >
                     <div className="admin-role-option-head">
                       <span className={`dash-role-badge ${roleDescriptions[r].badgeClass}`}>
-                        {r === 'ADMIN' ? <Shield size={12} /> : r === 'HR' ? <Users size={12} /> : r === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
-                        {r}
+                        {r === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : r === 'ADMIN' ? <Shield size={12} /> : r === 'HR' ? <Users size={12} /> : r === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
+                        {r === 'SUPER_ADMIN' ? 'SUPER ADMIN' : r}
                       </span>
                       {selectedRole === r && <CheckCircle2 size={16} className="admin-role-checked" />}
                     </div>
@@ -259,7 +270,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
                 ))}
               </div>
 
-              {editingUser.id === currentUserId && selectedRole !== 'ADMIN' && (
+              {editingUser.id === currentUserId && editingUser.role === 'ADMIN' && selectedRole !== 'ADMIN' && (
                 <div className="admin-warning-alert">
                   <ShieldAlert size={16} />
                   <span>Caution: Demoting your own account will remove your administrator access immediately.</span>
