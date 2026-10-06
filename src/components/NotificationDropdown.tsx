@@ -3,6 +3,7 @@ import { CheckCheck, BellOff, ArrowRight } from 'lucide-react'
 import type { NotificationItem as NotificationItemType } from '../lib/notification-api'
 import NotificationItem from './NotificationItem'
 import UnreadBadge from './UnreadBadge'
+import { SkeletonNotifications } from './Skeleton'
 
 interface NotificationDropdownProps {
   notifications: NotificationItemType[]
@@ -63,10 +64,7 @@ export default function NotificationDropdown({
       {/* Body List */}
       <div className="notif-dropdown-body">
         {loading && notifications.length === 0 ? (
-          <div className="notif-loading-state">
-            <span className="notif-spinner" />
-            <small>Fetching notifications...</small>
-          </div>
+          <SkeletonNotifications count={4} />
         ) : notifications.length === 0 ? (
           <div className="notif-empty-state">
             <div className="notif-empty-icon-wrap">

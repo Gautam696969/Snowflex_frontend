@@ -6,12 +6,14 @@ import {
 } from 'lucide-react'
 import { updateUserRole, type SafeUser } from '../lib/auth-api'
 import UserAvatar from './UserAvatar'
+import { SkeletonKpiGrid, SkeletonTable } from './Skeleton'
 
 interface AdminUsersViewProps {
   users: SafeUser[]
   token: string
   currentUserId: number
   onRefresh: () => void
+  loading?: boolean
 }
 
 const roleDescriptions: Record<string, { desc: string; badgeClass: string }> = {
@@ -22,7 +24,7 @@ const roleDescriptions: Record<string, { desc: string; badgeClass: string }> = {
   EMPLOYEE: { desc: 'Standard staff: self-service attendance, leave requests & assigned tasks.', badgeClass: 'role-employee' },
 }
 
-export default function AdminUsersView({ users, token, currentUserId, onRefresh }: AdminUsersViewProps) {
+export default function AdminUsersView({ users, token, currentUserId, onRefresh, loading = false }: AdminUsersViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [editingUser, setEditingUser] = useState<SafeUser | null>(null)
@@ -76,6 +78,17 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
     } finally {
       setSaving(false)
     }
+  }
+
+  if (loading && users.length === 0) {
+    return (
+      <div className="admin-users-view">
+        <SkeletonKpiGrid count={4} />
+        <div style={{ marginTop: '24px' }}>
+          <SkeletonTable columns={5} rows={6} hasAvatar={true} />
+        </div>
+      </div>
+    )
   }
 
   return (

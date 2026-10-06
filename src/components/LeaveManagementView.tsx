@@ -15,6 +15,7 @@ import LeaveBalanceSummary from './LeaveBalanceSummary'
 import ApplyLeaveModal from './ApplyLeaveModal'
 import LeaveTypesAdminModal from './LeaveTypesAdminModal'
 import UserAvatar from './UserAvatar'
+import { SkeletonTable } from './Skeleton'
 
 interface LeaveManagementViewProps {
   userRole?: string
@@ -457,22 +458,8 @@ export default function LeaveManagementView({
 
       {/* Leave Requests Table */}
       <div className="saas-table-container leave-table-container">
-        {loadErrors[activeTab] ? (
-          <div className="leave-load-error leave-table-error" role="alert">
-            <div>
-              <strong>Unable to load {activeTab === 'my' ? 'your' : activeTab === 'admin' ? 'Admin' : 'team'} leave requests.</strong>
-              <p>{loadErrors[activeTab]}</p>
-            </div>
-            <button type="button" className="secondary-action" onClick={() => void loadAllData()} disabled={loading}>
-              <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
-              <span>Retry</span>
-            </button>
-          </div>
-        ) : loading && leaves.length === 0 ? (
-          <div className="notif-loading-state" style={{ padding: '60px 20px' }}>
-            <span className="notif-spinner" />
-            <span>Loading leave records...</span>
-          </div>
+        {loading && leaves.length === 0 ? (
+          <SkeletonTable columns={canReview ? 7 : 6} rows={5} hasAvatar={canReview} />
         ) : filteredLeaves.length === 0 ? (
           <div className="notif-empty-state" style={{ padding: '60px 20px' }}>
             <CalendarDays size={36} color="#8a9c90" strokeWidth={1.5} style={{ marginBottom: '10px' }} />
@@ -690,7 +677,8 @@ export default function LeaveManagementView({
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
           leaveTypes={leaveTypes}
-          onRefresh={async () => { await loadAllData() }}
+          onRefresh={loadAllData}
+          loading={loading}
         />
       )}
 

@@ -28,7 +28,7 @@ import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
 import { useNotifications } from '../hooks/useNotifications'
-import { fetchLeaveActionCount } from '../lib/leave-api'
+import { SkeletonOverview, SkeletonTable, SkeletonCards } from '../components/Skeleton'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
@@ -1134,6 +1134,7 @@ export default function Dashboard() {
               onRefresh={() => {
                 if (token && user) void loadData(token, user, 'users')
               }}
+              loading={loading}
             />
           ) : view === 'system' ? (
             <AdminSystemView
@@ -1152,8 +1153,11 @@ export default function Dashboard() {
               token={token || ''}
             />
           ) : view === 'overview' ? (
-            <>
-              {/* 4 Premium Metric Cards */}
+            loading && !stats ? (
+              <SkeletonOverview />
+            ) : (
+              <>
+                {/* 4 Premium Metric Cards */}
               <div className="kpi-metric-grid">
                 {metrics.map(({ label, value, detail, icon: Icon, iconClass, trend, trendClass }) => (
                   <article className="kpi-card" key={label}>
@@ -1340,6 +1344,7 @@ export default function Dashboard() {
                 </div>
               </section>
             </>
+            )
           ) : (
             /* SaaS Modern Data Table / Cards Grid */
             <section className="saas-table-card">
@@ -1423,11 +1428,15 @@ export default function Dashboard() {
               </div>
 
               {loading ? (
-                <div className="saas-empty-box">
-                  <div className="live-loader-ring" style={{ width: '38px', height: '38px' }}><i /><i /><i /></div>
-                  <h3 style={{ marginTop: '14px' }}>Loading {activeItem?.label} records…</h3>
-                  <p>Streaming from Snowflake cloud warehouse</p>
-                </div>
+                viewMode === 'cards' && isManagementView ? (
+                  <SkeletonCards count={6} />
+                ) : (
+                  <SkeletonTable
+                    columns={view === 'employees' ? (role === 'ADMIN' ? 7 : 6) : view === 'departments' ? 4 : 5}
+                    rows={6}
+                    hasAvatar={view === 'employees'}
+                  />
+                )
               ) : filteredRows.length === 0 ? (
                 <div className="saas-empty-box">
                   <div className="empty-icon-wrap">

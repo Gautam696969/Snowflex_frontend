@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import AuthLayout from '../layouts/AuthLayout'
 import { clearToken, getCurrentUser, logout, readToken } from '../lib/auth-api'
 import type { SafeUser } from '../lib/auth-api'
+import { SkeletonAccount } from '../components/Skeleton'
 
 export default function Account() {
   const navigate = useNavigate()
@@ -50,7 +51,7 @@ export default function Account() {
   return (
     <AuthLayout title="Your account" description="Your current Snowflex sign-in details.">
       {loading ? (
-        <p className="form-hint" role="status">Checking your session...</p>
+        <SkeletonAccount />
       ) : user ? (
         <div className="account-card">
           <div className="account-avatar" aria-hidden="true">{user.fullName.slice(0, 1).toUpperCase()}</div>

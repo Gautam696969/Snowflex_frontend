@@ -1,5 +1,6 @@
 import type { LeaveBalance } from '../lib/leave-api'
 import { Sparkles } from 'lucide-react'
+import { SkeletonLeaveBalances } from './Skeleton'
 
 interface LeaveBalanceSummaryProps {
   balances: LeaveBalance[]
@@ -13,12 +14,7 @@ export default function LeaveBalanceSummary({
   onSelectType,
 }: LeaveBalanceSummaryProps) {
   if (loading && balances.length === 0) {
-    return (
-      <div className="leave-balance-loading">
-        <span className="notif-spinner" />
-        <span>Loading your leave balances...</span>
-      </div>
-    )
+    return <SkeletonLeaveBalances count={4} />
   }
 
   if (balances.length === 0) {
