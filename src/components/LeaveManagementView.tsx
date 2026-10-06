@@ -139,9 +139,12 @@ export default function LeaveManagementView({
     }
     window.addEventListener('focus', refreshWhenVisible)
     document.addEventListener('visibilitychange', refreshWhenVisible)
+    const handleLeavesUpdated = () => { void loadAllData() }
+    window.addEventListener('leaves-updated', handleLeavesUpdated)
     return () => {
       window.removeEventListener('focus', refreshWhenVisible)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('leaves-updated', handleLeavesUpdated)
     }
   }, [loadAllData])
 

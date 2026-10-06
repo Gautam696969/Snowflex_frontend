@@ -1,13 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Bot, Circle, MessageSquarePlus, X } from 'lucide-react'
 import type { ChatEntry } from '../hooks/useWidgetChat'
 import ChatInput from './ChatInput'
 import ChatMessage from './ChatMessage'
 
 const suggestions = [
-  'Who is absent today?',
-  'Show pending leaves',
-  'Summarize attendance',
+  'Apply leave',
+  'My leave balance',
+  'Status of my last leave',
 ]
 
 interface ChatWindowProps {
@@ -15,20 +15,46 @@ interface ChatWindowProps {
   userName: string
   avatarUrl?: string | null
   loading: boolean
+  progressText?: string
   error: string
   onSend: (message: string) => Promise<void>
+  onConfirm: (messageId: string | number, token: string) => void
+  onCancel: (messageId: string | number) => void
   onRetry: () => Promise<void>
   onClear: () => void
   onClose: () => void
 }
 
-export default function ChatWindow({ messages, userName, avatarUrl, loading, error, onSend, onRetry, onClear, onClose }: ChatWindowProps) {
+export default function ChatWindow({
+  messages,
+  userName,
+  avatarUrl,
+  loading,
+  progressText,
+  error,
+  onSend,
+  onConfirm,
+  onCancel,
+  onRetry,
+  onClear,
+  onClose,
+}: ChatWindowProps) {
   const messagesRef = useRef<HTMLDivElement>(null)
+  const [draftValue, setDraftValue] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const container = messagesRef.current
     if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
   }, [messages, loading, error])
+
+  const handleEdit = (text: string) => {
+    setDraftValue(text)
+  }
+
+  const handleSend = async (msg: string) => {
+    setDraftValue('')
+    await onSend(msg)
+  }
 
   return (
     <section className="floating-chat-window" id="snowflex-chat-window" aria-label="Snowflex AI Assistant" aria-live="polite">
@@ -47,19 +73,32 @@ export default function ChatWindow({ messages, userName, avatarUrl, loading, err
           <div className="floating-chat-welcome">
             <span className="floating-chat-welcome-icon" aria-hidden="true"><Bot size={20} /></span>
             <strong>Hi, I’m your Snowflex AI Assistant.</strong>
-            <p>What can I help you find?</p>
+            <p>I can help you check balances and apply for leaves.</p>
             <div className="floating-chat-suggestions">
               {suggestions.map((suggestion) => (
-                <button type="button" key={suggestion} onClick={() => void onSend(suggestion)} disabled={loading}>{suggestion}</button>
+                <button type="button" key={suggestion} onClick={() => void handleSend(suggestion)} disabled={loading}>{suggestion}</button>
               ))}
             </div>
           </div>
-        ) : messages.map((message) => <ChatMessage message={message} userName={userName} avatarUrl={avatarUrl} key={message.id} />)}
+        ) : (
+          messages.map((message) => (
+            <ChatMessage
+              message={message}
+              userName={userName}
+              avatarUrl={avatarUrl}
+              key={message.id}
+              onConfirm={onConfirm}
+              onEdit={handleEdit}
+              onCancel={onCancel}
+            />
+          ))
+        )}
 
         {loading && (
-          <div className="floating-chat-typing-row" role="status" aria-label="AI is typing">
+          <div className="floating-chat-typing-row" role="status" aria-label="AI is working">
             <span className="floating-chat-avatar" aria-hidden="true"><Bot size={14} /></span>
             <span className="floating-chat-typing"><i /><i /><i /></span>
+            <span className="floating-chat-progress-text">{progressText || 'Thinking...'}</span>
           </div>
         )}
         {error && (
@@ -70,7 +109,7 @@ export default function ChatWindow({ messages, userName, avatarUrl, loading, err
         )}
       </div>
 
-      <ChatInput disabled={loading} onSend={onSend} />
+      <ChatInput disabled={loading} onSend={handleSend} initialValue={draftValue} />
     </section>
   )
 }

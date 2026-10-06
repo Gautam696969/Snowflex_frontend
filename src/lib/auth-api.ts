@@ -264,12 +264,42 @@ export async function sendAiMessage(
   return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
 }
 
+export interface LeaveConfirmationPayload {
+  token: string
+  leaveTypeId: number
+  leaveTypeName: string
+  leaveTypeCode: string
+  isPaid: boolean
+  startDate: string
+  endDate: string
+  daysCount: number
+  halfDaySession?: 'FIRST_HALF' | 'SECOND_HALF' | null
+  reason: string
+  balanceBefore: number
+  balanceAfter: number
+  isUnlimited: boolean
+  expiresAt: number
+}
+
+export interface ConfirmLeaveResponse {
+  message: string
+  leaveRequest: {
+    id: number
+    daysCount: number
+    status: string
+    startDate: string
+    endDate: string
+    leaveTypeName: string
+  }
+}
+
 export interface AiWidgetMessage {
   id: string
   role: 'assistant'
   content: string
   model: string
   createdAt: string
+  confirmation?: LeaveConfirmationPayload | null
 }
 
 export async function sendWidgetMessage(
@@ -281,6 +311,13 @@ export async function sendWidgetMessage(
   },
 ): Promise<{ message: AiWidgetMessage }> {
   return apiRequest<{ message: AiWidgetMessage }>('/ai-employee/widget/chat', token, 'POST', payload)
+}
+
+export async function confirmWidgetLeave(
+  token: string,
+  confirmationToken: string,
+): Promise<ConfirmLeaveResponse> {
+  return apiRequest<ConfirmLeaveResponse>('/ai-employee/widget/confirm', token, 'POST', { confirmationToken })
 }
 
 export async function transcribeVoiceAudio(token: string, blob: Blob, language?: string, mimeType?: string): Promise<string> {
