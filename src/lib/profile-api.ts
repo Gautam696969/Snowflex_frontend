@@ -47,6 +47,7 @@ const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 export async function getUserProfile(token: string): Promise<UserProfile> {
   const response = await fetch(`${apiBase}/users/me`, {
+    cache: 'no-store',
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -1,6 +1,7 @@
-import { Bot, Check, Clock3, User, X } from 'lucide-react'
+import { Bot, Check, Clock3, X } from 'lucide-react'
 import type { ChatEntry } from '../hooks/useWidgetChat'
 import { renderMarkdown } from '../lib/render-markdown'
+import UserAvatar from './UserAvatar'
 
 function formatTime(value: string) {
   const date = new Date(value)
@@ -9,7 +10,7 @@ function formatTime(value: string) {
     : date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ChatMessage({ message }: { message: ChatEntry }) {
+export default function ChatMessage({ message, userName, avatarUrl }: { message: ChatEntry; userName: string; avatarUrl?: string | null }) {
   const isUser = message.role === 'user'
 
   return (
@@ -26,7 +27,7 @@ export default function ChatMessage({ message }: { message: ChatEntry }) {
           {formatTime(message.createdAt)}
         </small>
       </div>
-      {isUser && <span className="floating-chat-avatar user-avatar" aria-hidden="true"><User size={14} /></span>}
+      {isUser && <UserAvatar name={userName} avatarUrl={avatarUrl} size={24} className="floating-chat-avatar user-avatar" />}
     </article>
   )
 }

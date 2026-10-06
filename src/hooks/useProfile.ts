@@ -7,6 +7,7 @@ import {
   type UserProfile,
   type UpdateProfilePayload,
 } from '../lib/profile-api'
+import { notifyAvatarUpdated } from '../lib/avatar'
 
 export function useProfile(token: string | null) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -46,6 +47,7 @@ export function useProfile(token: string | null) {
     if (!token) throw new Error('Not authenticated')
     const newAvatarUrl = await uploadAvatar(token, file)
     setProfile((prev) => (prev ? { ...prev, avatarUrl: newAvatarUrl } : null))
+    notifyAvatarUpdated(newAvatarUrl)
     return newAvatarUrl
   }
 
@@ -53,6 +55,7 @@ export function useProfile(token: string | null) {
     if (!token) throw new Error('Not authenticated')
     await removeAvatar(token)
     setProfile((prev) => (prev ? { ...prev, avatarUrl: null } : null))
+    notifyAvatarUpdated(null)
   }
 
   return {

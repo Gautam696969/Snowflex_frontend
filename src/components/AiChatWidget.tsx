@@ -3,7 +3,7 @@ import { useWidgetChat } from '../hooks/useWidgetChat'
 import ChatLauncherButton from './ChatLauncherButton'
 import ChatWindow from './ChatWindow'
 
-export default function AiChatWidget({ token }: { token: string }) {
+export default function AiChatWidget({ token, userName, avatarUrl }: { token: string; userName: string; avatarUrl?: string | null }) {
   const [isOpen, setIsOpen] = useState(false)
   const { messages, loading, error, sendMessage, retry, clearChat } = useWidgetChat(token)
 
@@ -21,6 +21,8 @@ export default function AiChatWidget({ token }: { token: string }) {
       {isOpen && (
         <ChatWindow
           messages={messages}
+          userName={userName}
+          avatarUrl={avatarUrl}
           loading={loading}
           error={error}
           onSend={sendMessage}

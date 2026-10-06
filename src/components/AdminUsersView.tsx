@@ -5,6 +5,7 @@ import {
   CheckCircle2, X, ShieldAlert
 } from 'lucide-react'
 import { updateUserRole, type SafeUser } from '../lib/auth-api'
+import UserAvatar from './UserAvatar'
 
 interface AdminUsersViewProps {
   users: SafeUser[]
@@ -181,9 +182,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
                   <tr key={u.id} className={isSelf ? 'admin-row-self' : ''}>
                     <td>
                       <div className="admin-user-cell">
-                        <div className="admin-user-avatar">
-                          {u.fullName.slice(0, 2).toUpperCase()}
-                        </div>
+                        <UserAvatar name={u.fullName} avatarUrl={u.avatarUrl} size={36} className="admin-user-avatar" />
                         <div>
                           <strong className="admin-user-name">
                             {u.fullName} {isSelf && <span className="admin-self-tag">(You)</span>}
@@ -230,6 +229,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh 
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
               <div>
+                <UserAvatar name={editingUser.fullName} avatarUrl={editingUser.avatarUrl} size={36} className="admin-user-avatar" />
                 <h3>Update User Role</h3>
                 <p>Modify permissions and platform access for <strong>{editingUser.fullName}</strong> ({editingUser.email})</p>
               </div>

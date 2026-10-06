@@ -15,7 +15,7 @@ import {
   getAdminSystemInfo, type AdminSystemInfo
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
-import { getFullAvatarUrl } from '../lib/avatar'
+import { AVATAR_UPDATED_EVENT } from '../lib/avatar'
 import AiAssistant from '../components/AiAssistant'
 import AiChatWidget from '../components/AiChatWidget'
 import ThemeToggle from '../components/ThemeToggle'
@@ -23,6 +23,7 @@ import AdminUsersView from '../components/AdminUsersView'
 import AdminSystemView from '../components/AdminSystemView'
 import TopProfileDropdown from '../components/TopProfileDropdown'
 import NotificationBell from '../components/NotificationBell'
+import UserAvatar from '../components/UserAvatar'
 import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
@@ -42,33 +43,6 @@ const formatDateTime = (value: unknown) => {
   if (!value) return '—'
   const date = new Date(String(value))
   return isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-// Generate consistent avatar colors
-const avatarColors = [
-  'linear-gradient(135deg, #10b981, #047857)',
-  'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-  'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-  'linear-gradient(135deg, #f59e0b, #b45309)',
-  'linear-gradient(135deg, #ec4899, #be185d)',
-  'linear-gradient(135deg, #06b6d4, #0e7490)',
-  'linear-gradient(135deg, #14b8a6, #0f766e)',
-]
-
-function getAvatarBackground(name: string) {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  const index = Math.abs(hash) % avatarColors.length
-  return avatarColors[index]
-}
-
-function getInitials(name: string) {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-  return name.slice(0, 2).toUpperCase()
 }
 
 export default function Dashboard() {
@@ -222,6 +196,33 @@ export default function Dashboard() {
       setCurrentPage(1)
     }
   }, [view])
+
+  useEffect(() => {
+    if (!token || !user) return
+    let syncing = false
+    const syncCurrentView = async () => {
+      if (syncing || document.visibilityState !== 'visible') return
+      syncing = true
+      try {
+        const latestUser = await getCurrentUser(token)
+        setUser(latestUser)
+        await loadData(token, latestUser, view)
+      } catch {
+        // Keep the current view usable when a background refresh fails.
+      } finally {
+        syncing = false
+      }
+    }
+    const handleVisibility = () => { if (document.visibilityState === 'visible') void syncCurrentView() }
+    window.addEventListener('focus', syncCurrentView)
+    window.addEventListener(AVATAR_UPDATED_EVENT, syncCurrentView)
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      window.removeEventListener('focus', syncCurrentView)
+      window.removeEventListener(AVATAR_UPDATED_EVENT, syncCurrentView)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [token, user?.id, view])
 
   async function refresh() {
     if (token && user) {
@@ -678,17 +679,7 @@ export default function Dashboard() {
             onClick={() => navigate('/profile')}
             title="My Profile & Security"
           >
-            {user.avatarUrl ? (
-              <img
-                src={getFullAvatarUrl(user.avatarUrl) || ''}
-                alt={user.fullName}
-                className="profile-avatar-img"
-              />
-            ) : (
-              <span className="profile-avatar" style={{ background: getAvatarBackground(user.fullName) }}>
-                {getInitials(user.fullName)}
-              </span>
-            )}
+            <UserAvatar name={user.fullName} avatarUrl={user.avatarUrl} size={34} className="profile-avatar" />
             <span className="profile-copy">
               <strong>{user.fullName}</strong>
               <small>{role}</small>
@@ -762,14 +753,23 @@ export default function Dashboard() {
               <button className="modal-close" type="button" onClick={() => setViewingRow(null)} aria-label="Close"><XIcon size={18} /></button>
             </div>
             <div className="modal-body" style={{ padding: '24px', maxHeight: '65vh', overflow: 'auto' }}>
-              <dl className="detail-grid">
-                {Object.entries(viewingRow).filter(([key]) => !['description', 'createdAt', 'updatedAt'].includes(key)).map(([key, value]) => (
+                {view === 'employees' && (
+                  <div className="avatar-user-cell" style={{ marginBottom: '20px' }}>
+                    <UserAvatar name={String(viewingRow.fullName || 'User')} avatarUrl={String(viewingRow.avatarUrl || '') || null} size={48} className="avatar-circle" />
+                    <div className="avatar-info-copy">
+                      <strong>{String(viewingRow.fullName || 'Employee')}</strong>
+                      {Boolean(viewingRow.email) && <small>{String(viewingRow.email)}</small>}
+                    </div>
+                  </div>
+                )}
+                <dl className="detail-grid">
+                {Object.entries(viewingRow).filter(([key]) => !['description', 'createdAt', 'updatedAt'].includes(key) && !key.toLowerCase().includes('avatar')).map(([key, value]) => (
                   <div key={key} className="detail-item">
                     <dt>{key.replace(/[A-Z]/g, letter => ` ${letter}`).replace(/Id$/, ' ID').toUpperCase()}</dt>
                     <dd>{key.toLowerCase().includes('date') ? formatDate(value) : key.toLowerCase().includes('status') ? renderStatusPill(value) : String(value ?? '—')}</dd>
                   </div>
                 ))}
-              </dl>
+                </dl>
             </div>
             <div className="modal-footer">
               <button className="primary-action" type="button" onClick={() => setViewingRow(null)}>Close</button>
@@ -942,6 +942,12 @@ export default function Dashboard() {
                     void perform(path, method, payload)
                   }}
                 >
+                  {view === 'employees' && editingRow && (
+                    <div className="avatar-user-cell" style={{ width: '100%', marginBottom: '16px' }}>
+                      <UserAvatar name={String(editingRow.fullName || 'User')} avatarUrl={String(editingRow.avatarUrl || '') || null} size={38} className="avatar-circle" />
+                      <strong>{String(editingRow.fullName || 'Employee')}</strong>
+                    </div>
+                  )}
                   {view === 'departments' && (
                     <label style={{ width: '100%' }}>
                       Department Name
@@ -1086,7 +1092,7 @@ export default function Dashboard() {
 
           {/* VIEW SWITCHER CONTENT */}
           {view === 'assistant' ? (
-            token && <AiAssistant token={token} onError={setError} />
+            token && <AiAssistant token={token} onError={setError} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />
           ) : view === 'users' ? (
             <AdminUsersView
               users={adminUsers}
@@ -1260,18 +1266,7 @@ export default function Dashboard() {
                         {recentLeaves.slice(0, 2).map((item) => (
                           <div key={String(item.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {item.avatarUrl ? (
-                                <img
-                                  src={getFullAvatarUrl(String(item.avatarUrl)) || ''}
-                                  alt={String(item.fullName || 'User')}
-                                  className="avatar-circle-img"
-                                  style={{ width: '26px', height: '26px', borderRadius: '50%' }}
-                                />
-                              ) : (
-                                <span className="avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px', background: getAvatarBackground(String(item.fullName || 'User')) }}>
-                                  {getInitials(String(item.fullName || 'User'))}
-                                </span>
-                              )}
+                              <UserAvatar name={String(item.fullName || 'User')} avatarUrl={String(item.avatarUrl || '') || null} size={26} className="avatar-circle" />
                               <strong style={{ color: '#2b3f34' }}>{String(item.fullName || 'Employee')}</strong>
                             </div>
                             {renderStatusPill(item.status)}
@@ -1434,18 +1429,7 @@ export default function Dashboard() {
                         <article className="emp-profile-card" key={String(row.id)}>
                           <div className="emp-card-top">
                             <div className="emp-card-identity">
-                              {row.avatarUrl ? (
-                                <img
-                                  src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
-                                  alt={String(row.fullName || 'User')}
-                                  className="avatar-circle-img"
-                                  style={{ width: '38px', height: '38px', borderRadius: '50%' }}
-                                />
-                              ) : (
-                                <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
-                                  {getInitials(String(row.fullName || 'User'))}
-                                </span>
-                              )}
+                              <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={38} className="avatar-circle" />
                               <div className="emp-card-name">
                                 <strong>{String(row.fullName || 'Unnamed')}</strong>
                                 <small>{String(row.email || 'No email')}</small>
@@ -1606,7 +1590,7 @@ export default function Dashboard() {
                           </tr>
                         ) : (
                           <tr>
-                            {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key)).slice(0, 7).map((key) => (
+                            {Object.keys(rows[0] || {}).filter((key) => !['description'].includes(key) && !key.toLowerCase().includes('avatar')).slice(0, 7).map((key) => (
                               <th key={key} onClick={() => handleSort(key)} style={{ cursor: 'pointer' }}>
                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                   <span>{key.replace(/[A-Z]/g, letter => ` ${letter}`).toUpperCase()}</span>
@@ -1625,18 +1609,7 @@ export default function Dashboard() {
                             <tr key={String(row.id ?? index)}>
                               <td>
                                 <div className="avatar-user-cell">
-                                  {row.avatarUrl ? (
-                                    <img
-                                      src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
-                                      alt={String(row.fullName || 'User')}
-                                      className="avatar-circle-img"
-                                      style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                                    />
-                                  ) : (
-                                    <span className="avatar-circle" style={{ background: getAvatarBackground(String(row.fullName || 'User')) }}>
-                                      {getInitials(String(row.fullName || 'User'))}
-                                    </span>
-                                  )}
+                                  <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={28} className="avatar-circle" />
                                   <div className="avatar-info-copy">
                                     <strong>{String(row.fullName || '—')}</strong>
                                     {row.email ? <small>{String(row.email)}</small> : null}
@@ -1692,25 +1665,19 @@ export default function Dashboard() {
                         ) : (
                           paginatedRows.map((row, index) => (
                             <tr key={String(row.id ?? index)}>
-                              {Object.entries(row).filter(([key]) => !['description'].includes(key)).slice(0, 7).map(([key, value]) => (
+                              {Object.entries(row).filter(([key]) => !['description'].includes(key) && !key.toLowerCase().includes('avatar')).slice(0, 7).map(([key, value]) => (
                                 <td key={key}>
-                                  {key.toLowerCase() === 'fullname' ? (
+                                  {['fullname', 'assignedtoname', 'assignedbyname'].includes(key.toLowerCase()) ? (
                                     <div className="avatar-user-cell">
-                                      {row.avatarUrl ? (
-                                        <img
-                                          src={getFullAvatarUrl(String(row.avatarUrl)) || ''}
-                                          alt={String(value || 'User')}
-                                          className="avatar-circle-img"
-                                          style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                                        />
-                                      ) : (
-                                        <span className="avatar-circle" style={{ background: getAvatarBackground(String(value || 'User')) }}>
-                                          {getInitials(String(value || 'User'))}
-                                        </span>
-                                      )}
+                                      <UserAvatar
+                                        name={String(value || 'User')}
+                                        avatarUrl={String(key.toLowerCase() === 'assignedtoname' ? row.assignedToAvatarUrl || '' : key.toLowerCase() === 'assignedbyname' ? row.assignedByAvatarUrl || '' : row.avatarUrl || '') || null}
+                                        size={28}
+                                        className="avatar-circle"
+                                      />
                                       <div className="avatar-info-copy">
                                         <strong>{String(value || '—')}</strong>
-                                        {row.email ? <small>{String(row.email)}</small> : null}
+                                        {key.toLowerCase() === 'fullname' && row.email ? <small>{String(row.email)}</small> : null}
                                       </div>
                                     </div>
                                   ) : key.toLowerCase().includes('status') ? (
@@ -1813,7 +1780,7 @@ export default function Dashboard() {
       </section>
 
       {/* Floating AI Chat Widget */}
-      {token && <AiChatWidget token={token} />}
+      {token && <AiChatWidget token={token} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />}
     </main>
   )
 }
