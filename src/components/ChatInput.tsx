@@ -1,14 +1,22 @@
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, useEffect, type FormEvent, type KeyboardEvent } from 'react'
 import { Send } from 'lucide-react'
 
 interface ChatInputProps {
   disabled: boolean
   onSend: (message: string) => Promise<void>
+  initialValue?: string
 }
 
-export default function ChatInput({ disabled, onSend }: ChatInputProps) {
-  const [draft, setDraft] = useState('')
+export default function ChatInput({ disabled, onSend, initialValue }: ChatInputProps) {
+  const [draft, setDraft] = useState(initialValue || '')
   const canSend = draft.trim().length > 0 && !disabled
+
+  // If initialValue changes, update draft
+  useEffect(() => {
+    if (initialValue !== undefined) {
+      setDraft(initialValue)
+    }
+  }, [initialValue])
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

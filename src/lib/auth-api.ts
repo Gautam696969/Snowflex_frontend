@@ -106,7 +106,7 @@ export interface DashboardData {
 }
 
 export async function getDashboard(token: string, role: string): Promise<DashboardData> {
-  const endpoint = role === 'ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
+  const endpoint = role === 'ADMIN' || role === 'SUPER_ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
   const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/dashboard/${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
@@ -185,10 +185,11 @@ export async function getUsers(token: string): Promise<SafeUser[]> {
 }
 
 export async function updateUserRole(token: string, userId: number, role: string): Promise<SafeUser> {
+  const normalizedRole = role.trim().toUpperCase().replace(/[\s-]+/g, '_')
   const response = await request<ApiResponse & { data: SafeUser }>(`/admin/users/${userId}/role`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify({ role: normalizedRole }),
   })
   return response.data
 }
@@ -263,12 +264,42 @@ export async function sendAiMessage(
   return apiRequest<AiChatResponse>('/ai-employee/chat', token, 'POST', payload)
 }
 
+export interface LeaveConfirmationPayload {
+  token: string
+  leaveTypeId: number
+  leaveTypeName: string
+  leaveTypeCode: string
+  isPaid: boolean
+  startDate: string
+  endDate: string
+  daysCount: number
+  halfDaySession?: 'FIRST_HALF' | 'SECOND_HALF' | null
+  reason: string
+  balanceBefore: number
+  balanceAfter: number
+  isUnlimited: boolean
+  expiresAt: number
+}
+
+export interface ConfirmLeaveResponse {
+  message: string
+  leaveRequest: {
+    id: number
+    daysCount: number
+    status: string
+    startDate: string
+    endDate: string
+    leaveTypeName: string
+  }
+}
+
 export interface AiWidgetMessage {
   id: string
   role: 'assistant'
   content: string
   model: string
   createdAt: string
+  confirmation?: LeaveConfirmationPayload | null
 }
 
 export async function sendWidgetMessage(
@@ -280,6 +311,13 @@ export async function sendWidgetMessage(
   },
 ): Promise<{ message: AiWidgetMessage }> {
   return apiRequest<{ message: AiWidgetMessage }>('/ai-employee/widget/chat', token, 'POST', payload)
+}
+
+export async function confirmWidgetLeave(
+  token: string,
+  confirmationToken: string,
+): Promise<ConfirmLeaveResponse> {
+  return apiRequest<ConfirmLeaveResponse>('/ai-employee/widget/confirm', token, 'POST', { confirmationToken })
 }
 
 export async function transcribeVoiceAudio(token: string, blob: Blob, language?: string, mimeType?: string): Promise<string> {

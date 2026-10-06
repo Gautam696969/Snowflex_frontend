@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import {
   CalendarDays, Plus, Filter, Search, RefreshCw, Settings,
   CheckCircle2, XCircle, Clock, FileText, Check, X, ArrowUpDown
@@ -9,6 +9,7 @@ import {
   fetchAllLeaves, approveLeave, rejectLeave, cancelLeave,
   type LeaveType, type LeaveBalance, type LeaveRecord
 } from '../lib/leave-api'
+import { useNotifications } from '../hooks/useNotifications'
 import LeaveTypeBadge from './LeaveTypeBadge'
 import LeaveBalanceSummary from './LeaveBalanceSummary'
 import ApplyLeaveModal from './ApplyLeaveModal'
@@ -22,18 +23,35 @@ interface LeaveManagementViewProps {
   token?: string
 }
 
+type LeaveLoadErrorKey = 'types' | 'balances' | 'my' | 'team' | 'admin'
+type RequestResult<T> = { data: T } | { error: string }
+
+async function captureRequest<T>(request: Promise<T>): Promise<RequestResult<T>> {
+  try {
+    return { data: await request }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'The request failed.' }
+  }
+}
+
 export default function LeaveManagementView({
   userRole = 'EMPLOYEE',
+  currentUserId = 0,
 }: LeaveManagementViewProps) {
-  const isAdminOrHr = userRole === 'ADMIN' || userRole === 'HR'
-  const isManager = userRole === 'MANAGER'
-  const canReview = isAdminOrHr || isManager
+  const normalizedRole = userRole.trim().toUpperCase().replace(/[\s-]+/g, '_')
+  const isSuperAdmin = normalizedRole === 'SUPER_ADMIN'
+  const isAdminOrHr = normalizedRole === 'ADMIN' || isSuperAdmin || normalizedRole === 'HR'
+  const canReview = normalizedRole === 'ADMIN' || isSuperAdmin
 
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [balances, setBalances] = useState<LeaveBalance[]>([])
-  const [leaves, setLeaves] = useState<LeaveRecord[]>([])
+  const [myLeaves, setMyLeaves] = useState<LeaveRecord[]>([])
+  const [teamLeaves, setTeamLeaves] = useState<LeaveRecord[]>([])
+  const [adminLeaves, setAdminLeaves] = useState<LeaveRecord[]>([])
+  const [activeTab, setActiveTab] = useState<'my' | 'team' | 'admin'>('my')
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadErrors, setLoadErrors] = useState<Partial<Record<LeaveLoadErrorKey, string>>>({})
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('')
@@ -58,29 +76,59 @@ export default function LeaveManagementView({
   const [selectedInitialTypeId, setSelectedInitialTypeId] = useState<number | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
 
-  // Rejection modal state
+  // Rejection modal & single-flight decision state
+  const isSubmittingRef = useRef(false)
   const [rejectingLeaveId, setRejectingLeaveId] = useState<number | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [submittingDecision, setSubmittingDecision] = useState(false)
+  const [activeDecisionId, setActiveDecisionId] = useState<number | null>(null)
 
-  const loadAllData = useCallback(async () => {
+  const { refresh: refreshNotifications } = useNotifications()
+
+  const leaves = useMemo(() => activeTab === 'my'
+    ? myLeaves
+    : activeTab === 'admin'
+      ? adminLeaves
+      : teamLeaves, [activeTab, myLeaves, teamLeaves, adminLeaves])
+
+  const loadAllData = useCallback(async (): Promise<boolean> => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const [typesData, balancesData, leavesData] = await Promise.all([
-        fetchLeaveTypes(!isAdminOrHr).catch(() => []),
-        fetchMyLeaveBalances().catch(() => []),
-        (canReview ? fetchAllLeaves() : fetchMyLeaves()).catch(() => []),
+      const [typesResult, balancesResult, myResult, teamResult, adminResult] = await Promise.all([
+        captureRequest(fetchLeaveTypes(!isAdminOrHr)),
+        captureRequest(fetchMyLeaveBalances()),
+        captureRequest(fetchMyLeaves()),
+        canReview ? captureRequest(fetchAllLeaves('team')) : Promise.resolve({ data: [] as LeaveRecord[] }),
+        isSuperAdmin ? captureRequest(fetchAllLeaves('admin')) : Promise.resolve({ data: [] as LeaveRecord[] }),
       ])
 
-      setLeaveTypes(typesData)
-      setBalances(balancesData)
-      setLeaves(leavesData)
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to load leave records')
+      const errors: Partial<Record<LeaveLoadErrorKey, string>> = {}
+      if ('data' in typesResult) setLeaveTypes(typesResult.data)
+      else errors.types = typesResult.error
+      if ('data' in balancesResult) setBalances(balancesResult.data)
+      else errors.balances = balancesResult.error
+      if ('data' in myResult) setMyLeaves(myResult.data)
+      else errors.my = myResult.error
+      if ('data' in teamResult) setTeamLeaves(teamResult.data)
+      else errors.team = teamResult.error
+      if ('data' in adminResult) setAdminLeaves(adminResult.data)
+      else errors.admin = adminResult.error
+      setLoadErrors(errors)
+      return Object.keys(errors).length === 0
     } finally {
       setLoading(false)
     }
-  }, [isAdminOrHr, canReview])
+  }, [isAdminOrHr, canReview, isSuperAdmin])
+
+  const refreshEverything = useCallback(async () => {
+    await loadAllData()
+    window.dispatchEvent(new CustomEvent('leaves-updated'))
+    try {
+      await refreshNotifications()
+    } catch {
+      // non-blocking
+    }
+  }, [loadAllData, refreshNotifications])
 
   useEffect(() => {
     void loadAllData()
@@ -92,17 +140,23 @@ export default function LeaveManagementView({
     }
     window.addEventListener('focus', refreshWhenVisible)
     document.addEventListener('visibilitychange', refreshWhenVisible)
+    const handleLeavesUpdated = () => { void loadAllData() }
+    window.addEventListener('leaves-updated', handleLeavesUpdated)
     return () => {
       window.removeEventListener('focus', refreshWhenVisible)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('leaves-updated', handleLeavesUpdated)
     }
   }, [loadAllData])
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await loadAllData()
-    setRefreshing(false)
-    toast.success('Leave records refreshed')
+    try {
+      if (await loadAllData()) toast.success('Leave records refreshed')
+      else toast.error('Some leave data could not be refreshed. See the request details below.')
+    } finally {
+      setRefreshing(false)
+    }
   };
 
   const handleOpenApplyModal = (typeId?: number) => {
@@ -111,15 +165,28 @@ export default function LeaveManagementView({
   }
 
   const handleApprove = async (id: number) => {
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
     setSubmittingDecision(true)
+    setActiveDecisionId(id)
+
     try {
       await approveLeave(id)
       toast.success('Leave request approved!')
-      await loadAllData()
+      await refreshEverything()
     } catch (err: any) {
-      toast.error(err.message || 'Failed to approve leave request')
+      const msg = String(err?.message || '')
+      const isConflict = Boolean(err?.isConflict || err?.status === 409 || /already decided|not pending/i.test(msg))
+      if (isConflict) {
+        toast('This request was already decided', { icon: 'ℹ️' })
+        await refreshEverything()
+      } else {
+        toast.error(msg || 'Failed to approve leave request')
+      }
     } finally {
+      isSubmittingRef.current = false
       setSubmittingDecision(false)
+      setActiveDecisionId(null)
     }
   }
 
@@ -129,33 +196,46 @@ export default function LeaveManagementView({
   }
 
   const handleConfirmReject = async () => {
-    if (!rejectingLeaveId) return
-    if (!rejectionReason.trim()) {
-      toast.error('Please specify a rejection reason')
-      return
-    }
-
+    if (isSubmittingRef.current || !rejectingLeaveId) return
+    isSubmittingRef.current = true
     setSubmittingDecision(true)
+    const leaveIdToReject = rejectingLeaveId
+
     try {
-      await rejectLeave(rejectingLeaveId, rejectionReason.trim())
+      await rejectLeave(leaveIdToReject, rejectionReason.trim() || undefined)
       toast.success('Leave request rejected')
       setRejectingLeaveId(null)
-      await loadAllData()
+      setRejectionReason('')
+      await refreshEverything()
     } catch (err: any) {
-      toast.error(err.message || 'Failed to reject leave request')
+      const msg = String(err?.message || '')
+      const isConflict = Boolean(err?.isConflict || err?.status === 409 || /already decided|not pending/i.test(msg))
+      if (isConflict) {
+        toast('This request was already decided', { icon: 'ℹ️' })
+        setRejectingLeaveId(null)
+        setRejectionReason('')
+        await refreshEverything()
+      } else {
+        toast.error(msg || 'Failed to reject leave request')
+      }
     } finally {
+      isSubmittingRef.current = false
       setSubmittingDecision(false)
     }
   }
 
   const handleCancelMyLeave = async (id: number) => {
+    if (isSubmittingRef.current) return
     if (!window.confirm('Are you sure you want to cancel this pending leave request?')) return
+    isSubmittingRef.current = true
     try {
       await cancelLeave(id)
       toast.success('Leave request cancelled')
-      await loadAllData()
+      await refreshEverything()
     } catch (err: any) {
       toast.error(err.message || 'Failed to cancel leave request')
+    } finally {
+      isSubmittingRef.current = false
     }
   }
 
@@ -292,6 +372,19 @@ export default function LeaveManagementView({
         </div>
       </div>
 
+      {(loadErrors.types || loadErrors.balances) && (
+        <div className="leave-load-error" role="alert">
+          <div>
+            <strong>Some leave information could not be loaded.</strong>
+            <p>{[loadErrors.types, loadErrors.balances].filter(Boolean).join(' ')}</p>
+          </div>
+          <button type="button" className="secondary-action" onClick={() => void loadAllData()} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
+            <span>Retry</span>
+          </button>
+        </div>
+      )}
+
       {/* Employee Balances Section (Cards with progress bar) */}
       <LeaveBalanceSummary
         balances={balances}
@@ -299,13 +392,29 @@ export default function LeaveManagementView({
         onSelectType={(typeId) => handleOpenApplyModal(typeId)}
       />
 
+      <div className="leave-view-tabs" role="tablist" aria-label="Leave requests">
+        <button type="button" role="tab" aria-selected={activeTab === 'my'} className={activeTab === 'my' ? 'active' : ''} onClick={() => setActiveTab('my')}>
+          My leaves
+        </button>
+        {canReview && (
+          <button type="button" role="tab" aria-selected={activeTab === 'team'} className={activeTab === 'team' ? 'active' : ''} onClick={() => setActiveTab('team')}>
+            Team requests
+          </button>
+        )}
+        {isSuperAdmin && (
+          <button type="button" role="tab" aria-selected={activeTab === 'admin'} className={activeTab === 'admin' ? 'active' : ''} onClick={() => setActiveTab('admin')}>
+            Admin requests
+          </button>
+        )}
+      </div>
+
       {/* Filter and Search Bar */}
       <div className="leave-filter-bar">
         <div className="leave-search-wrap">
           <Search size={15} color="#8a9c90" />
           <input
             type="text"
-            placeholder={canReview ? 'Search by employee, leave type, or reason...' : 'Search by reason or leave type...'}
+            placeholder={activeTab !== 'my' ? 'Search by employee, leave type, or reason...' : 'Search by reason or leave type...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -365,10 +474,10 @@ export default function LeaveManagementView({
           <table className="saas-grid-table leave-grid-table">
             <thead>
               <tr>
-                {canReview && (
+                {activeTab !== 'my' && (
                   <th onClick={() => handleSort('employee')} style={{ cursor: 'pointer' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <span>EMPLOYEE</span>
+                        <span>{activeTab === 'admin' ? 'ADMINISTRATOR' : 'EMPLOYEE'}</span>
                       <ArrowUpDown size={12} color={sortKey === 'employee' ? '#10b981' : '#8a9c90'} />
                     </div>
                   </th>
@@ -386,7 +495,7 @@ export default function LeaveManagementView({
                   </div>
                 </th>
                 <th>REASON / DETAILS</th>
-                {canReview && <th>REMAINING BALANCE</th>}
+                {activeTab !== 'my' && <th>REMAINING BALANCE</th>}
                 <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                     <span>STATUS</span>
@@ -409,7 +518,7 @@ export default function LeaveManagementView({
                 return (
                   <tr key={l.id}>
                     {/* Employee Profile (Admin view) */}
-                    {canReview && (
+                    {activeTab !== 'my' && (
                       <td>
                         <div className="avatar-user-cell">
                           <UserAvatar name={l.fullName || 'User'} avatarUrl={l.avatarUrl} size={34} className="avatar-circle" />
@@ -459,16 +568,16 @@ export default function LeaveManagementView({
                             <span>Attachment</span>
                           </a>
                         )}
-                        {l.rejectionReason && l.status === 'REJECTED' && (
+                        {(l.decisionNote || l.rejectionReason) && l.status === 'REJECTED' && (
                           <small className="leave-rejection-note">
-                            Reason: {l.rejectionReason}
+                            Reason: {l.decisionNote || l.rejectionReason}
                           </small>
                         )}
                       </div>
                     </td>
 
                     {/* Remaining Balance (Admin view) */}
-                    {canReview && (
+                    {activeTab !== 'my' && (
                       <td>
                         <div className="leave-balance-preview-cell">
                           {l.remainingBalance !== undefined ? (
@@ -482,13 +591,34 @@ export default function LeaveManagementView({
                       </td>
                     )}
 
-                    {/* Status Pill */}
-                    <td>{renderStatus(l.status)}</td>
+                    {/* Status Pill and decision history */}
+                    <td>
+                      {renderStatus(l.status)}
+                      {l.autoApproved ? (
+                        <small className="leave-decision-meta">{l.decisionNote || 'Auto-approved (no approver available)'}</small>
+                      ) : l.approverName && l.decidedAt ? (
+                        <small className="leave-decision-meta">
+                          {l.status === 'REJECTED' ? 'Rejected' : 'Approved'} by {l.approverName} · {new Date(l.decidedAt).toLocaleDateString()}
+                        </small>
+                      ) : null}
+                    </td>
 
                     {/* Action Buttons */}
                     <td style={{ textAlign: 'right' }}>
                       {l.status === 'PENDING' ? (
-                        canReview ? (
+                        activeTab === 'my' ? (
+                          <div className="leave-own-pending-actions">
+                            <small>You can't approve your own leave</small>
+                            <button
+                              type="button"
+                              className="leave-cancel-btn"
+                              onClick={() => handleCancelMyLeave(l.id)}
+                              title="Cancel pending request"
+                            >
+                              <span>Cancel</span>
+                            </button>
+                          </div>
+                        ) : canReview && l.requesterUserId !== undefined && l.requesterUserId !== currentUserId ? (
                           <div className="leave-action-group">
                             <button
                               type="button"
@@ -498,7 +628,7 @@ export default function LeaveManagementView({
                               title="Approve this leave request"
                             >
                               <Check size={13} />
-                              <span>Approve</span>
+                              <span>{submittingDecision && activeDecisionId === l.id ? 'Approving...' : 'Approve'}</span>
                             </button>
                             <button
                               type="button"
@@ -512,14 +642,7 @@ export default function LeaveManagementView({
                             </button>
                           </div>
                         ) : (
-                          <button
-                            type="button"
-                            className="leave-cancel-btn"
-                            onClick={() => handleCancelMyLeave(l.id)}
-                            title="Cancel pending request"
-                          >
-                            <span>Cancel</span>
-                          </button>
+                          <small className="leave-own-pending-note">You can't approve your own leave</small>
                         )
                       ) : (
                         <span style={{ fontSize: '11px', color: '#9ca3af', fontStyle: 'italic' }}>
@@ -540,10 +663,10 @@ export default function LeaveManagementView({
         <ApplyLeaveModal
           isOpen={showApplyModal}
           onClose={() => setShowApplyModal(false)}
-          onSuccess={loadAllData}
+          onSuccess={async () => { await loadAllData() }}
           leaveTypes={leaveTypes.filter((t) => t.isActive)}
           balances={balances}
-          existingLeaves={leaves}
+          existingLeaves={myLeaves}
           initialTypeId={selectedInitialTypeId}
         />
       )}
@@ -575,12 +698,11 @@ export default function LeaveManagementView({
             </div>
             <div className="modal-body">
               <p style={{ fontSize: '13px', color: '#4b5e52', margin: '0 0 12px 0' }}>
-                Please provide a reason for rejecting this leave request. The employee will receive this in their notification.
+                Add an optional reason for rejecting this leave request. The employee will receive it in their notification.
               </p>
               <textarea
-                required
                 rows={3}
-                placeholder="e.g. Inadequate team coverage or project deadline"
+                placeholder="Optional: e.g. Inadequate team coverage or project deadline"
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 style={{ width: '100%', boxSizing: 'border-box' }}
@@ -598,7 +720,7 @@ export default function LeaveManagementView({
                 type="button"
                 className="primary-action"
                 style={{ background: '#dc2626', borderColor: '#dc2626' }}
-                disabled={submittingDecision || !rejectionReason.trim()}
+                disabled={submittingDecision}
                 onClick={handleConfirmReject}
               >
                 {submittingDecision ? 'Rejecting...' : 'Confirm Rejection'}

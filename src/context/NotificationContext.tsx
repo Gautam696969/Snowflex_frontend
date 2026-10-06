@@ -94,6 +94,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Listen to external leave updates to refresh notifications
+  useEffect(() => {
+    const handleLeavesUpdated = () => {
+      void refresh()
+    }
+    window.addEventListener('leaves-updated', handleLeavesUpdated)
+    return () => window.removeEventListener('leaves-updated', handleLeavesUpdated)
+  }, [refresh])
+
   // Stream subscription & background polling tied to active authToken
   useEffect(() => {
     if (!authToken) {
