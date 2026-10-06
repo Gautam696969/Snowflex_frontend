@@ -28,6 +28,7 @@ import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
 import { useNotifications } from '../hooks/useNotifications'
+import { fetchLeaveActionCount } from '../lib/leave-api'
 
 type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
@@ -89,7 +90,8 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('table')
-  const { leaveUnreadCount, markByTypeAsRead, clear: clearNotifications } = useNotifications()
+  const [leaveActionCount, setLeaveActionCount] = useState(0)
+  const { markByTypeAsRead, clear: clearNotifications } = useNotifications()
 
   // Mark leave notifications as read when opening Leave view
   useEffect(() => {
@@ -97,6 +99,34 @@ export default function Dashboard() {
       void markByTypeAsRead('LEAVE')
     }
   }, [view, markByTypeAsRead])
+
+  useEffect(() => {
+    if (!token || !user) return
+    let active = true
+    let loadingCount = false
+    const updateCount = async () => {
+      if (loadingCount) return
+      loadingCount = true
+      try {
+        const count = await fetchLeaveActionCount()
+        if (active) setLeaveActionCount(count)
+      } catch {
+        // Keep the last known count if the badge endpoint is temporarily unavailable.
+      } finally {
+        loadingCount = false
+      }
+    }
+    void updateCount()
+    const interval = window.setInterval(() => { void updateCount() }, 20000)
+    window.addEventListener('focus', updateCount)
+    window.addEventListener('leaves-updated', updateCount)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+      window.removeEventListener('focus', updateCount)
+      window.removeEventListener('leaves-updated', updateCount)
+    }
+  }, [token, user?.id, user?.role])
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -120,7 +150,7 @@ export default function Dashboard() {
         setRows([])
         // Concurrently fetch recent leaves for overview intelligence feed
         try {
-          const leavesPath = currentUser.role === 'EMPLOYEE' ? '/leaves/me' : '/leaves'
+          const leavesPath = ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role) ? '/leaves' : '/leaves/me'
           const leavesData = await apiRequest<Row[]>(leavesPath, currentToken)
           setRecentLeaves(leavesData.slice(0, 4))
         } catch {
@@ -135,7 +165,7 @@ export default function Dashboard() {
         ])
         setRows(empData)
         setAvailableDepartments(deptData)
-        if (currentUser.role === 'ADMIN' || currentUser.role === 'HR') {
+        if (['ADMIN', 'SUPER_ADMIN', 'HR'].includes(currentUser.role)) {
           getUsers(currentToken).then(setAvailableUsers).catch(() => {})
         }
       } else if (currentView === 'departments') {
@@ -154,7 +184,7 @@ export default function Dashboard() {
         const path = currentView === 'attendance'
           ? currentUser.role === 'EMPLOYEE' ? '/attendance/me' : '/attendance'
           : currentView === 'leaves'
-            ? currentUser.role === 'EMPLOYEE' ? '/leaves/me' : '/leaves'
+            ? ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role) ? '/leaves' : '/leaves/me'
             : '/tasks'
         const result = await apiRequest<Row[]>(path, currentToken)
         setRows(result)
@@ -449,7 +479,9 @@ export default function Dashboard() {
   }, [filteredRows, currentPage, pageSize])
 
   const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role
-  const canManage = role === 'ADMIN' || role === 'HR'
+  const canManage = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HR'
+  const roleLabel = role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : role
+  const roleClass = String(role || 'employee').toLowerCase().replace('_', '-')
 
   const navGroups = useMemo(() => {
     const groups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
@@ -468,7 +500,7 @@ export default function Dashboard() {
       ] },
     ]
 
-    if (role === 'ADMIN') {
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
       groups.push({
         label: 'ADMINISTRATION',
         items: [
@@ -493,6 +525,7 @@ export default function Dashboard() {
   const isManagementView = view === 'employees' || view === 'departments'
   const showActions = canManage && isManagementView
   const isEmployee = role === 'EMPLOYEE'
+  const isAdminWorkspace = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   // Workforce Pulse Calculations
   const attendanceTotal = role === 'MANAGER'
@@ -549,7 +582,7 @@ export default function Dashboard() {
       { label: 'Employee Directory', desc: 'Profiles, codes & status', view: 'employees' as View, icon: Users },
       { label: 'Departments', desc: 'Organizational teams', view: 'departments' as View, icon: Building2 },
     ] : []),
-    ...(role === 'ADMIN' ? [
+    ...(isAdminWorkspace ? [
       { label: 'User Roles & Governance', desc: 'Access level governance', view: 'users' as View, icon: ShieldCheck },
       { label: 'System Diagnostics', desc: 'Snowflake & SMTP health', view: 'system' as View, icon: Server },
     ] : []),
@@ -659,7 +692,7 @@ export default function Dashboard() {
                 >
                   <Icon size={17} strokeWidth={1.8} />
                   <span>{label}</span>
-                  {id === 'leaves' && <UnreadBadge count={leaveUnreadCount} className="sidebar-leave-badge" />}
+                  {id === 'leaves' && <UnreadBadge count={leaveActionCount} className="sidebar-leave-badge" />}
                   {view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -682,7 +715,7 @@ export default function Dashboard() {
             <UserAvatar name={user.fullName} avatarUrl={user.avatarUrl} size={34} className="profile-avatar" />
             <span className="profile-copy">
               <strong>{user.fullName}</strong>
-              <small>{role}</small>
+              <small>{roleLabel}</small>
             </span>
             <button
               type="button"
@@ -826,9 +859,9 @@ export default function Dashboard() {
                         ? 'ADMINISTRATION PORTAL'
                         : 'PEOPLE OPERATIONS'}
                 </span>
-                <span className={`dash-role-badge role-${(role || 'employee').toLowerCase()}`}>
-                  {role === 'ADMIN' ? <Shield size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
-                  {role}
+                <span className={`dash-role-badge role-${roleClass}`}>
+                  {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
+                  {roleLabel}
                 </span>
               </div>
               <h1 className="dash-hero-title">
@@ -838,7 +871,7 @@ export default function Dashboard() {
               </h1>
               <p className="dash-hero-sub">
                 {view === 'overview'
-                  ? role === 'ADMIN'
+                  ? isAdminWorkspace
                     ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
                     : role === 'MANAGER'
                       ? 'Team Operations Hub • Monitor attendance, review team leave petitions, and drive deliverables.'
@@ -1451,7 +1484,7 @@ export default function Dashboard() {
                               <span>Designation</span>
                               <strong>{String(row.designation || '—')}</strong>
                             </div>
-                            {role === 'ADMIN' && (
+                            {isAdminWorkspace && (
                               <div className="emp-meta-row">
                                 <span>Leave Status</span>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
@@ -1585,7 +1618,7 @@ export default function Dashboard() {
                                 <ArrowUpDown size={12} color="#8a9c90" />
                               </div>
                             </th>
-                            {role === 'ADMIN' && <th>LEAVE STATUS</th>}
+                            {isAdminWorkspace && <th>LEAVE STATUS</th>}
                             {showActions && <th style={{ textAlign: 'right' }}>ACTIONS</th>}
                           </tr>
                         ) : (
@@ -1620,7 +1653,7 @@ export default function Dashboard() {
                               <td>{String(row.departmentName || row.departmentId || 'Unassigned')}</td>
                               <td>{String(row.designation || '—')}</td>
                               <td>{renderStatusPill(row.status || 'ACTIVE')}</td>
-                              {role === 'ADMIN' && (
+                              {isAdminWorkspace && (
                                 <td>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
                                     {row.onLeaveToday ? (

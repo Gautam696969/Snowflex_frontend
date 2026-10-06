@@ -1037,6 +1037,18 @@ a { color: inherit; }
   border: 1px solid #d4eb95;
 }
 
+.dash-role-badge.role-super-admin {
+  background: #dcefc0;
+  color: #163d2b;
+  border: 1px solid #a8cf69;
+}
+
+:root[data-theme='dark'] .dash-role-badge.role-super-admin {
+  background: #294a36;
+  color: #d9f29b;
+  border-color: #648c48;
+}
+
 .dash-role-badge.role-hr {
   background: #e0f2fe;
   color: #0369a1;
@@ -4730,6 +4742,63 @@ a { color: inherit; }
   border: 1px solid #e1e9df;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.leave-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid #dce7dc;
+}
+
+.leave-view-tabs button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #66796c;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.leave-view-tabs button:hover { color: #1e513a; }
+.leave-view-tabs button.active { border-bottom-color: #a9d34d; color: #193c33; }
+.leave-load-error {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e6c786;
+  border-radius: 8px;
+  background: #fff9e9;
+  color: #624b1d;
+}
+.leave-load-error strong { display: block; font-size: 13px; }
+.leave-load-error p { margin: 4px 0 0; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.leave-table-error { min-height: 180px; align-content: center; }
+.leave-decision-meta { display: block; margin-top: 5px; color: #66796c; font-size: 10px; line-height: 1.4; }
+.leave-own-pending-actions { display: grid; justify-items: end; gap: 5px; }
+.leave-own-pending-actions small,
+.leave-own-pending-note { color: #77877c; font-size: 10px; white-space: nowrap; }
+
+:root[data-theme='dark'] .leave-view-tabs { border-color: #2c4435; }
+:root[data-theme='dark'] .leave-view-tabs button { color: #a6b7aa; }
+:root[data-theme='dark'] .leave-view-tabs button:hover,
+:root[data-theme='dark'] .leave-view-tabs button.active { color: #d9f29b; }
+:root[data-theme='dark'] .leave-load-error { border-color: #6b5731; background: #302b1f; color: #f1d99d; }
+:root[data-theme='dark'] .leave-decision-meta,
+:root[data-theme='dark'] .leave-own-pending-actions small,
+:root[data-theme='dark'] .leave-own-pending-note { color: #a3b2a5; }
+
+@media (max-width: 680px) {
+  .leave-view-tabs { gap: 0; }
+  .leave-view-tabs button { flex: 1 1 auto; padding-inline: 8px; }
+  .leave-load-error { grid-template-columns: minmax(0, 1fr); }
+  .leave-own-pending-actions small,
+  .leave-own-pending-note { white-space: normal; }
 }
 
 .leave-toolbar-meta .section-kicker {

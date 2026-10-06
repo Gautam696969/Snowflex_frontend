@@ -106,7 +106,7 @@ export interface DashboardData {
 }
 
 export async function getDashboard(token: string, role: string): Promise<DashboardData> {
-  const endpoint = role === 'ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
+  const endpoint = role === 'ADMIN' || role === 'SUPER_ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
   const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/dashboard/${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
@@ -185,10 +185,11 @@ export async function getUsers(token: string): Promise<SafeUser[]> {
 }
 
 export async function updateUserRole(token: string, userId: number, role: string): Promise<SafeUser> {
+  const normalizedRole = role.trim().toUpperCase().replace(/[\s-]+/g, '_')
   const response = await request<ApiResponse & { data: SafeUser }>(`/admin/users/${userId}/role`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify({ role: normalizedRole }),
   })
   return response.data
 }
