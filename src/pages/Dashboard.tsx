@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
-  Server, ShieldCheck, UserCircle2
+  Server, ShieldCheck, UserCircle2, MessageSquare
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
@@ -27,10 +27,13 @@ import UserAvatar from '../components/UserAvatar'
 import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
+import { fetchLeaveActionCount } from '../lib/leave-api'
 import { useNotifications } from '../hooks/useNotifications'
 import { SkeletonOverview, SkeletonTable, SkeletonCards } from '../components/Skeleton'
+import LiveChatView from '../components/chat/LiveChatView'
+import { useChat } from '../context/ChatContext'
 
-type View = 'overview' | 'assistant' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
+type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
 type ViewMode = 'table' | 'cards'
 
@@ -92,6 +95,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [leaveActionCount, setLeaveActionCount] = useState(0)
   const { markByTypeAsRead, clear: clearNotifications } = useNotifications()
+  const { totalUnreadCount: chatUnreadCount } = useChat()
 
   // Mark leave notifications as read when opening Leave view
   useEffect(() => {
@@ -480,13 +484,14 @@ export default function Dashboard() {
 
   const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role
   const canManage = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HR'
-  const roleLabel = role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : role
+  const roleLabel = role
   const roleClass = String(role || 'employee').toLowerCase().replace('_', '-')
 
   const navGroups = useMemo(() => {
     const groups: { label: string; items: { id: View; label: string; icon: typeof LayoutDashboard }[] }[] = [
       { label: 'OVERVIEW', items: [
         { id: 'overview' as View, label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'chat' as View, label: 'Chat', icon: MessageSquare as unknown as typeof LayoutDashboard },
         { id: 'assistant' as View, label: 'AI Employee', icon: Sparkles },
       ] },
       { label: 'MANAGEMENT', items: [
@@ -693,6 +698,7 @@ export default function Dashboard() {
                   <Icon size={17} strokeWidth={1.8} />
                   <span>{label}</span>
                   {id === 'leaves' && <UnreadBadge count={leaveActionCount} className="sidebar-leave-badge" />}
+                  {id === 'chat' && <UnreadBadge count={chatUnreadCount} className="sidebar-chat-badge" />}
                   {view === id && <ChevronRight className="nav-chevron" size={15} />}
                 </button>
               ))}
@@ -845,7 +851,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className={view === 'assistant' ? 'page-content ai-page-content' : 'page-content'}>
+        <div className={view === 'assistant' ? 'page-content ai-page-content' : view === 'chat' ? 'page-content chat-page-content' : 'page-content'}>
           {/* Executive Hero Banner */}
           <section className="dash-hero">
             <div className="dash-hero-content">
@@ -855,9 +861,11 @@ export default function Dashboard() {
                     ? 'SNOWFLEX PEOPLE PLATFORM'
                     : view === 'assistant'
                       ? 'AI PEOPLE ASSISTANT'
-                      : view === 'users' || view === 'system'
-                        ? 'ADMINISTRATION PORTAL'
-                        : 'PEOPLE OPERATIONS'}
+                      : view === 'chat'
+                        ? 'TEAM COLLABORATION'
+                        : view === 'users' || view === 'system'
+                          ? 'ADMINISTRATION PORTAL'
+                          : 'PEOPLE OPERATIONS'}
                 </span>
                 <span className={`dash-role-badge role-${roleClass}`}>
                   {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
@@ -878,11 +886,13 @@ export default function Dashboard() {
                       : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
                   : view === 'assistant'
                     ? 'Natural language queries across employee records, team status, and corporate policies.'
+                    : view === 'chat'
+                      ? 'Real-time role-restricted live messaging with colleagues, managers, and administrators.'
                     : view === 'users'
                       ? 'Governance console: configure user access levels, manage role promotions, and audit registered accounts.'
                       : view === 'system'
                         ? 'Telemetry console: monitor live Snowflake cloud connections, runtime status, and test SMTP email delivery.'
-                        : `Centralized registry and workflows for ${activeItem?.label.toLowerCase()}.`}
+                        : `Centralized registry and workflows for ${activeItem?.label?.toLowerCase() || 'this module'}.`}
               </p>
             </div>
 
@@ -1126,6 +1136,8 @@ export default function Dashboard() {
           {/* VIEW SWITCHER CONTENT */}
           {view === 'assistant' ? (
             token && <AiAssistant token={token} onError={setError} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />
+          ) : view === 'chat' ? (
+            user && <LiveChatView currentUser={user} />
           ) : view === 'users' ? (
             <AdminUsersView
               users={adminUsers}
