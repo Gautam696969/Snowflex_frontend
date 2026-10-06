@@ -7,12 +7,14 @@ import {
   createLeaveType, updateLeaveType, toggleLeaveType, deleteLeaveType,
   type LeaveType, type CreateLeaveTypePayload
 } from '../lib/leave-api'
+import { SkeletonTable } from './Skeleton'
 
 interface LeaveTypesAdminModalProps {
   isOpen: boolean
   onClose: () => void
   leaveTypes: LeaveType[]
   onRefresh: () => void
+  loading?: boolean
 }
 
 export default function LeaveTypesAdminModal({
@@ -20,6 +22,7 @@ export default function LeaveTypesAdminModal({
   onClose,
   leaveTypes,
   onRefresh,
+  loading = false,
 }: LeaveTypesAdminModalProps) {
   const [editingType, setEditingType] = useState<LeaveType | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -269,7 +272,10 @@ export default function LeaveTypesAdminModal({
 
           {/* Table of Types */}
           <div className="leave-types-table-container">
-            <table className="saas-grid-table">
+            {loading && leaveTypes.length === 0 ? (
+              <SkeletonTable columns={6} rows={4} />
+            ) : (
+              <table className="saas-grid-table">
               <thead>
                 <tr>
                   <th>TYPE & CODE</th>
@@ -341,6 +347,7 @@ export default function LeaveTypesAdminModal({
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 

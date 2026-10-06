@@ -12,6 +12,7 @@ import {
 import type { AiConversation, AiMessage } from '../lib/auth-api'
 import { renderMarkdown } from '../lib/render-markdown'
 import UserAvatar from './UserAvatar'
+import { SkeletonConversationHistory, SkeletonMessageBubbles } from './Skeleton'
 
 const MAX_MESSAGE_LENGTH = 4000
 
@@ -217,7 +218,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
           </button>
         </div>
         {loadingConversations ? (
-          <p className="ai-history-empty">Loading conversations…</p>
+          <SkeletonConversationHistory count={5} />
         ) : conversations.length === 0 ? (
           <p className="ai-history-empty">No conversations yet. Start one to get help.</p>
         ) : filteredConversations.length === 0 ? (
@@ -333,7 +334,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
             </article>
           ))}
 
-          {loadingMessages && <p className="ai-history-empty">Loading conversation…</p>}
+          {loadingMessages && <SkeletonMessageBubbles count={2} />}
 
           {sending && (
             <article className="ai-bubble assistant">

@@ -4,6 +4,7 @@ import {
   Server, Snowflake, Mail, Send, Activity, RefreshCw, Database
 } from 'lucide-react'
 import { sendAdminTestEmail, type AdminSystemInfo } from '../lib/auth-api'
+import { SkeletonDiagnosticCards } from './Skeleton'
 
 interface AdminSystemViewProps {
   systemInfo: AdminSystemInfo | null
@@ -52,6 +53,21 @@ export default function AdminSystemView({
     } finally {
       setSendingTest(false)
     }
+  }
+
+  if (loading && !systemInfo) {
+    return (
+      <div className="admin-system-view">
+        <div className="admin-system-header">
+          <div>
+            <span className="dash-kicker">INFRASTRUCTURE HEALTH</span>
+            <h2>Platform Health & Engine Diagnostics</h2>
+            <p>Real-time telemetry for Snowflake data warehouse, SMTP mail delivery, and runtime services.</p>
+          </div>
+        </div>
+        <SkeletonDiagnosticCards />
+      </div>
+    )
   }
 
   const db = systemInfo?.database
