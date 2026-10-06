@@ -221,7 +221,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh,
                     <td>
                       <span className={`dash-role-badge ${roleDescriptions[normalizedRole]?.badgeClass || 'role-employee'}`}>
                         {normalizedRole === 'SUPER_ADMIN' ? <ShieldCheck size={11} /> : normalizedRole === 'ADMIN' ? <Shield size={11} /> : normalizedRole === 'HR' ? <Users size={11} /> : normalizedRole === 'MANAGER' ? <Briefcase size={11} /> : <User size={11} />}
-                        {normalizedRole === 'SUPER_ADMIN' ? 'SUPER ADMIN' : normalizedRole}
+                        {normalizedRole}
                       </span>
                     </td>
                     <td>
@@ -274,7 +274,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh,
                     <div className="admin-role-option-head">
                       <span className={`dash-role-badge ${roleDescriptions[r].badgeClass}`}>
                         {r === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : r === 'ADMIN' ? <Shield size={12} /> : r === 'HR' ? <Users size={12} /> : r === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
-                        {r === 'SUPER_ADMIN' ? 'SUPER ADMIN' : r}
+                        {r}
                       </span>
                       {selectedRole === r && <CheckCircle2 size={16} className="admin-role-checked" />}
                     </div>
