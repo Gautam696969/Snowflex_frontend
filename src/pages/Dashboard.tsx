@@ -5,14 +5,15 @@ import {
   Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2,
   ChevronRight, CircleHelp, Clock3, LayoutDashboard, LogOut, Menu,
   PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
-  Edit, Trash2, Eye, Search, X as XIcon, UserCheck,
+  Edit, Trash2, Eye, Search, X as XIcon, UserCheck, UserX, RotateCcw, AlertTriangle,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
   Server, ShieldCheck, UserCircle2, MessageSquare
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
   getDepartments, getEmployees, getUsers, logout, readToken,
-  getAdminSystemInfo, type AdminSystemInfo
+  getAdminSystemInfo, getEmployeeStats, terminateEmployee, reactivateEmployee,
+  type AdminSystemInfo, type EmployeeStats
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
 import { AVATAR_UPDATED_EVENT } from '../lib/avatar'
@@ -91,6 +92,14 @@ export default function Dashboard() {
   const [pageSize, setPageSize] = useState(10)
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Row | null>(null)
+  const [employeeStatusTab, setEmployeeStatusTab] = useState<'ACTIVE' | 'TERMINATED' | 'ALL'>('ACTIVE')
+  const [employeeStats, setEmployeeStats] = useState<EmployeeStats | null>(null)
+  const [terminateTarget, setTerminateTarget] = useState<Row | null>(null)
+  const [terminateReason, setTerminateReason] = useState('')
+  const [terminating, setTerminating] = useState(false)
+  const [terminateError, setTerminateError] = useState('')
+  const [reactivateTarget, setReactivateTarget] = useState<Row | null>(null)
+  const [reactivating, setReactivating] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [leaveActionCount, setLeaveActionCount] = useState(0)
@@ -149,8 +158,12 @@ export default function Dashboard() {
     setError('')
     try {
       if (currentView === 'overview') {
-        const dashboardStats = await getDashboard(currentToken, currentUser.role)
+        const [dashboardStats, statsData] = await Promise.all([
+          getDashboard(currentToken, currentUser.role),
+          getEmployeeStats(currentToken).catch(() => null),
+        ])
         setStats(dashboardStats)
+        if (statsData) setEmployeeStats(statsData)
         setRows([])
         // Concurrently fetch recent leaves for overview intelligence feed
         try {
@@ -163,12 +176,14 @@ export default function Dashboard() {
       } else if (currentView === 'assistant') {
         setRows([])
       } else if (currentView === 'employees') {
-        const [empData, deptData] = await Promise.all([
-          getEmployees(currentToken),
+        const [empData, deptData, statsData] = await Promise.all([
+          getEmployees(currentToken, employeeStatusTab),
           getDepartments(currentToken).catch(() => []),
+          getEmployeeStats(currentToken).catch(() => null),
         ])
         setRows(empData)
         setAvailableDepartments(deptData)
+        if (statsData) setEmployeeStats(statsData)
         if (['ADMIN', 'SUPER_ADMIN', 'HR'].includes(currentUser.role)) {
           getUsers(currentToken).then(setAvailableUsers).catch(() => {})
         }
@@ -615,6 +630,15 @@ export default function Dashboard() {
         </span>
       )
     }
+    if (raw === 'TERMINATED') {
+      return (
+        <span className="status-pill status-terminated" title="Deactivated / Terminated Employee">
+          <span className="status-pill-dot" />
+          <UserX size={12} />
+          TERMINATED
+        </span>
+      )
+    }
     if (raw === 'REJECTED' || raw === 'ABSENT' || raw === 'CANCELLED') {
       return (
         <span className="status-pill status-rejected">
@@ -633,6 +657,145 @@ export default function Dashboard() {
       )
     }
     return <span className="status-pill">{raw || '—'}</span>
+  }
+
+  function canTerminateRow(targetRow: Row): boolean {
+    if (!user) return false
+    const currentRole = (user.role || '').toUpperCase()
+    if (!['SUPER_ADMIN', 'ADMIN', 'HR'].includes(currentRole)) return false
+
+    // Cannot terminate self
+    const targetUserId = Number(targetRow.userId || targetRow.id)
+    if (targetUserId === user.id) return false
+
+    const targetStatus = String(targetRow.status || 'ACTIVE').toUpperCase()
+    if (targetStatus === 'TERMINATED') return false
+
+    const targetRole = String(targetRow.role || 'EMPLOYEE').toUpperCase()
+    if (currentRole === 'HR') {
+      if (['ADMIN', 'SUPER_ADMIN', 'HR'].includes(targetRole)) return false
+    }
+    if (currentRole === 'ADMIN') {
+      if (targetRole === 'SUPER_ADMIN') return false
+    }
+    return true
+  }
+
+  function canReactivateRow(targetRow: Row): boolean {
+    if (!user) return false
+    const currentRole = (user.role || '').toUpperCase()
+    if (!['SUPER_ADMIN', 'ADMIN'].includes(currentRole)) return false
+
+    const targetStatus = String(targetRow.status || 'ACTIVE').toUpperCase()
+    if (targetStatus !== 'TERMINATED') return false
+
+    const targetRole = String(targetRow.role || 'EMPLOYEE').toUpperCase()
+    if (currentRole === 'ADMIN' && targetRole === 'SUPER_ADMIN') return false
+
+    return true
+  }
+
+  async function handleEmployeeStatusTabChange(newTab: 'ACTIVE' | 'TERMINATED' | 'ALL') {
+    setEmployeeStatusTab(newTab)
+    setCurrentPage(1)
+    if (token) {
+      try {
+        setLoading(true)
+        const [empData, statsData] = await Promise.all([
+          getEmployees(token, newTab),
+          getEmployeeStats(token).catch(() => null),
+        ])
+        setRows(empData)
+        if (statsData) setEmployeeStats(statsData)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to filter employees')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  function handleOpenTerminate(target: Row) {
+    setTerminateTarget(target)
+    setTerminateReason('')
+    setTerminateError('')
+  }
+
+  function handleOpenReactivate(target: Row) {
+    setReactivateTarget(target)
+  }
+
+  async function handleConfirmTerminate() {
+    if (!token || !terminateTarget || terminating) return
+    const reason = terminateReason.trim()
+    if (reason.length < 5) {
+      setTerminateError('Reason must be at least 5 characters.')
+      return
+    }
+
+    setTerminating(true)
+    setTerminateError('')
+    try {
+      await terminateEmployee(token, Number(terminateTarget.id), reason)
+      toast.success('Employee terminated successfully')
+      setTerminateTarget(null)
+      setTerminateReason('')
+      // Refresh list & stats without page reload
+      const [empData, statsData] = await Promise.all([
+        getEmployees(token, employeeStatusTab),
+        getEmployeeStats(token).catch(() => null),
+      ])
+      setRows(empData)
+      if (statsData) setEmployeeStats(statsData)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to terminate employee'
+      setTerminateError(msg)
+      toast.error(msg)
+      if (msg.toLowerCase().includes('already terminated')) {
+        setTerminateTarget(null)
+        setTerminateReason('')
+        const [empData, statsData] = await Promise.all([
+          getEmployees(token, employeeStatusTab),
+          getEmployeeStats(token).catch(() => null),
+        ]).catch(() => [null, null])
+        if (empData) setRows(empData)
+        if (statsData) setEmployeeStats(statsData)
+      }
+    } finally {
+      setTerminating(false)
+    }
+  }
+
+  async function handleConfirmReactivate() {
+    if (!token || !reactivateTarget || reactivating) return
+
+    setReactivating(true)
+    try {
+      await reactivateEmployee(token, Number(reactivateTarget.id))
+      toast.success('Employee reactivated successfully')
+      setReactivateTarget(null)
+      // Refresh list & stats without page reload
+      const [empData, statsData] = await Promise.all([
+        getEmployees(token, employeeStatusTab),
+        getEmployeeStats(token).catch(() => null),
+      ])
+      setRows(empData)
+      if (statsData) setEmployeeStats(statsData)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to reactivate employee'
+      toast.error(msg)
+      if (msg.toLowerCase().includes('already active')) {
+        setReactivateTarget(null)
+        const [empData, statsData] = await Promise.all([
+          getEmployees(token, employeeStatusTab),
+          getEmployeeStats(token).catch(() => null),
+        ]).catch(() => [null, null])
+        if (empData) setRows(empData)
+        if (statsData) setEmployeeStats(statsData)
+      }
+    } finally {
+      setReactivating(false)
+    }
   }
 
   if (!user) return (
@@ -781,7 +944,208 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* View Record Details Modal */}
+      {/* Terminate Employee Confirmation Modal */}
+      {terminateTarget && (
+        <div
+          className="modal-overlay"
+          onClick={() => { if (!terminating) setTerminateTarget(null) }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="terminate-modal-title"
+        >
+          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 id="terminate-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
+                <UserX size={18} /> Terminate Employee
+              </h3>
+              <button
+                className="modal-close"
+                type="button"
+                disabled={terminating}
+                onClick={() => setTerminateTarget(null)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '20px 24px' }}>
+              {/* Danger Warning Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#f87171',
+                  marginBottom: '16px',
+                  fontSize: '13px',
+                  lineHeight: 1.45,
+                }}
+              >
+                <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong>This employee will lose access immediately.</strong>
+                  <p style={{ margin: '4px 0 0', opacity: 0.9 }}>
+                    Active sessions and sockets will be disconnected immediately. The employee will not be able to log in or access any workspace feature.
+                  </p>
+                </div>
+              </div>
+
+              {/* Target info badge */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  background: 'var(--bg-subtle, #f3f6f1)',
+                  marginBottom: '18px',
+                }}
+              >
+                <UserAvatar
+                  name={String(terminateTarget.fullName || 'User')}
+                  avatarUrl={String(terminateTarget.avatarUrl || '') || null}
+                  size={42}
+                  className="avatar-circle"
+                />
+                <div>
+                  <strong style={{ fontSize: '15px', color: 'var(--text-main, #193c33)' }}>
+                    {String(terminateTarget.fullName || 'Unnamed Employee')}
+                  </strong>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted, #728477)', marginTop: '2px' }}>
+                    Role: <strong style={{ color: 'var(--text-main, #193c33)' }}>{String(terminateTarget.role || 'EMPLOYEE')}</strong> &bull; Code: {String(terminateTarget.employeeCode || '—')} &bull; {String(terminateTarget.email || '')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Reason Form Field */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main, #193c33)' }}>
+                  Reason for Termination <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={terminateReason}
+                  onChange={(e) => {
+                    setTerminateReason(e.target.value)
+                    if (e.target.value.trim().length >= 5) setTerminateError('')
+                  }}
+                  placeholder="Provide an audit reason for termination (required, minimum 5 characters)..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    border: terminateError ? '1px solid #ef4444' : '1px solid var(--border-color, #dbe2d8)',
+                    fontFamily: 'inherit',
+                  }}
+                  disabled={terminating}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {terminateError ? (
+                    <span style={{ fontSize: '11.5px', color: '#ef4444' }}>{terminateError}</span>
+                  ) : (
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #728477)' }}>
+                      Minimum 5 characters required for audit trail
+                    </span>
+                  )}
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted, #728477)' }}>
+                    {terminateReason.trim().length} chars
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="secondary-action"
+                type="button"
+                disabled={terminating}
+                onClick={() => setTerminateTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="primary-action"
+                type="button"
+                style={{
+                  background: '#dc2626',
+                  borderColor: '#dc2626',
+                  color: '#ffffff',
+                  opacity: (terminateReason.trim().length < 5 || terminating) ? 0.6 : 1,
+                  cursor: (terminateReason.trim().length < 5 || terminating) ? 'not-allowed' : 'pointer',
+                }}
+                disabled={terminateReason.trim().length < 5 || terminating}
+                onClick={handleConfirmTerminate}
+              >
+                {terminating ? 'Terminating...' : 'Terminate Employee'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactivate Employee Confirmation Modal */}
+      {reactivateTarget && (
+        <div
+          className="modal-overlay"
+          onClick={() => { if (!reactivating) setReactivateTarget(null) }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reactivate-modal-title"
+        >
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 id="reactivate-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
+                <RotateCcw size={18} /> Reactivate Employee
+              </h3>
+              <button
+                className="modal-close"
+                type="button"
+                disabled={reactivating}
+                onClick={() => setReactivateTarget(null)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <p style={{ margin: '0 0 12px', fontSize: '13.5px', lineHeight: 1.5 }}>
+                Are you sure you want to reactivate <strong>{String(reactivateTarget.fullName || 'this employee')}</strong>?
+              </p>
+              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted, #728477)' }}>
+                Their status will be restored to <strong>ACTIVE</strong> and their account will immediately be permitted to sign in and access the workspace again.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="secondary-action"
+                type="button"
+                disabled={reactivating}
+                onClick={() => setReactivateTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="primary-action"
+                type="button"
+                style={{
+                  background: '#059669',
+                  borderColor: '#059669',
+                  color: '#ffffff',
+                }}
+                disabled={reactivating}
+                onClick={handleConfirmReactivate}
+              >
+                {reactivating ? 'Reactivating...' : 'Reactivate Employee'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {viewingRow && (
         <div className="modal-overlay" onClick={() => setViewingRow(null)} role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
           <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
@@ -1378,13 +1742,69 @@ export default function Dashboard() {
             </>
             )
           ) : (
-            /* SaaS Modern Data Table / Cards Grid */
-            <section className="saas-table-card">
-              <div className="saas-table-top">
-                <div className="saas-table-title-area">
-                  <span className="dash-kicker">LIVE FROM SNOWFLAKE</span>
-                  <h2>{activeItem?.label} Directory</h2>
+            <>
+              {/* Employee KPI Summary Bar */}
+              {view === 'employees' && employeeStats && (
+                <div className="employee-kpi-bar">
+                  <div className="employee-kpi-card active-card">
+                    <div className="emp-kpi-icon-box kpi-icon-emerald">
+                      <UserCheck size={20} strokeWidth={2.2} />
+                    </div>
+                    <div className="emp-kpi-info">
+                      <span className="emp-kpi-label">Active Employees</span>
+                      <strong className="emp-kpi-val">{employeeStats.activeCount}</strong>
+                      <span className="emp-kpi-sub">Currently working</span>
+                    </div>
+                  </div>
+
+                  <div className="employee-kpi-card terminated-card">
+                    <div className="emp-kpi-icon-box kpi-icon-rose">
+                      <UserX size={20} strokeWidth={2.2} />
+                    </div>
+                    <div className="emp-kpi-info">
+                      <span className="emp-kpi-label">Terminated</span>
+                      <strong className="emp-kpi-val">{employeeStats.terminatedCount}</strong>
+                      <span className="emp-kpi-sub">Deactivated accounts</span>
+                    </div>
+                  </div>
+
+                  <div className="employee-kpi-card roles-card">
+                    <div className="emp-kpi-info" style={{ width: '100%' }}>
+                      <span className="emp-kpi-label">Active Staff by Role</span>
+                      <div className="emp-role-pills">
+                        <span className="role-chip" title="Super Administrators">
+                          <small>SUPER ADMIN</small>
+                          <strong>{employeeStats.byRole?.SUPER_ADMIN ?? 0}</strong>
+                        </span>
+                        <span className="role-chip" title="Administrators">
+                          <small>ADMIN</small>
+                          <strong>{employeeStats.byRole?.ADMIN ?? 0}</strong>
+                        </span>
+                        <span className="role-chip" title="HR Personnel">
+                          <small>HR</small>
+                          <strong>{employeeStats.byRole?.HR ?? 0}</strong>
+                        </span>
+                        <span className="role-chip" title="Managers">
+                          <small>MANAGER</small>
+                          <strong>{employeeStats.byRole?.MANAGER ?? 0}</strong>
+                        </span>
+                        <span className="role-chip" title="Employees">
+                          <small>EMPLOYEE</small>
+                          <strong>{employeeStats.byRole?.EMPLOYEE ?? 0}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* SaaS Modern Data Table / Cards Grid */}
+              <section className="saas-table-card">
+                <div className="saas-table-top">
+                  <div className="saas-table-title-area">
+                    <span className="dash-kicker">LIVE FROM SNOWFLAKE</span>
+                    <h2>{activeItem?.label} Directory</h2>
+                  </div>
 
                 <div className="saas-table-actions">
                   {/* Search Bar */}
@@ -1430,6 +1850,40 @@ export default function Dashboard() {
                           </>
                         )}
                       </select>
+                    </div>
+                  )}
+
+                  {/* Status Filter Tabs for Employees: Active | Terminated | All */}
+                  {view === 'employees' && (
+                    <div className="employee-filter-tabs">
+                      <button
+                        type="button"
+                        className={`filter-tab-btn ${employeeStatusTab === 'ACTIVE' ? 'active' : ''}`}
+                        onClick={() => handleEmployeeStatusTabChange('ACTIVE')}
+                      >
+                        Active
+                        {employeeStats && <span className="tab-badge">{employeeStats.activeCount}</span>}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-tab-btn ${employeeStatusTab === 'TERMINATED' ? 'active' : ''}`}
+                        onClick={() => handleEmployeeStatusTabChange('TERMINATED')}
+                      >
+                        Terminated
+                        {employeeStats && <span className="tab-badge badge-danger">{employeeStats.terminatedCount}</span>}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-tab-btn ${employeeStatusTab === 'ALL' ? 'active' : ''}`}
+                        onClick={() => handleEmployeeStatusTabChange('ALL')}
+                      >
+                        All
+                        {employeeStats && (
+                          <span className="tab-badge badge-neutral">
+                            {(employeeStats.activeCount ?? 0) + (employeeStats.terminatedCount ?? 0)}
+                          </span>
+                        )}
+                      </button>
                     </div>
                   )}
 
@@ -1509,7 +1963,17 @@ export default function Dashboard() {
                                 <small>{String(row.email || 'No email')}</small>
                               </div>
                             </div>
-                            {renderStatusPill(row.status || 'ACTIVE')}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                              {renderStatusPill(row.status || 'ACTIVE')}
+                              {String(row.status || '').toUpperCase() === 'TERMINATED' && Boolean(row.terminatedAt) && (
+                                <span
+                                  style={{ fontSize: '10.5px', color: '#f87171' }}
+                                  title={row.terminationReason ? `Reason: ${String(row.terminationReason)}` : undefined}
+                                >
+                                  {formatDate(row.terminatedAt)}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="emp-card-meta-list">
@@ -1563,6 +2027,26 @@ export default function Dashboard() {
                             <div className="table-action-btns">
                               <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
                               {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                              {view === 'employees' && canTerminateRow(row) && (
+                                <button
+                                  className="action-chip-btn action-terminate"
+                                  type="button"
+                                  onClick={() => handleOpenTerminate(row)}
+                                  title="Terminate employee"
+                                >
+                                  <UserX size={15} />
+                                </button>
+                              )}
+                              {view === 'employees' && canReactivateRow(row) && (
+                                <button
+                                  className="action-chip-btn action-reactivate"
+                                  type="button"
+                                  onClick={() => handleOpenReactivate(row)}
+                                  title="Reactivate employee"
+                                >
+                                  <RotateCcw size={15} />
+                                </button>
+                              )}
                               {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete"><Trash2 size={15} /></button>}
                             </div>
                           </div>
@@ -1693,7 +2177,19 @@ export default function Dashboard() {
                               <td><strong>{String(row.employeeCode || '—')}</strong></td>
                               <td>{String(row.departmentName || row.departmentId || 'Unassigned')}</td>
                               <td>{String(row.designation || '—')}</td>
-                              <td>{renderStatusPill(row.status || 'ACTIVE')}</td>
+                              <td>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                                  {renderStatusPill(row.status || 'ACTIVE')}
+                                  {String(row.status || '').toUpperCase() === 'TERMINATED' && Boolean(row.terminatedAt) && (
+                                    <span
+                                      style={{ fontSize: '10.5px', color: '#f87171', whiteSpace: 'nowrap' }}
+                                      title={row.terminationReason ? `Reason: ${String(row.terminationReason)}` : undefined}
+                                    >
+                                      Terminated {formatDate(row.terminatedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
                               {isAdminWorkspace && (
                                 <td>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
@@ -1730,6 +2226,26 @@ export default function Dashboard() {
                                   <div className="table-action-btns">
                                     <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
                                     {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                                    {view === 'employees' && canTerminateRow(row) && (
+                                      <button
+                                        className="action-chip-btn action-terminate"
+                                        type="button"
+                                        onClick={() => handleOpenTerminate(row)}
+                                        title="Terminate employee"
+                                      >
+                                        <UserX size={15} />
+                                      </button>
+                                    )}
+                                    {view === 'employees' && canReactivateRow(row) && (
+                                      <button
+                                        className="action-chip-btn action-reactivate"
+                                        type="button"
+                                        onClick={() => handleOpenReactivate(row)}
+                                        title="Reactivate employee"
+                                      >
+                                        <RotateCcw size={15} />
+                                      </button>
+                                    )}
                                     {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
                                   </div>
                                 </td>
@@ -1844,6 +2360,7 @@ export default function Dashboard() {
                 </>
               )}
             </section>
+            </>
           )}
 
           <footer className="content-foot">
