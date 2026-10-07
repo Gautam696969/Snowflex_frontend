@@ -1,3 +1,5 @@
+import { apiBase } from './api-config'
+
 export function getInitials(name: string): string {
   if (!name) return 'U'
   return (
@@ -25,8 +27,7 @@ export function getFullAvatarUrl(url?: string | null): string | null {
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
     return url
   }
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-  const origin = apiBase.replace(/\/api\/?$/, '')
+  const origin = apiBase.replace(/\/api$/, '')
   return `${origin}${url.startsWith('/') ? '' : '/'}${url}`
 }
 

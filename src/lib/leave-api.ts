@@ -95,7 +95,7 @@ export interface ApiError extends Error {
   isConflict?: boolean
 }
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import { apiBase } from './api-config'
 
 async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = readToken()

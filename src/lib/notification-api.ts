@@ -22,7 +22,7 @@ interface ApiResponse<T = unknown> {
   data?: T
 }
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import { apiBase } from './api-config'
 
 export async function fetchNotifications(
   token: string,

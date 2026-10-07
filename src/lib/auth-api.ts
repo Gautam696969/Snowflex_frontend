@@ -25,7 +25,7 @@ function normalizeAvatarFields<T>(value: T): T {
   return normalized as T
 }
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import { apiBase } from './api-config'
 const tokenKey = 'snowflex.auth.token'
 
 async function request<T extends ApiResponse>(path: string, options: RequestInit = {}): Promise<T> {

@@ -57,11 +57,11 @@ interface ApiResponse<T> {
   data: T
 }
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import { apiBase } from './api-config'
 
 export function getSocketUrl(): string {
-  const envUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000'
-  return envUrl.replace(/\/api\/?$/, '')
+  const envUrl = (import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000').trim().replace(/\/+$/, '')
+  return envUrl.replace(/\/api$/, '')
 }
 
 async function chatFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
