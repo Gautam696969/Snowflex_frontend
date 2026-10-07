@@ -53,7 +53,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
     <div className={`notif-bell-container ${className}`.trim()} ref={bellContainerRef}>
       <button
         type="button"
-        className={`notif-bell-btn icon-button ${isOpen ? 'is-active' : ''}`}
+        className={`notif-bell-btn ${isOpen ? 'is-active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`Notifications, ${unreadCounts.total} unread`}
         aria-haspopup="true"

@@ -108,10 +108,12 @@ export default function Dashboard() {
   const { markByTypeAsRead, clear: clearNotifications } = useNotifications()
   const { totalUnreadCount: chatUnreadCount } = useChat()
 
-  // Mark leave notifications as read when opening Leave view
+  // Mark leave and holiday notifications as read when opening their respective views
   useEffect(() => {
     if (view === 'leaves') {
       void markByTypeAsRead('LEAVE')
+    } else if (view === 'holidays') {
+      void markByTypeAsRead('HOLIDAY')
     }
   }, [view, markByTypeAsRead])
 

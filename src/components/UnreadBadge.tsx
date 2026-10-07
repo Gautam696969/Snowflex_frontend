@@ -7,7 +7,7 @@ interface UnreadBadgeProps {
 
 export default function UnreadBadge({
   count,
-  max = 9,
+  max = 99,
   className = '',
   dotOnly = false,
 }: UnreadBadgeProps) {

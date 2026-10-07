@@ -46,6 +46,13 @@ function getNotificationVisuals(type: string) {
       bgClass: 'notif-bg-rejected',
     }
   }
+  if (upper === 'HOLIDAY') {
+    return {
+      icon: Calendar,
+      badgeClass: 'notif-badge-approved',
+      bgClass: 'notif-bg-approved',
+    }
+  }
   return {
     icon: Bell,
     badgeClass: 'notif-badge-default',

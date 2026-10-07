@@ -195,31 +195,42 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const token = readToken()
     if (!token) return
 
-    let itemType = ''
-    setNotifications((prev) =>
-      prev.map((item) => {
+    setNotifications((prev) => {
+      let foundType = ''
+      let wasUnread = false
+
+      const updated = prev.map((item) => {
         if (item.id === id) {
-          itemType = item.type
+          foundType = item.type
+          wasUnread = !item.isRead
           return { ...item, isRead: true, readAt: new Date().toISOString() }
         }
         return item
-      }),
-    )
+      })
 
-    setUnreadCounts((prev) => {
-      if (prev.total <= 0) return prev
-      const newByType = { ...prev.byType }
-      if (itemType && newByType[itemType]) {
-        newByType[itemType] = Math.max(0, newByType[itemType] - 1)
+      if (wasUnread) {
+        setUnreadCounts((countsPrev) => {
+          if (countsPrev.total <= 0) return countsPrev
+          const newByType = { ...countsPrev.byType }
+          if (foundType && newByType[foundType]) {
+            newByType[foundType] = Math.max(0, newByType[foundType] - 1)
+          }
+          return {
+            total: Math.max(0, countsPrev.total - 1),
+            byType: newByType,
+          }
+        })
       }
-      return {
-        total: Math.max(0, prev.total - 1),
-        byType: newByType,
-      }
+
+      return updated
     })
 
     try {
       await markNotificationRead(token, id)
+      const freshCounts = await fetchUnreadCounts(token).catch(() => null)
+      if (freshCounts) {
+        setUnreadCounts(freshCounts)
+      }
     } catch {
       // rollback or re-sync if failed
       void refresh()
@@ -238,12 +249,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     try {
       await markAllNotificationsRead(token)
+      const freshCounts = await fetchUnreadCounts(token).catch(() => null)
+      if (freshCounts) {
+        setUnreadCounts(freshCounts)
+      }
     } catch {
       void refresh()
     }
   }, [refresh])
 
-  // Optimistic mark by type as read (e.g. 'LEAVE' when opening Leave requests view)
+  // Optimistic mark by type as read (e.g. 'LEAVE' when opening Leave requests view, or 'HOLIDAY')
   const markByTypeAsRead = useCallback(async (type: string) => {
     const token = readToken()
     if (!token) return
@@ -278,6 +293,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     try {
       await markNotificationsByTypeRead(token, type)
+      const freshCounts = await fetchUnreadCounts(token).catch(() => null)
+      if (freshCounts) {
+        setUnreadCounts(freshCounts)
+      }
     } catch {
       void refresh()
     }

@@ -4812,11 +4812,13 @@ a { color: inherit; }
 
 .notif-bell-btn {
   position: relative;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: 1px solid #e1e8df;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 8px;
+  padding: 0;
   color: var(--text-sub, #4b5e52);
   display: inline-flex;
   align-items: center;
@@ -4843,11 +4845,13 @@ a { color: inherit; }
 }
 
 /* Reusable Unread Badges */
+.unread-badge,
 .unread-count-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-family: inherit;
+  font-size: 9.5px;
   font-weight: 800;
   line-height: 1;
   border-radius: 9999px;
@@ -4856,17 +4860,45 @@ a { color: inherit; }
   min-width: 17px;
   height: 17px;
   padding: 0 4px;
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.45);
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.4);
   letter-spacing: -0.02em;
+  box-sizing: border-box;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.unread-badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  flex-shrink: 0;
 }
 
 .notif-bell-badge {
   position: absolute;
-  top: 1px;
-  right: 1px;
-  z-index: 2;
+  top: -4px;
+  right: -4px;
+  z-index: 3;
   pointer-events: none;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1;
   border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 4px rgba(239, 68, 68, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  letter-spacing: -0.02em;
 }
 
 .sidebar-leave-badge {
@@ -5162,6 +5194,12 @@ a { color: inherit; }
 }
 
 /* Dark Theme Overrides */
+:root[data-theme='dark'] .notif-bell-btn {
+  background: #14221b;
+  border-color: #273b30;
+  color: #9aa89d;
+}
+
 :root[data-theme='dark'] .notif-bell-btn:hover,
 :root[data-theme='dark'] .notif-bell-btn.is-active {
   background: #1c2e24;
@@ -5173,7 +5211,10 @@ a { color: inherit; }
 }
 
 :root[data-theme='dark'] .notif-bell-badge {
-  border-color: #15241d;
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #14221b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6), 0 0 6px rgba(239, 68, 68, 0.5);
 }
 
 :root[data-theme='dark'] .notif-dropdown-popover {

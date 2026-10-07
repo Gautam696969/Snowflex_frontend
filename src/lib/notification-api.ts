@@ -49,9 +49,11 @@ export async function fetchNotifications(
 }
 
 export async function fetchUnreadCounts(token: string): Promise<UnreadCounts> {
-  const response = await fetch(`${apiBase}/notifications/unread-count`, {
+  const response = await fetch(`${apiBase}/notifications/unread-count?_t=${Date.now()}`, {
+    cache: 'no-store',
     headers: {
       Authorization: `Bearer ${token}`,
+      'Cache-Control': 'no-cache',
     },
   })
   const json = (await response.json().catch(() => null)) as ApiResponse<UnreadCounts> | null
