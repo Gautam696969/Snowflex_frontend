@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Profile from './pages/Profile'
+import NotFound from './pages/NotFound'
 import { NotificationProvider } from './context/NotificationContext'
 import { ChatProvider } from './context/ChatContext'
 
@@ -22,7 +23,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat" element={<Navigate to="/dashboard?view=chat" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </ChatProvider>
     </NotificationProvider>

@@ -1,0 +1,9 @@
+services:
+  - type: static
+    name: snowflex-frontend-2
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
