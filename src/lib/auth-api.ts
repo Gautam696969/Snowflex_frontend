@@ -28,6 +28,19 @@ function normalizeAvatarFields<T>(value: T): T {
 import { apiBase } from './api-config'
 const tokenKey = 'snowflex.auth.token'
 
+export function handleDeactivatedResponse(message?: string): void {
+  const notice = message || 'Your account has been deactivated. Please contact HR.'
+  try {
+    sessionStorage.setItem('deactivated_notice', notice)
+  } catch {
+    // Session storage unavailable
+  }
+  clearToken()
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.href = `/login?notice=${encodeURIComponent(notice)}`
+  }
+}
+
 async function request<T extends ApiResponse>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
     cache: 'no-store',
@@ -36,7 +49,17 @@ async function request<T extends ApiResponse>(path: string, options: RequestInit
   })
   const body = (await response.json().catch(() => null)) as T | null
   if (!response.ok || !body?.success) {
-    throw new Error(body?.message || 'Unable to reach the authentication service.')
+    const errorMsg = body?.message || 'Unable to reach the authentication service.'
+    const isDeactivated =
+      (response.status === 401 || response.status === 403) &&
+      (errorMsg.toLowerCase().includes('your account has been deactivated') ||
+        errorMsg.toLowerCase().includes('account has been deactivated') ||
+        (errorMsg.toLowerCase().includes('contact hr') && !path.includes('/terminate')))
+
+    if (isDeactivated && !path.startsWith('/auth/login')) {
+      handleDeactivatedResponse(errorMsg)
+    }
+    throw new Error(errorMsg)
   }
   return { ...body, data: normalizeAvatarFields(body.data) } as T
 }
@@ -130,8 +153,44 @@ export async function getDashboard(token: string, role: string): Promise<Dashboa
   }
 }
 
-export async function getEmployees(token: string): Promise<Record<string, unknown>[]> {
-  const response = await request<ApiResponse & { data: Record<string, unknown>[] }>('/employees', {
+export interface EmployeeStats {
+  activeCount: number
+  terminatedCount: number
+  byRole: {
+    SUPER_ADMIN: number
+    ADMIN: number
+    HR: number
+    MANAGER: number
+    EMPLOYEE: number
+  }
+}
+
+export async function getEmployeeStats(token: string): Promise<EmployeeStats> {
+  const response = await request<ApiResponse & { data: EmployeeStats }>('/employees/stats', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function getEmployees(token: string, status: string = 'ACTIVE'): Promise<Record<string, unknown>[]> {
+  const response = await request<ApiResponse & { data: Record<string, unknown>[] }>(`/employees?status=${encodeURIComponent(status)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return response.data
+}
+
+export async function terminateEmployee(token: string, id: number, reason: string): Promise<Record<string, unknown>> {
+  const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/employees/${id}/terminate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ reason }),
+  })
+  return response.data
+}
+
+export async function reactivateEmployee(token: string, id: number): Promise<Record<string, unknown>> {
+  const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/employees/${id}/reactivate`, {
+    method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   })
   return response.data

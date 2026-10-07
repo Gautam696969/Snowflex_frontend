@@ -8459,3 +8459,277 @@ a { color: inherit; }
   background: #25332a;
   color: #f28b75;
 }
+
+/* ==========================================================================
+   Employee Termination & Statistics Styling
+   ========================================================================== */
+
+/* Employee KPI Bar on Employees Page */
+.employee-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.employee-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8df;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(25, 60, 51, 0.04);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.employee-kpi-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(25, 60, 51, 0.08);
+}
+
+.employee-kpi-card.active-card {
+  border-left: 4px solid #10b981;
+}
+
+.employee-kpi-card.terminated-card {
+  border-left: 4px solid #ef4444;
+}
+
+.employee-kpi-card.roles-card {
+  border-left: 4px solid #6366f1;
+}
+
+.emp-kpi-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.emp-kpi-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-kpi-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #657b6f;
+  margin-bottom: 2px;
+}
+
+.emp-kpi-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: #193c33;
+  line-height: 1.1;
+  font-family: 'Manrope', sans-serif;
+}
+
+.emp-kpi-sub {
+  font-size: 11.5px;
+  color: #8a9c90;
+  margin-top: 3px;
+}
+
+.emp-role-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f1f5f1;
+  border: 1px solid #dbe2d8;
+  font-size: 10.5px;
+}
+
+.role-chip small {
+  color: #62766b;
+  font-weight: 700;
+  font-size: 9.5px;
+}
+
+.role-chip strong {
+  color: #193c33;
+  font-weight: 800;
+}
+
+/* Status Filter Tabs */
+.employee-filter-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: #edf3eb;
+  padding: 3px;
+  border-radius: 9px;
+  gap: 3px;
+}
+
+.filter-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #556b5e;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.filter-tab-btn:hover {
+  color: #193c33;
+}
+
+.filter-tab-btn.active {
+  background: #ffffff;
+  color: #193c33;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #e2e8df;
+  color: #3b5044;
+}
+
+.tab-badge.badge-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.tab-badge.badge-neutral {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+/* Action Chips for Termination & Reactivation */
+.action-chip-btn.action-terminate:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.action-chip-btn.action-reactivate:hover {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+/* Status Terminated Pill */
+.status-terminated {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Dark Theme Overrides */
+:root[data-theme='dark'] .employee-kpi-card {
+  border-color: #27372d;
+  background: #17231c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+:root[data-theme='dark'] .employee-kpi-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme='dark'] .emp-kpi-label {
+  color: #8ea195;
+}
+
+:root[data-theme='dark'] .emp-kpi-val {
+  color: #edf5ee;
+}
+
+:root[data-theme='dark'] .emp-kpi-sub {
+  color: #6e8276;
+}
+
+:root[data-theme='dark'] .role-chip {
+  background: #1e2c24;
+  border-color: #2d3e33;
+}
+
+:root[data-theme='dark'] .role-chip small {
+  color: #9cb0a3;
+}
+
+:root[data-theme='dark'] .role-chip strong {
+  color: #e5eee7;
+}
+
+:root[data-theme='dark'] .employee-filter-tabs {
+  background: #15221b;
+  border: 1px solid #233429;
+}
+
+:root[data-theme='dark'] .filter-tab-btn {
+  color: #8da194;
+}
+
+:root[data-theme='dark'] .filter-tab-btn:hover {
+  color: #e5eee7;
+}
+
+:root[data-theme='dark'] .filter-tab-btn.active {
+  background: #233429;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme='dark'] .tab-badge {
+  background: #2b3d31;
+  color: #cbdad0;
+}
+
+:root[data-theme='dark'] .tab-badge.badge-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+:root[data-theme='dark'] .tab-badge.badge-neutral {
+  background: #2d3832;
+  color: #9caaa0;
+}
+
+:root[data-theme='dark'] .action-chip-btn.action-terminate:hover {
+  background: rgba(220, 38, 38, 0.22);
+  color: #fca5a5;
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
+:root[data-theme='dark'] .action-chip-btn.action-reactivate:hover {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+:root[data-theme='dark'] .status-terminated {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+

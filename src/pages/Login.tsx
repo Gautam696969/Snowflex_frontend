@@ -1,6 +1,7 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { AlertCircle } from 'lucide-react'
 import Input from '../components/Input'
 import LoadingButton from '../components/LoadingButton'
 import PasswordInput from '../components/PasswordInput'
@@ -10,6 +11,7 @@ import { login, storeToken } from '../lib/auth-api'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
@@ -17,6 +19,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [helpMessage, setHelpMessage] = useState('')
   const [serverError, setServerError] = useState('')
+  const [deactivatedNotice, setDeactivatedNotice] = useState('')
+
+  useEffect(() => {
+    const noticeFromUrl = searchParams.get('notice')
+    const noticeFromStorage = sessionStorage.getItem('deactivated_notice')
+    if (noticeFromUrl || noticeFromStorage) {
+      const msg = noticeFromUrl || noticeFromStorage || 'Your account has been deactivated. Please contact HR.'
+      setDeactivatedNotice(msg)
+      sessionStorage.removeItem('deactivated_notice')
+    }
+  }, [searchParams])
 
   const errors = getLoginErrors(email, password)
   const isValid = !errors.email && !errors.password
@@ -55,6 +68,28 @@ export default function Login() {
 
   return (
     <AuthLayout title="Welcome back" description="Sign in to pick up right where you left off.">
+      {deactivatedNotice && (
+        <div
+          className="deactivated-account-banner"
+          role="alert"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 14px',
+            marginBottom: '16px',
+            borderRadius: '8px',
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#f87171',
+            fontSize: '13px',
+            lineHeight: 1.4,
+          }}
+        >
+          <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <span>{deactivatedNotice}</span>
+        </div>
+      )}
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <Input
           id="email"
