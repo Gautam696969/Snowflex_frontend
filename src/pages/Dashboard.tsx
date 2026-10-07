@@ -649,7 +649,7 @@ export default function Dashboard() {
   const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
 
   return (
-    <main className={`workbench${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}`}>
+    <main className={`workbench${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
       {/* Sidebar Navigation */}
       <aside className="workbench-sidebar" aria-label="Workspace sidebar">
         <div className="sidebar-brand-row">
@@ -852,87 +852,107 @@ export default function Dashboard() {
         </header>
 
         <div className={view === 'assistant' ? 'page-content ai-page-content' : view === 'chat' ? 'page-content chat-page-content' : 'page-content'}>
-          {/* Executive Hero Banner */}
-          <section className="dash-hero">
-            <div className="dash-hero-content">
-              <div className="dash-hero-topline">
-                <span className="dash-kicker">
-                  {view === 'overview'
-                    ? 'SNOWFLEX PEOPLE PLATFORM'
-                    : view === 'assistant'
-                      ? 'AI PEOPLE ASSISTANT'
-                      : view === 'chat'
-                        ? 'TEAM COLLABORATION'
-                        : view === 'users' || view === 'system'
-                          ? 'ADMINISTRATION PORTAL'
-                          : 'PEOPLE OPERATIONS'}
-                </span>
+          {view === 'chat' || view === 'assistant' ? (
+            /* Compact Header for Chat & AI Employee */
+            <section className="chat-hero-compact">
+              <div className="chat-hero-compact-content">
+                {view === 'chat' ? (
+                  <MessageSquare size={18} className="chat-hero-compact-icon" />
+                ) : (
+                  <Sparkles size={18} className="chat-hero-compact-icon" />
+                )}
+                <h1 className="chat-hero-compact-title">{view === 'chat' ? 'Chat' : 'AI Employee'}</h1>
                 <span className={`dash-role-badge role-${roleClass}`}>
                   {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
                   {roleLabel}
                 </span>
+                <span className="chat-hero-compact-sub">
+                  {view === 'chat'
+                    ? 'Live messaging with your team'
+                    : 'Natural language queries for people operations'}
+                </span>
               </div>
-              <h1 className="dash-hero-title">
-                {view === 'overview'
-                  ? `Good ${greetingTime}, ${user.fullName.split(' ')[0]}`
-                  : activeItem?.label}
-              </h1>
-              <p className="dash-hero-sub">
-                {view === 'overview'
-                  ? isAdminWorkspace
-                    ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
-                    : role === 'MANAGER'
-                      ? 'Team Operations Hub • Monitor attendance, review team leave petitions, and drive deliverables.'
-                      : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
-                  : view === 'assistant'
-                    ? 'Natural language queries across employee records, team status, and corporate policies.'
-                    : view === 'chat'
-                      ? 'Real-time role-restricted live messaging with colleagues, managers, and administrators.'
+
+              <div className="chat-hero-clock" title="Current Time">
+                <Clock3 size={14} className="chat-hero-clock-icon" />
+                <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </section>
+          ) : (
+            /* Executive Hero Banner */
+            <section className="dash-hero">
+              <div className="dash-hero-content">
+                <div className="dash-hero-topline">
+                  <span className="dash-kicker">
+                    {view === 'overview'
+                      ? 'SNOWFLEX PEOPLE PLATFORM'
+                      : view === 'users' || view === 'system'
+                        ? 'ADMINISTRATION PORTAL'
+                        : 'PEOPLE OPERATIONS'}
+                  </span>
+                  <span className={`dash-role-badge role-${roleClass}`}>
+                    {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
+                    {roleLabel}
+                  </span>
+                </div>
+                <h1 className="dash-hero-title">
+                  {view === 'overview'
+                    ? `Good ${greetingTime}, ${user.fullName.split(' ')[0]}`
+                    : activeItem?.label}
+                </h1>
+                <p className="dash-hero-sub">
+                  {view === 'overview'
+                    ? isAdminWorkspace
+                      ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
+                      : role === 'MANAGER'
+                        ? 'Team Operations Hub • Monitor attendance, review team leave petitions, and drive deliverables.'
+                        : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
                     : view === 'users'
                       ? 'Governance console: configure user access levels, manage role promotions, and audit registered accounts.'
                       : view === 'system'
                         ? 'Telemetry console: monitor live Snowflake cloud connections, runtime status, and test SMTP email delivery.'
                         : `Centralized registry and workflows for ${activeItem?.label?.toLowerCase() || 'this module'}.`}
-              </p>
-            </div>
-
-            <div className="dash-hero-actions">
-              {view === 'attendance' && role === 'EMPLOYEE' && (
-                <>
-                  <button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
-                    Check In
-                  </button>
-                  <button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
-                    Check Out
-                  </button>
-                </>
-              )}
-
-              {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
-                <button
-                  className="primary-action"
-                  type="button"
-                  onClick={() => {
-                    setEditingRow(null)
-                    setForm({
-                      name: '', userId: '', employeeCode: '', departmentId: '',
-                      phone: '', designation: '', joiningDate: '', fullName: '', email: '',
-                      title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
-                    })
-                    setShowCreate((open) => !open)
-                  }}
-                >
-                  <Plus size={16} />
-                  {`Add ${view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}`}
-                </button>
-              )}
-
-              <div className="dash-time-chip" title="Current Time">
-                <Clock3 size={15} color="#517154" />
-                <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </p>
               </div>
-            </div>
-          </section>
+
+              <div className="dash-hero-actions">
+                {view === 'attendance' && role === 'EMPLOYEE' && (
+                  <>
+                    <button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
+                      Check In
+                    </button>
+                    <button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
+                      Check Out
+                    </button>
+                  </>
+                )}
+
+                {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
+                  <button
+                    className="primary-action"
+                    type="button"
+                    onClick={() => {
+                      setEditingRow(null)
+                      setForm({
+                        name: '', userId: '', employeeCode: '', departmentId: '',
+                        phone: '', designation: '', joiningDate: '', fullName: '', email: '',
+                        title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
+                      })
+                      setShowCreate((open) => !open)
+                    }}
+                  >
+                    <Plus size={16} />
+                    {`Add ${view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : 'Task'}`}
+                  </button>
+                )}
+
+                <div className="dash-time-chip" title="Current Time">
+                  <Clock3 size={15} color="#517154" />
+                  <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+            </section>
+          )}
 
           {error && <div className="notice error-notice" role="alert">{error}</div>}
           {notice && <div className="notice success-notice" role="status">{notice}</div>}
