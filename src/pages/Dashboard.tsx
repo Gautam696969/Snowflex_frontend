@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
-  Activity, ArrowUpRight, Building2, CalendarDays, Check, CheckSquare2,
+  Activity, ArrowUpRight, Building2, Calendar, CalendarDays, Check, CheckSquare2,
   ChevronRight, CircleHelp, Clock3, LayoutDashboard, LogOut, Menu,
   PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck, UserX, RotateCcw, AlertTriangle,
@@ -28,13 +28,15 @@ import UserAvatar from '../components/UserAvatar'
 import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
+import HolidaysView from '../components/HolidaysView'
+import UpcomingHolidaysWidget from '../components/UpcomingHolidaysWidget'
 import { fetchLeaveActionCount } from '../lib/leave-api'
 import { useNotifications } from '../hooks/useNotifications'
 import { SkeletonOverview, SkeletonTable, SkeletonCards } from '../components/Skeleton'
 import LiveChatView from '../components/chat/LiveChatView'
 import { useChat } from '../context/ChatContext'
 
-type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'tasks' | 'users' | 'system' | 'profile'
+type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'holidays' | 'tasks' | 'users' | 'system' | 'profile'
 type Row = Record<string, unknown>
 type ViewMode = 'table' | 'cards'
 
@@ -173,7 +175,7 @@ export default function Dashboard() {
         } catch {
           // Non-critical if recent leaves fail to load
         }
-      } else if (currentView === 'assistant') {
+      } else if (currentView === 'assistant' || currentView === 'chat' || currentView === 'holidays') {
         setRows([])
       } else if (currentView === 'employees') {
         const [empData, deptData, statsData] = await Promise.all([
@@ -516,6 +518,7 @@ export default function Dashboard() {
       { label: 'TIME & WORK', items: [
         { id: 'attendance' as View, label: 'Attendance', icon: Clock3 },
         { id: 'leaves' as View, label: 'Leave requests', icon: CalendarDays },
+        { id: 'holidays' as View, label: 'Holidays', icon: Calendar },
         { id: 'tasks' as View, label: 'Tasks', icon: CheckSquare2 },
       ] },
     ]
@@ -597,6 +600,7 @@ export default function Dashboard() {
   const shortcuts = [
     { label: 'Attendance Tracking', desc: 'Manage check-ins & shifts', view: 'attendance' as View, icon: Clock3 },
     { label: isEmployee ? 'Request Leave' : 'Leave Administration', desc: 'Petitions & annual balance', view: 'leaves' as View, icon: CalendarDays },
+    { label: 'Holidays & Observances', desc: 'Calendar schedule & breaks', view: 'holidays' as View, icon: Calendar },
     { label: 'Task Assignments', desc: 'Priorities & deliverables', view: 'tasks' as View, icon: CheckSquare2 },
     ...(canManage ? [
       { label: 'Employee Directory', desc: 'Profiles, codes & status', view: 'employees' as View, icon: Users },
@@ -1548,6 +1552,11 @@ export default function Dashboard() {
               currentUserId={user?.id ?? 0}
               token={token || ''}
             />
+          ) : view === 'holidays' ? (
+            <HolidaysView
+              userRole={role || 'EMPLOYEE'}
+              token={token || ''}
+            />
           ) : view === 'overview' ? (
             loading && !stats ? (
               <SkeletonOverview />
@@ -1709,6 +1718,11 @@ export default function Dashboard() {
                     </div>
                   )}
                 </article>
+              </div>
+
+              {/* Upcoming Holidays Dashboard Section */}
+              <div className="overview-holidays-banner-wrap">
+                <UpcomingHolidaysWidget onNavigate={() => setView('holidays')} />
               </div>
 
               {/* Quick Launch Shortcuts Hub */}
