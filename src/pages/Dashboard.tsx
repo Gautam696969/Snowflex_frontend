@@ -880,7 +880,7 @@ export default function Dashboard() {
               <p className="dash-hero-sub">
                 {view === 'overview'
                   ? isAdminWorkspace
-                    ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouseeeeeeee.'
+                    ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
                     : role === 'MANAGER'
                       ? 'Team Operations Hub • Monitor attendance, review team leave petitions, and drive deliverables.'
                       : 'Personal Workspace • Track attendance, check leave balances, and review assigned tasks.'
