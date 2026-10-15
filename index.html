@@ -2,10 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link id="app-favicon" rel="icon" type="image/svg+xml" href="/favicon-blue.svg" />
+    <meta name="description" content="SnowFlex is the enterprise Employee Management System powered by Snowflake Data Cloud. Streamline employee profiles, smart attendance, leave approvals, automated payroll, and AI HR Copilot." />
+    <meta name="keywords" content="employee management system, HRIS, Snowflake HR, attendance tracking, leave management, payroll software, people operations, HR AI copilot" />
+    <meta name="theme-color" content="#0284c7" />
+    <meta property="og:title" content="SnowFlex — Enterprise Employee Management System" />
+    <meta property="og:description" content="Unify employee profiles, attendance, multi-tiered leave approvals, payroll, and real-time AI assistance on a singular Snowflake data platform." />
+    <meta property="og:type" content="website" />
     <link href="https://fonts.googleapis.com/css?family=Anton|Passion+One|PT+Sans+Caption" rel="stylesheet" type="text/css" />
-    <title>Snowflex People Operations</title>
+    <title>SnowFlex — Enterprise Employee Management System & People Operations</title>
     <script>
       (function () {
         var redirect = sessionStorage.redirect
@@ -13,6 +19,17 @@
         if (redirect && redirect !== location.href) {
           history.replaceState(null, null, redirect)
         }
+        try {
+          var isLanding = window.location.pathname === '/' || window.location.pathname === ''
+          var fav = document.getElementById('app-favicon')
+          if (fav) {
+            fav.href = isLanding ? '/favicon-blue.svg' : '/favicon-green.svg'
+          }
+          var metaTheme = document.querySelector('meta[name="theme-color"]')
+          if (metaTheme) {
+            metaTheme.content = isLanding ? '#0284c7' : '#193c33'
+          }
+        } catch (e) {}
       })()
     </script>
   </head>

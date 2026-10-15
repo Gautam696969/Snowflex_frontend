@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import Landing from './pages/Landing'
 import Account from './pages/Account'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -9,12 +10,16 @@ import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
 import { NotificationProvider } from './context/NotificationContext'
 import { ChatProvider } from './context/ChatContext'
+import { useDynamicFavicon } from './hooks/useDynamicFavicon'
 
 function App() {
+  useDynamicFavicon()
+
   return (
     <NotificationProvider>
       <ChatProvider>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
