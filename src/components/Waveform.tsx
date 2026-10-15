@@ -74,7 +74,7 @@ export default function Waveform({ analyserRef, active, barCount = 32, color = '
   return (
     <canvas
       ref={canvasRef}
-      className="ai-waveform"
+      className="ai-waveform block flex-1 min-w-0"
       aria-hidden="true"
       style={{ width: '100%', height: 56 }}
     />

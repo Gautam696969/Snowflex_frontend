@@ -147,20 +147,20 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
   }
 
   return (
-    <form className="profile-form-card" onSubmit={handleSubmit} noValidate>
-      <div className="profile-form-header">
+    <form className="profile-form-card bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#27372e] rounded-[16px] p-[28px] shadow-[0_4px_20px_rgba(20,36,29,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] mb-[24px]" onSubmit={handleSubmit} noValidate>
+      <div className="profile-form-header flex items-start justify-between gap-[16px] mb-[24px] pb-[18px] border-b border-[#edf1eb] dark:border-[#25352c] flex-wrap">
         <div>
-          <span className="dash-kicker">PERSONAL INFORMATION</span>
-          <h2 className="profile-card-title">Employee Details & Contact</h2>
-          <p className="profile-card-sub">
+          <span className="dash-kicker text-[10px] font-extrabold tracking-[0.08em] uppercase text-[#698571] dark:text-[#8ea596]">PERSONAL INFORMATION</span>
+          <h2 className="profile-card-title text-[18px] font-extrabold text-[#14241d] dark:text-[#f1f7f2] my-[4px] tracking-[-0.01em]">Employee Details & Contact</h2>
+          <p className="profile-card-sub text-[13px] text-[#65776d] dark:text-[#8c9d92] m-0">
             Update your public personal profile and verified contact coordinates.
           </p>
         </div>
 
-        <div className="profile-form-actions-top">
+        <div className="profile-form-actions-top flex items-center gap-[10px]">
           <button
             type="button"
-            className="secondary-action btn-sm"
+            className="secondary-action btn-sm inline-flex items-center gap-[6px] px-[12px] py-[6px] text-[12px] font-semibold rounded-[8px] bg-[#f0f4ee] dark:bg-[#202d26] text-[#2c4035] dark:text-[#c4d6cb] hover:bg-[#e4ece1] dark:hover:bg-[#293a31] border border-[#dce2d7] dark:border-[#2b3c33] cursor-pointer transition-all disabled:opacity-50"
             onClick={handleCancel}
             disabled={!isDirty || saving}
             title="Reset form fields"
@@ -170,13 +170,13 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
           </button>
           <button
             type="submit"
-            className="primary-action btn-sm"
+            className="primary-action btn-sm inline-flex items-center gap-[6px] px-[12px] py-[6px] text-[12px] font-bold rounded-[8px] bg-[#193c33] dark:bg-[#d9ed74] text-[#d9ed74] dark:text-[#14241d] hover:bg-[#14241d] dark:hover:bg-[#c8dc65] cursor-pointer transition-all disabled:opacity-50"
             disabled={!isDirty || saving}
             title="Save changes to Snowflake"
           >
             {saving ? (
               <>
-                <Loader2 size={14} className="spinning" />
+                <Loader2 size={14} className="spinning animate-spin" />
                 <span>Saving…</span>
               </>
             ) : (
@@ -189,17 +189,16 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
         </div>
       </div>
 
-      <div className="profile-fields-grid">
+      <div className="profile-fields-grid grid grid-cols-2 max-[760px]:grid-cols-1 gap-[20px]">
         {/* Full Name */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-fullName" className="profile-field-label">
-            <User size={14} />
-            <span>Full Name <strong className="required-star">*</strong></span>
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-fullName" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
+            <span className="inline-flex items-center gap-[6px]"><User size={14} />Full Name <strong className="required-star text-[#dc2626]">*</strong></span>
           </label>
           <input
             id="profile-fullName"
             type="text"
-            className={`profile-field-input ${errors.fullName ? 'has-error' : ''}`}
+            className={`profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)] ${errors.fullName ? 'has-error border-[#dc2626] bg-[#fffafa] dark:bg-[#201414]' : ''}`}
             placeholder="Your full name"
             value={fullName}
             onChange={(e) => {
@@ -209,18 +208,18 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
             required
           />
           {errors.fullName && (
-            <span className="profile-field-error">
+            <span className="profile-field-error inline-flex items-center gap-[4px] text-[11px] text-[#dc2626] font-semibold mt-[2px]">
               <AlertCircle size={12} /> {errors.fullName}
             </span>
           )}
         </div>
 
         {/* Email */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-email" className="profile-field-label">
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-email" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
             <span>Work Email</span>
             {!isAdmin && (
-              <span className="readonly-badge" title="Only administrators can edit work emails">
+              <span className="readonly-badge inline-flex items-center gap-[4px] text-[10px] font-semibold text-[#7b8f83] dark:text-[#8c9d92] bg-[#f1f4ef] dark:bg-[#24352b] px-[7px] py-[2px] rounded-[4px]" title="Only administrators can edit work emails">
                 <Lock size={11} /> Read-only
               </span>
             )}
@@ -228,7 +227,7 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
           <input
             id="profile-email"
             type="email"
-            className={`profile-field-input ${!isAdmin ? 'is-readonly' : ''} ${errors.email ? 'has-error' : ''}`}
+            className={`profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)] ${!isAdmin ? 'is-readonly bg-[#f7faf6] dark:bg-[#17221c] text-[#65776d] dark:text-[#8c9d92] cursor-not-allowed border-[#e4ebe2] dark:border-[#25362b]' : ''} ${errors.email ? 'has-error border-[#dc2626] bg-[#fffafa] dark:bg-[#201414]' : ''}`}
             value={email}
             readOnly={!isAdmin}
             onChange={(e) => {
@@ -239,22 +238,21 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
             }}
           />
           {errors.email && (
-            <span className="profile-field-error">
+            <span className="profile-field-error inline-flex items-center gap-[4px] text-[11px] text-[#dc2626] font-semibold mt-[2px]">
               <AlertCircle size={12} /> {errors.email}
             </span>
           )}
         </div>
 
         {/* Phone */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-phone" className="profile-field-label">
-            <Phone size={14} />
-            <span>Phone Number</span>
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-phone" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
+            <span className="inline-flex items-center gap-[6px]"><Phone size={14} />Phone Number</span>
           </label>
           <input
             id="profile-phone"
             type="tel"
-            className={`profile-field-input ${errors.phone ? 'has-error' : ''}`}
+            className={`profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)] ${errors.phone ? 'has-error border-[#dc2626] bg-[#fffafa] dark:bg-[#201414]' : ''}`}
             placeholder="+1 555-0199"
             value={phone}
             onChange={(e) => {
@@ -263,22 +261,21 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
             }}
           />
           {errors.phone && (
-            <span className="profile-field-error">
+            <span className="profile-field-error inline-flex items-center gap-[4px] text-[11px] text-[#dc2626] font-semibold mt-[2px]">
               <AlertCircle size={12} /> {errors.phone}
             </span>
           )}
         </div>
 
         {/* Designation / Job Title */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-designation" className="profile-field-label">
-            <Briefcase size={14} />
-            <span>Job Title / Designation</span>
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-designation" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
+            <span className="inline-flex items-center gap-[6px]"><Briefcase size={14} />Job Title / Designation</span>
           </label>
           <input
             id="profile-designation"
             type="text"
-            className="profile-field-input"
+            className="profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)]"
             placeholder="e.g. Senior People Operations Analyst"
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
@@ -286,11 +283,11 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
         </div>
 
         {/* Employee Code */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-empCode" className="profile-field-label">
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-empCode" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
             <span>Employee Code</span>
             {!isAdmin && (
-              <span className="readonly-badge" title="Assigned by organizational registry">
+              <span className="readonly-badge inline-flex items-center gap-[4px] text-[10px] font-semibold text-[#7b8f83] dark:text-[#8c9d92] bg-[#f1f4ef] dark:bg-[#24352b] px-[7px] py-[2px] rounded-[4px]" title="Assigned by organizational registry">
                 <Lock size={11} /> Read-only
               </span>
             )}
@@ -298,7 +295,7 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
           <input
             id="profile-empCode"
             type="text"
-            className={`profile-field-input ${!isAdmin ? 'is-readonly' : ''}`}
+            className={`profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)] ${!isAdmin ? 'is-readonly bg-[#f7faf6] dark:bg-[#17221c] text-[#65776d] dark:text-[#8c9d92] cursor-not-allowed border-[#e4ebe2] dark:border-[#25362b]' : ''}`}
             value={employeeCode}
             readOnly={!isAdmin}
             onChange={(e) => {
@@ -308,45 +305,44 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
         </div>
 
         {/* Department Name */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-dept" className="profile-field-label">
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-dept" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
             <span>Department</span>
-            <span className="readonly-badge">
+            <span className="readonly-badge inline-flex items-center gap-[4px] text-[10px] font-semibold text-[#7b8f83] dark:text-[#8c9d92] bg-[#f1f4ef] dark:bg-[#24352b] px-[7px] py-[2px] rounded-[4px]">
               <Lock size={11} /> Read-only
             </span>
           </label>
           <input
             id="profile-dept"
             type="text"
-            className="profile-field-input is-readonly"
+            className="profile-field-input is-readonly w-full px-[14px] py-[10px] text-[13px] text-[#65776d] dark:text-[#8c9d92] bg-[#f7faf6] dark:bg-[#17221c] border border-[#e4ebe2] dark:border-[#25362b] rounded-[8px] outline-none font-inherit cursor-not-allowed box-border"
             value={profile.departmentName || 'General Staff'}
             readOnly
           />
         </div>
 
         {/* Date of Birth */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-dob" className="profile-field-label">
-            <Calendar size={14} />
-            <span>Date of Birth</span>
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-dob" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
+            <span className="inline-flex items-center gap-[6px]"><Calendar size={14} />Date of Birth</span>
           </label>
           <input
             id="profile-dob"
             type="date"
-            className="profile-field-input"
+            className="profile-field-input w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)]"
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
           />
         </div>
 
         {/* Gender */}
-        <div className="profile-field-group">
-          <label htmlFor="profile-gender" className="profile-field-label">
+        <div className="profile-field-group flex flex-col gap-[6px]">
+          <label htmlFor="profile-gender" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
             <span>Gender</span>
           </label>
           <select
             id="profile-gender"
-            className="profile-field-select"
+            className="profile-field-select w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)]"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
           >
@@ -359,15 +355,14 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
         </div>
 
         {/* Physical Address */}
-        <div className="profile-field-group full-width">
-          <label htmlFor="profile-address" className="profile-field-label">
-            <MapPin size={14} />
-            <span>Residential / Mailing Address</span>
+        <div className="profile-field-group full-width col-span-full flex flex-col gap-[6px]">
+          <label htmlFor="profile-address" className="profile-field-label flex items-center justify-between text-[12px] font-bold text-[#2b3f34] dark:text-[#d8e5dc] tracking-[0.01em]">
+            <span className="inline-flex items-center gap-[6px]"><MapPin size={14} />Residential / Mailing Address</span>
           </label>
           <textarea
             id="profile-address"
             rows={2}
-            className="profile-field-textarea"
+            className="profile-field-textarea w-full px-[14px] py-[10px] text-[13px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#131a16] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none font-inherit transition-all duration-150 box-border focus:border-[#193c33] dark:focus:border-[#d9ed74] focus:ring-2 focus:ring-[rgba(25,60,51,0.12)] dark:focus:ring-[rgba(217,237,116,0.15)]"
             placeholder="Street address, city, state, postal code"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -376,7 +371,7 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
       </div>
 
       {isDirty && (
-        <div className="profile-dirty-banner">
+        <div className="profile-dirty-banner mt-[24px] px-[18px] py-[12px] bg-[#f4faeb] dark:bg-[#1a251b] border border-[#cce89a] dark:border-[#344d2d] rounded-[10px] text-[#2e4a1a] dark:text-[#d9ed74] text-[13px] flex items-center gap-[10px] animate-[fadeIn_0.2s_ease]">
           <Sparkles size={16} />
           <span>You have unsaved edits. Click <strong>Save Changes</strong> to synchronize your record to Snowflake.</span>
         </div>

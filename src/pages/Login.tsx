@@ -90,7 +90,7 @@ export default function Login() {
           <span>{deactivatedNotice}</span>
         </div>
       )}
-      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+      <form className="auth-form flex flex-col gap-[18px] mt-[30px]" onSubmit={handleSubmit} noValidate>
         <Input
           id="email"
           label="Email address"
@@ -112,10 +112,10 @@ export default function Login() {
           onBlur={() => setTouched((current) => ({ ...current, password: true }))}
         />
 
-        <div className="form-options">
-          <label className="check-label" htmlFor="remember">
+        <div className="form-options flex items-center justify-between gap-[12px] -mt-[2px] max-[380px]:items-start">
+          <label className="check-label inline-flex min-h-[24px] items-center gap-[9px] text-[#545e53] text-[13px] leading-[1.45] cursor-pointer" htmlFor="remember">
             <input
-              className="check-control"
+              className="check-control w-[16px] h-[16px] shrink-0 m-0 accent-[var(--accent,#ed6b4f)] cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2"
               id="remember"
               type="checkbox"
               checked={remember}
@@ -123,18 +123,18 @@ export default function Login() {
             />
             Remember me
           </label>
-          <Link className="text-link" to="/forgot-password">
+          <Link className="text-link p-0 border-0 bg-transparent text-[#bc503b] text-[13px] font-semibold no-underline cursor-pointer transition-colors duration-150 ease-out hover:text-[#913b2b] hover:underline hover:underline-offset-[3px] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2" to="/forgot-password">
             Forgot password?
           </Link>
         </div>
 
-        {helpMessage && <p className="form-hint" role="status">{helpMessage}</p>}
-        {serverError && <p className="form-hint" role="alert">{serverError}</p>}
+        {helpMessage && <p className="form-hint -mt-[9px] mb-0 text-[#687368] text-[12px] leading-[1.45]" role="status">{helpMessage}</p>}
+        {serverError && <p className="form-hint -mt-[9px] mb-0 text-[#687368] text-[12px] leading-[1.45]" role="alert">{serverError}</p>}
         <LoadingButton loading={loading} disabled={!isValid}>Log in</LoadingButton>
       </form>
 
-      <p className="auth-switch">
-        Don&apos;t have an account?<Link className="text-link" to="/register">Create account</Link>
+      <p className="auth-switch mt-[25px] mb-0 text-[#788176] text-[13px] text-center [&_.text-link]:ml-[4px]">
+        Don&apos;t have an account?<Link className="text-link p-0 border-0 bg-transparent text-[#bc503b] text-[13px] font-semibold no-underline cursor-pointer transition-colors duration-150 ease-out hover:text-[#913b2b] hover:underline hover:underline-offset-[3px] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2 ml-[4px]" to="/register">Create account</Link>
       </p>
     </AuthLayout>
   )

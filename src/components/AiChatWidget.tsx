@@ -27,7 +27,7 @@ export default function AiChatWidget({ token, userName, avatarUrl }: { token: st
   }, [isOpen])
 
   return (
-    <div className="ai-chat-widget">
+    <div className="ai-chat-widget fixed z-[1000] right-[24px] bottom-[24px] grid justify-items-end gap-[14px] pointer-events-none">
       {isOpen && (
         <ChatWindow
           messages={messages}

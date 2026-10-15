@@ -63,7 +63,7 @@ export default function Register() {
 
   return (
     <AuthLayout title="Create your account" description="A little more clarity for your next big thing.">
-      <form className="auth-form register-form" onSubmit={handleSubmit} noValidate>
+      <form className="auth-form register-form flex flex-col gap-[14px] mt-[30px]" onSubmit={handleSubmit} noValidate>
         <Input
           id="fullName"
           label="Full name"
@@ -106,10 +106,10 @@ export default function Register() {
           onBlur={() => setTouched((current) => ({ ...current, confirmation: true }))}
         />
 
-        <div className="terms-field">
-          <label className="check-label" htmlFor="terms">
+        <div className="terms-field flex flex-col gap-[5px] [&_.form-error]:ml-[25px]">
+          <label className="check-label inline-flex min-h-[24px] items-center gap-[9px] text-[#545e53] text-[13px] leading-[1.45] cursor-pointer" htmlFor="terms">
             <input
-              className="check-control"
+              className="check-control w-[16px] h-[16px] shrink-0 m-0 accent-[var(--accent,#ed6b4f)] cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2"
               id="terms"
               type="checkbox"
               checked={acceptedTerms}
@@ -127,20 +127,20 @@ export default function Register() {
 
         <LoadingButton loading={loading} disabled={!isValid}>Create account</LoadingButton>
         {notice && (
-          <div className="form-notice" role="status">
+          <div className="form-notice flex items-start gap-[10px] p-[12px_13px] border border-[#d5e8cb] rounded-[5px] bg-[#f2f8ee] text-[#38613d] text-[13px] leading-[1.5] [&>svg]:shrink-0 [&>svg]:mt-[1px]" role="status">
             <CheckCircle2 size={17} aria-hidden="true" />
             <span>{notice}</span>
           </div>
         )}
         {serverError && (
-          <div className="form-error" role="alert">
+          <div className="form-error -mt-[2px] mb-0 text-[#b83d32] text-[12px] leading-[1.4]" role="alert">
             <span>{serverError}</span>
           </div>
         )}
       </form>
 
-      <p className="auth-switch">
-        Already have an account?<Link className="text-link" to="/login">Log in</Link>
+      <p className="auth-switch mt-[25px] mb-0 text-[#788176] text-[13px] text-center [&_.text-link]:ml-[4px]">
+        Already have an account?<Link className="text-link p-0 border-0 bg-transparent text-[#bc503b] text-[13px] font-semibold no-underline cursor-pointer transition-colors duration-150 ease-out hover:text-[#913b2b] hover:underline hover:underline-offset-[3px] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2 ml-[4px]" to="/login">Log in</Link>
       </p>
     </AuthLayout>
   )
