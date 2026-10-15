@@ -23,21 +23,21 @@ export function Skeleton({
   const getVariantClass = () => {
     switch (variant) {
       case 'circular':
-        return 'skeleton-circle'
+        return 'skeleton-circle rounded-full'
       case 'text':
-        return 'skeleton-text'
+        return 'skeleton-text rounded-[4px]'
       case 'rectangular':
-        return 'skeleton-rect'
+        return 'skeleton-rect rounded-none'
       case 'rounded':
       default:
-        return 'skeleton-rounded'
+        return 'skeleton-rounded rounded-[8px]'
     }
   }
 
   const items = Array.from({ length: count }, (_, i) => (
     <span
       key={i}
-      className={`skeleton-base skeleton-shimmer ${getVariantClass()} ${className}`.trim()}
+      className={`skeleton-base skeleton-shimmer inline-block select-none align-middle bg-[length:200%_100%] animate-[skeleton-shimmer_1.6s_ease-in-out_infinite] ${getVariantClass()} ${className}`.trim()}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,

@@ -265,7 +265,7 @@ export default function Profile() {
         </header>
 
         {/* Profile Page Content */}
-        <div className="page-content profile-page-content">
+        <div className="page-content profile-page-content max-w-[1360px] mx-auto pb-[48px]">
           <div className="page-heading">
             <div>
               <div className="section-kicker">PERSONAL IDENTITY & ACCESS CONTROL</div>
@@ -292,9 +292,9 @@ export default function Profile() {
           )}
 
           {/* Responsive Two-Column Profile Layout */}
-          <div className="profile-layout-grid">
+          <div className="profile-layout-grid grid grid-cols-[360px_minmax(0,1fr)] max-[1060px]:grid-cols-[minmax(0,1fr)] gap-[28px] max-[1060px]:gap-[24px] items-start">
             {/* Left Column: Profile Card */}
-            <div className="profile-left-col">
+            <div className="profile-left-col sticky top-[80px] max-[1060px]:static">
               {profileLoading ? (
                 <div className="profile-header-card profile-card-loading">
                   <div className="profile-header-cover" />
@@ -314,11 +314,15 @@ export default function Profile() {
             </div>
 
             {/* Right Column: Tabbed Forms */}
-            <div className="profile-right-col">
-              <div className="profile-tabs-bar">
+            <div className="profile-right-col min-w-0">
+              <div className="profile-tabs-bar flex items-center gap-[6px] mb-[20px] border-b border-[#dce2d7] dark:border-[#27372e] pb-0">
                 <button
                   type="button"
-                  className={`profile-tab-btn ${activeTab === 'info' ? 'active' : ''}`}
+                  className={`profile-tab-btn inline-flex items-center gap-[8px] px-[18px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+                    activeTab === 'info'
+                      ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
+                      : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74] hover:bg-[rgba(25,60,51,0.04)]'
+                  }`}
                   onClick={() => setActiveTab('info')}
                 >
                   <UserCircle2 size={16} />
@@ -326,7 +330,11 @@ export default function Profile() {
                 </button>
                 <button
                   type="button"
-                  className={`profile-tab-btn ${activeTab === 'security' ? 'active' : ''}`}
+                  className={`profile-tab-btn inline-flex items-center gap-[8px] px-[18px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+                    activeTab === 'security'
+                      ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
+                      : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74] hover:bg-[rgba(25,60,51,0.04)]'
+                  }`}
                   onClick={() => setActiveTab('security')}
                 >
                   <KeyRound size={16} />
@@ -362,17 +370,17 @@ export default function Profile() {
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div
-          className="modal-overlay"
+          className="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-[4px] flex items-center justify-center p-[16px] z-[9999]"
           onClick={() => setShowLogoutConfirm(false)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="sidebar-logout-title"
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="sidebar-logout-title">Sign Out</h3>
+          <div className="modal bg-white dark:bg-[#19231e] rounded-[16px] border border-[#dce2d7] dark:border-[#27372e] shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-[480px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between px-[24px] py-[18px] border-b border-[#edf1eb] dark:border-[#25352c]">
+              <h3 id="sidebar-logout-title" className="text-[18px] font-bold text-[#14241d] dark:text-[#f1f7f2] m-0">Sign Out</h3>
               <button
-                className="modal-close"
+                className="modal-close bg-transparent border-0 text-[#7b8f83] dark:text-[#8c9d92] hover:text-[#193c33] dark:hover:text-[#d9ed74] cursor-pointer p-[4px] rounded-[6px]"
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
                 aria-label="Close"
@@ -380,12 +388,12 @@ export default function Profile() {
                 <X size={18} />
               </button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body p-[24px]">
               <p style={{ margin: 0, color: 'var(--text-sub, #4b5563)', fontSize: '14px', lineHeight: 1.5 }}>
                 Are you sure you want to sign out of Snowflex People Operations?
               </p>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div className="modal-footer flex items-center justify-end gap-[10px] px-[24px] py-[16px] bg-[#f7faf6] dark:bg-[#141c18] border-t border-[#edf1eb] dark:border-[#25352c]">
               <button
                 type="button"
                 className="secondary-action"

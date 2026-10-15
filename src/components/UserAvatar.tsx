@@ -18,7 +18,7 @@ export default function UserAvatar({ name, avatarUrl, size = 34, className = '' 
   const dimension = typeof size === 'number' ? `${size}px` : size
   return (
     <span
-      className={`user-avatar ${className}`.trim()}
+      className={`user-avatar inline-grid place-items-center overflow-hidden rounded-full shrink-0 align-middle text-white font-bold uppercase ${className}`.trim()}
       style={{ width: dimension, height: dimension, backgroundColor: getAvatarBackground(accessibleName) }}
       role="img"
       aria-label={accessibleName}
@@ -27,12 +27,12 @@ export default function UserAvatar({ name, avatarUrl, size = 34, className = '' 
         <img
           src={imageUrl}
           alt={`${accessibleName}'s profile picture`}
-          className="user-avatar-image"
+          className="user-avatar-image block w-full h-full rounded-[inherit] object-cover"
           loading="lazy"
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <span className="user-avatar-initials" aria-hidden="true">{getInitials(accessibleName)}</span>
+        <span className="user-avatar-initials grid w-full h-full place-items-center text-inherit font-inherit leading-none" aria-hidden="true">{getInitials(accessibleName)}</span>
       )}
     </span>
   )

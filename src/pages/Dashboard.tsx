@@ -620,8 +620,8 @@ export default function Dashboard() {
     const raw = String(statusValue || '').toUpperCase()
     if (raw === 'ACTIVE' || raw === 'APPROVED' || raw === 'COMPLETED') {
       return (
-        <span className="status-pill status-active">
-          <span className="status-pill-dot" />
+        <span className="status-pill status-active inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap bg-[#eaf7ed] text-[#166534] border border-[#bbf7d0]">
+          <span className="status-pill-dot w-[6px] h-[6px] rounded-full bg-current" />
           {raw === 'APPROVED' ? <Check size={12} strokeWidth={2.5} /> : null}
           {raw}
         </span>
@@ -629,8 +629,8 @@ export default function Dashboard() {
     }
     if (raw === 'PENDING' || raw === 'HALF_DAY' || raw === 'LATE') {
       return (
-        <span className="status-pill status-pending">
-          <span className="status-pill-dot" />
+        <span className="status-pill status-pending inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]">
+          <span className="status-pill-dot w-[6px] h-[6px] rounded-full bg-current" />
           <Clock3 size={12} />
           {raw}
         </span>
@@ -638,8 +638,8 @@ export default function Dashboard() {
     }
     if (raw === 'TERMINATED') {
       return (
-        <span className="status-pill status-terminated" title="Deactivated / Terminated Employee">
-          <span className="status-pill-dot" />
+        <span className="status-pill status-terminated inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap bg-[#fef2f2] text-[#b91c1c] border border-[#fecaca]" title="Deactivated / Terminated Employee">
+          <span className="status-pill-dot w-[6px] h-[6px] rounded-full bg-current" />
           <UserX size={12} />
           TERMINATED
         </span>
@@ -647,8 +647,8 @@ export default function Dashboard() {
     }
     if (raw === 'REJECTED' || raw === 'ABSENT' || raw === 'CANCELLED') {
       return (
-        <span className="status-pill status-rejected">
-          <span className="status-pill-dot" />
+        <span className="status-pill status-rejected inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap bg-[#fee2e2] text-[#991b1b] border border-[#fecaca]">
+          <span className="status-pill-dot w-[6px] h-[6px] rounded-full bg-current" />
           <X size={12} />
           {raw}
         </span>
@@ -656,13 +656,13 @@ export default function Dashboard() {
     }
     if (raw === 'IN_PROGRESS' || raw === 'TODO' || raw === 'PRESENT') {
       return (
-        <span className="status-pill status-todo">
-          <span className="status-pill-dot" />
+        <span className="status-pill status-todo inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap bg-[#e0f2fe] text-[#075985] border border-[#bae6fd]">
+          <span className="status-pill-dot w-[6px] h-[6px] rounded-full bg-current" />
           {raw}
         </span>
       )
     }
-    return <span className="status-pill">{raw || '—'}</span>
+    return <span className="status-pill inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-[20px] text-[11px] font-bold tracking-[0.02em] whitespace-nowrap">{raw || '—'}</span>
   }
 
   function canTerminateRow(targetRow: Row): boolean {
@@ -805,11 +805,11 @@ export default function Dashboard() {
   }
 
   if (!user) return (
-    <main className="dashboard-loading">
-      <div className="live-loader" role="status" aria-live="polite">
-        <span className="live-loader-ring"><i /><i /><i /><i /></span>
-        <strong>Loading your workspace…</strong>
-        <small>Connecting to Snowflake People Operations Data Warehouse</small>
+    <main className="dashboard-loading grid min-h-screen place-items-center text-[#617166] dark:text-[#c0ccc2] bg-[#f4f6f1] dark:bg-[#141a17] text-[13px]">
+      <div className="live-loader grid justify-items-center gap-[14px] text-center" role="status" aria-live="polite">
+        <span className="live-loader-ring relative w-[48px] h-[48px]"><i /><i /><i /><i /></span>
+        <strong className="text-[#243a33] dark:text-[#edf2ec] font-bold text-[14px] font-sans">Loading your workspace…</strong>
+        <small className="text-[#8a978e] text-[11px]">Connecting to Snowflake People Operations Data Warehouse</small>
       </div>
     </main>
   )
@@ -818,19 +818,19 @@ export default function Dashboard() {
   const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
 
   return (
-    <main className={`workbench${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
+    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out ${sidebarCollapsed ? 'is-sidebar-collapsed grid-cols-[76px_minmax(0,1fr)]' : 'grid-cols-[248px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
       {/* Sidebar Navigation */}
-      <aside className="workbench-sidebar" aria-label="Workspace sidebar">
-        <div className="sidebar-brand-row">
-          <a className="workbench-brand" href="/dashboard" title="Snowflex People Operations">
-            <Snowflake className="workbench-mark" size={20} strokeWidth={2.5} />
-            <span className="sidebar-brand-copy">
+      <aside className="workbench-sidebar sticky z-[5] top-0 flex h-screen min-w-0 flex-col p-[25px_16px_17px] text-[#e9eee7] bg-[#193c33]" aria-label="Workspace sidebar">
+        <div className="sidebar-brand-row flex items-center justify-between mb-[38px]">
+          <a className="workbench-brand flex items-center gap-[10px] mx-[4px] my-0 text-inherit font-extrabold text-[16px] font-sans no-underline min-w-0" href="/dashboard" title="Snowflex People Operations">
+            <Snowflake className="workbench-mark grid w-[33px] h-[33px] place-items-center rounded-[8px_8px_8px_2px] text-[#193c33] bg-[#d9ed74] shrink-0" size={20} strokeWidth={2.5} />
+            <span className="sidebar-brand-copy brand-copy min-w-0 flex flex-col">
               snowflex
-              <span className="brand-caption">PEOPLE OPERATIONS</span>
+              <span className="brand-caption block mt-[1px] text-[#a7b9ab] font-mono text-[8px] tracking-[0.08em]">PEOPLE OPERATIONS</span>
             </span>
           </a>
           <button
-            className="sidebar-toggle"
+            className="sidebar-toggle grid w-[30px] h-[30px] shrink-0 place-items-center border border-[rgba(230,239,228,0.2)] rounded-[5px] text-[#d8e5dc] bg-transparent cursor-pointer hover:text-white hover:bg-[rgba(255,255,255,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2"
             type="button"
             title={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -844,14 +844,16 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <nav className="workbench-nav" aria-label="Workspace navigation">
+        <nav className="workbench-nav grid gap-[3px]" aria-label="Workspace navigation">
           {navGroups.map(({ label: groupLabel, items }, groupIndex) => (
-            <div className="nav-group" key={groupLabel}>
-              <div className="workspace-label">{groupLabel}</div>
+            <div className="nav-group grid gap-[3px]" key={groupLabel}>
+              <div className="workspace-label px-[11px] mb-[10px] text-[#93aa9d] font-mono text-[9px] font-medium tracking-[0.08em] uppercase">{groupLabel}</div>
               {items.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
-                  className={view === id ? 'nav-item selected' : 'nav-item'}
+                  className={`nav-item relative flex w-full min-h-[42px] items-center gap-[11px] px-[11px] border-0 rounded-[5px] text-[#c3d0c6] bg-transparent text-left text-[12px] cursor-pointer transition-[background,color] duration-140 ease-in-out hover:text-white hover:bg-[rgba(255,255,255,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2 ${
+                    view === id ? 'selected text-white bg-[rgba(255,255,255,0.12)] before:absolute before:top-[9px] before:bottom-[9px] before:-left-[16px] before:w-[3px] before:rounded-[0_3px_3px_0] before:bg-[#d9ed74] before:content-[\'\']' : ''
+                  }`}
                   title={sidebarCollapsed ? label : undefined}
                   aria-label={label}
                   onClick={() => {
@@ -868,33 +870,33 @@ export default function Dashboard() {
                   <span>{label}</span>
                   {id === 'leaves' && <UnreadBadge count={leaveActionCount} className="sidebar-leave-badge" />}
                   {id === 'chat' && <UnreadBadge count={chatUnreadCount} className="sidebar-chat-badge" />}
-                  {view === id && <ChevronRight className="nav-chevron" size={15} />}
+                  {view === id && <ChevronRight className="nav-chevron ml-auto text-[#d9ed74]" size={15} />}
                 </button>
               ))}
-              {groupIndex < navGroups.length - 1 && <div className="nav-separator" />}
+              {groupIndex < navGroups.length - 1 && <div className="nav-separator h-[1px] my-[10px] bg-[rgba(230,239,228,0.1)]" />}
             </div>
           ))}
         </nav>
 
-        <div className="sidebar-bottom">
-          <div className="help-row" title="Snowflake Connected Workspace">
+        <div className="sidebar-bottom grid gap-[15px] mt-auto">
+          <div className="help-row flex items-center gap-[9px] px-[10px] pb-[14px] border-b border-[rgba(230,239,228,0.13)] text-[#b7c6bb] text-[11px]" title="Snowflake Connected Workspace">
             <CircleHelp size={16} />
             <span>Snowflake DB v2.4</span>
           </div>
           <div
-            className="profile-chip"
+            className="profile-chip flex items-center gap-[10px] p-[7px] border-0 rounded-[5px] text-[#e9eee7] bg-transparent text-left cursor-pointer hover:bg-[rgba(255,255,255,0.08)]"
             style={{ cursor: 'pointer' }}
             onClick={() => navigate('/profile')}
             title="My Profile & Security"
           >
             <UserAvatar name={user.fullName} avatarUrl={user.avatarUrl} size={34} className="profile-avatar" />
-            <span className="profile-copy">
-              <strong>{user.fullName}</strong>
-              <small>{roleLabel}</small>
+            <span className="profile-copy grid min-w-0 gap-[2px] flex-1">
+              <strong className="overflow-hidden text-[11px] text-ellipsis whitespace-nowrap">{user.fullName}</strong>
+              <small className="text-[#a8b9ad] font-mono text-[9px]">{roleLabel}</small>
             </span>
             <button
               type="button"
-              className="sidebar-logout-icon-btn"
+              className="sidebar-logout-icon-btn grid w-[26px] h-[26px] place-items-center rounded-[4px] border border-transparent text-[#a8b9ad] hover:text-white hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer ml-auto bg-transparent"
               onClick={(e) => {
                 e.stopPropagation()
                 handleLogout()
@@ -909,7 +911,7 @@ export default function Dashboard() {
 
       {mobileSidebarOpen && (
         <button
-          className="mobile-sidebar-backdrop"
+          className="mobile-sidebar-backdrop fixed inset-0 z-[40] bg-[rgba(25,60,51,0.5)] backdrop-blur-[2px]"
           type="button"
           aria-label="Close navigation"
           onClick={() => setMobileSidebarOpen(false)}
@@ -918,16 +920,16 @@ export default function Dashboard() {
 
       {/* Logout Modal */}
       {showLogoutConfirm && (
-        <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="logout-modal-title">Sign Out</h3>
-              <button className="modal-close" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Close"><X size={18} /></button>
+        <div className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+          <div className="modal w-[min(100%,360px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+              <h3 id="logout-modal-title" className="m-0 text-[#243a33] font-bold text-[16px] font-sans">Sign Out</h3>
+              <button className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Close"><X size={18} /></button>
             </div>
-            <p className="modal-body">Are you sure you want to end your Snowflex session?</p>
-            <div className="modal-footer">
-              <button className="secondary-action" type="button" onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
-              <button className="primary-action" type="button" onClick={confirmLogout}>Sign Out</button>
+            <p className="modal-body m-0 p-[20px] text-[#546a5d] text-[14px] leading-[1.5]">Are you sure you want to end your Snowflex session?</p>
+            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
+              <button className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" type="button" onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
+              <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={confirmLogout}>Sign Out</button>
             </div>
           </div>
         </div>
@@ -935,16 +937,16 @@ export default function Dashboard() {
 
       {/* Delete Record Confirmation Modal */}
       {deleteTarget && (
-        <div className="modal-overlay" onClick={() => setDeleteTarget(null)} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="delete-modal-title">Delete Record</h3>
-              <button className="modal-close" type="button" onClick={() => setDeleteTarget(null)} aria-label="Close"><X size={18} /></button>
+        <div className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]" onClick={() => setDeleteTarget(null)} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+          <div className="modal w-[min(100%,360px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+              <h3 id="delete-modal-title" className="m-0 text-[#243a33] font-bold text-[16px] font-sans">Delete Record</h3>
+              <button className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]" type="button" onClick={() => setDeleteTarget(null)} aria-label="Close"><X size={18} /></button>
             </div>
-            <p className="modal-body">Are you sure you want to delete this record from Snowflake? This action is permanent and cannot be undone.</p>
-            <div className="modal-footer">
-              <button className="secondary-action" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="primary-action" style={{ background: '#dc2626', borderColor: '#dc2626' }} type="button" onClick={confirmDelete}>Delete Record</button>
+            <p className="modal-body m-0 p-[20px] text-[#546a5d] text-[14px] leading-[1.5]">Are you sure you want to delete this record from Snowflake? This action is permanent and cannot be undone.</p>
+            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
+              <button className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" type="button" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dc2626] rounded-[4px] text-white bg-[#dc2626] text-[11px] font-semibold cursor-pointer hover:bg-[#b91c1c] transition-colors" style={{ background: '#dc2626', borderColor: '#dc2626' }} type="button" onClick={confirmDelete}>Delete Record</button>
             </div>
           </div>
         </div>
@@ -953,19 +955,19 @@ export default function Dashboard() {
       {/* Terminate Employee Confirmation Modal */}
       {terminateTarget && (
         <div
-          className="modal-overlay"
+          className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]"
           onClick={() => { if (!terminating) setTerminateTarget(null) }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="terminate-modal-title"
         >
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="terminate-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
+          <div className="modal modal-lg w-[min(100%,560px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+              <h3 id="terminate-modal-title" className="m-0 font-bold text-[16px] font-sans" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
                 <UserX size={18} /> Terminate Employee
               </h3>
               <button
-                className="modal-close"
+                className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]"
                 type="button"
                 disabled={terminating}
                 onClick={() => setTerminateTarget(null)}
@@ -974,7 +976,7 @@ export default function Dashboard() {
                 <X size={18} />
               </button>
             </div>
-            <div className="modal-body" style={{ padding: '20px 24px' }}>
+            <div className="modal-body m-0 p-[20px_24px] text-[#546a5d] text-[14px] leading-[1.5]" style={{ padding: '20px 24px' }}>
               {/* Danger Warning Box */}
               <div
                 style={{
@@ -1016,7 +1018,7 @@ export default function Dashboard() {
                   name={String(terminateTarget.fullName || 'User')}
                   avatarUrl={String(terminateTarget.avatarUrl || '') || null}
                   size={42}
-                  className="avatar-circle"
+                  className="avatar-circle flex items-center justify-center rounded-full"
                 />
                 <div>
                   <strong style={{ fontSize: '15px', color: 'var(--text-main, #193c33)' }}>
@@ -1065,9 +1067,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
               <button
-                className="secondary-action"
+                className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors"
                 type="button"
                 disabled={terminating}
                 onClick={() => setTerminateTarget(null)}
@@ -1075,7 +1077,7 @@ export default function Dashboard() {
                 Cancel
               </button>
               <button
-                className="primary-action"
+                className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dc2626] rounded-[4px] text-white bg-[#dc2626] text-[11px] font-semibold cursor-pointer hover:bg-[#b91c1c] transition-colors"
                 type="button"
                 style={{
                   background: '#dc2626',
@@ -1097,19 +1099,19 @@ export default function Dashboard() {
       {/* Reactivate Employee Confirmation Modal */}
       {reactivateTarget && (
         <div
-          className="modal-overlay"
+          className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]"
           onClick={() => { if (!reactivating) setReactivateTarget(null) }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="reactivate-modal-title"
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="reactivate-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
+          <div className="modal w-[min(100%,360px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+              <h3 id="reactivate-modal-title" className="m-0 font-bold text-[16px] font-sans" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
                 <RotateCcw size={18} /> Reactivate Employee
               </h3>
               <button
-                className="modal-close"
+                className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]"
                 type="button"
                 disabled={reactivating}
                 onClick={() => setReactivateTarget(null)}
@@ -1118,7 +1120,7 @@ export default function Dashboard() {
                 <X size={18} />
               </button>
             </div>
-            <div className="modal-body" style={{ padding: '20px' }}>
+            <div className="modal-body m-0 p-[20px] text-[#546a5d] text-[14px] leading-[1.5]" style={{ padding: '20px' }}>
               <p style={{ margin: '0 0 12px', fontSize: '13.5px', lineHeight: 1.5 }}>
                 Are you sure you want to reactivate <strong>{String(reactivateTarget.fullName || 'this employee')}</strong>?
               </p>
@@ -1126,9 +1128,9 @@ export default function Dashboard() {
                 Their status will be restored to <strong>ACTIVE</strong> and their account will immediately be permitted to sign in and access the workspace again.
               </p>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
               <button
-                className="secondary-action"
+                className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors"
                 type="button"
                 disabled={reactivating}
                 onClick={() => setReactivateTarget(null)}
@@ -1136,7 +1138,7 @@ export default function Dashboard() {
                 Cancel
               </button>
               <button
-                className="primary-action"
+                className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#059669] rounded-[4px] text-white bg-[#059669] text-[11px] font-semibold cursor-pointer hover:bg-[#047857] transition-colors"
                 type="button"
                 style={{
                   background: '#059669',
@@ -1153,124 +1155,124 @@ export default function Dashboard() {
         </div>
       )}
       {viewingRow && (
-        <div className="modal-overlay" onClick={() => setViewingRow(null)} role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
-          <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 id="view-modal-title">
+        <div className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]" onClick={() => setViewingRow(null)} role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
+          <div className="modal modal-lg w-[min(100%,560px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+              <h3 id="view-modal-title" className="m-0 text-[#243a33] font-bold text-[16px] font-sans">
                 {view === 'employees' ? 'Employee Profile' : view === 'departments' ? 'Department Info' : 'Record Details'}
               </h3>
-              <button className="modal-close" type="button" onClick={() => setViewingRow(null)} aria-label="Close"><XIcon size={18} /></button>
+              <button className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]" type="button" onClick={() => setViewingRow(null)} aria-label="Close"><XIcon size={18} /></button>
             </div>
-            <div className="modal-body" style={{ padding: '24px', maxHeight: '65vh', overflow: 'auto' }}>
+            <div className="modal-body m-0 text-[#546a5d] text-[14px] leading-[1.5]" style={{ padding: '24px', maxHeight: '65vh', overflow: 'auto' }}>
                 {view === 'employees' && (
-                  <div className="avatar-user-cell" style={{ marginBottom: '20px' }}>
-                    <UserAvatar name={String(viewingRow.fullName || 'User')} avatarUrl={String(viewingRow.avatarUrl || '') || null} size={48} className="avatar-circle" />
-                    <div className="avatar-info-copy">
+                  <div className="avatar-user-cell flex items-center gap-[12px]" style={{ marginBottom: '20px' }}>
+                    <UserAvatar name={String(viewingRow.fullName || 'User')} avatarUrl={String(viewingRow.avatarUrl || '') || null} size={48} className="avatar-circle flex items-center justify-center rounded-full font-sans" />
+                    <div className="avatar-info-copy flex flex-col">
                       <strong>{String(viewingRow.fullName || 'Employee')}</strong>
                       {Boolean(viewingRow.email) && <small>{String(viewingRow.email)}</small>}
                     </div>
                   </div>
                 )}
-                <dl className="detail-grid">
+                <dl className="detail-grid grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-[16px]">
                 {Object.entries(viewingRow).filter(([key]) => !['description', 'createdAt', 'updatedAt'].includes(key) && !key.toLowerCase().includes('avatar')).map(([key, value]) => (
-                  <div key={key} className="detail-item">
-                    <dt>{key.replace(/[A-Z]/g, letter => ` ${letter}`).replace(/Id$/, ' ID').toUpperCase()}</dt>
-                    <dd>{key.toLowerCase().includes('date') ? formatDate(value) : key.toLowerCase().includes('status') ? renderStatusPill(value) : String(value ?? '—')}</dd>
+                  <div key={key} className="detail-item grid gap-[4px]">
+                    <dt className="text-[#87948b] font-mono text-[10px] font-medium tracking-[0.05em]">{key.replace(/[A-Z]/g, letter => ` ${letter}`).replace(/Id$/, ' ID').toUpperCase()}</dt>
+                    <dd className="m-0 text-[#243a33] text-[13px] font-medium">{key.toLowerCase().includes('date') ? formatDate(value) : key.toLowerCase().includes('status') ? renderStatusPill(value) : String(value ?? '—')}</dd>
                   </div>
                 ))}
                 </dl>
             </div>
-            <div className="modal-footer">
-              <button className="primary-action" type="button" onClick={() => setViewingRow(null)}>Close</button>
+            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
+              <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={() => setViewingRow(null)}>Close</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Main Workspace Body */}
-      <section className="workbench-main">
-        <header className="workbench-topbar">
-          <div className="topbar-location">
-            <button className="mobile-sidebar-open-button" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
+      <section className="workbench-main min-w-0 flex-1">
+        <header className="workbench-topbar sticky z-[2] top-0 flex h-[62px] items-center justify-between px-[38px] border-b border-[#e4e9e1] bg-[rgba(255,255,255,0.93)] backdrop-blur-[10px]">
+          <div className="topbar-location flex items-center gap-[12px] min-w-0">
+            <button className="mobile-sidebar-open-button hidden max-[680px]:grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef]" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
               <Menu size={19} />
             </button>
-            <span className="breadcrumb">Workspace</span>
-            <span className="breadcrumb-divider">/</span>
-            <strong>{activeItem?.label}</strong>
+            <span className="breadcrumb text-[#87948b] text-[11px]">Workspace</span>
+            <span className="breadcrumb-divider text-[#c2cbc2] text-[11px]">/</span>
+            <strong className="text-[11px] font-semibold">{activeItem?.label}</strong>
           </div>
-          <div className="topbar-actions">
-            <div className="dash-snowflake-pill" title="Live Snowflake Connection">
-              <span className="dash-pulse-dot" />
+          <div className="topbar-actions flex items-center gap-[12px]">
+            <div className="dash-snowflake-pill inline-flex items-center gap-[6px] px-[10px] py-[3px] rounded-[20px] bg-[#edf6ec] border border-[#d3e7d1] text-[#2b5636] text-[11px] font-semibold" title="Live Snowflake Connection">
+              <span className="dash-pulse-dot w-[7px] h-[7px] rounded-full bg-[#10b981] animate-[pulse-ring_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" />
               <span>Snowflake Live</span>
             </div>
-            <span className="today-label">
+            <span className="today-label text-[#87948b] text-[11px]">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
             <NotificationBell />
             <ThemeToggle className="topbar-theme-toggle" />
             <button
-              className="icon-button"
+              className="icon-button grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef] transition-colors"
               type="button"
               title="Refresh Workspace"
               onClick={() => void refresh()}
               disabled={refreshing}
             >
-              <RefreshCw size={17} className={refreshing ? 'spin-icon' : ''} />
+              <RefreshCw size={17} className={refreshing ? 'spin-icon animate-spin' : ''} />
             </button>
             <TopProfileDropdown user={user} />
           </div>
         </header>
 
-        <div className={view === 'assistant' ? 'page-content ai-page-content' : view === 'chat' ? 'page-content chat-page-content' : 'page-content'}>
+        <div className={`page-content w-[min(100%,1600px)] mx-auto p-[37px_38px_24px] ${view === 'assistant' ? 'ai-page-content' : view === 'chat' ? 'chat-page-content' : ''}`}>
           {view === 'chat' || view === 'assistant' ? (
             /* Compact Header for Chat & AI Employee */
-            <section className="chat-hero-compact">
-              <div className="chat-hero-compact-content">
+            <section className="chat-hero-compact flex items-center justify-between gap-[16px] h-[56px] min-h-[56px] max-h-[56px] px-[20px] mb-[10px] rounded-[12px] bg-[linear-gradient(135deg,rgba(25,60,51,0.04)_0%,rgba(217,237,116,0.08)_50%,rgba(25,60,51,0.02)_100%)] bg-white border border-[#e1e7de] shadow-[0_2px_8px_-2px_rgba(25,60,51,0.05)] box-border shrink-0 flex-none overflow-hidden">
+              <div className="chat-hero-compact-content flex items-center gap-[12px] min-w-0 flex-1">
                 {view === 'chat' ? (
-                  <MessageSquare size={18} className="chat-hero-compact-icon" />
+                  <MessageSquare size={18} className="chat-hero-compact-icon text-[#193c33] shrink-0" />
                 ) : (
-                  <Sparkles size={18} className="chat-hero-compact-icon" />
+                  <Sparkles size={18} className="chat-hero-compact-icon text-[#193c33] shrink-0" />
                 )}
-                <h1 className="chat-hero-compact-title">{view === 'chat' ? 'Chat' : 'AI Employee'}</h1>
-                <span className={`dash-role-badge role-${roleClass}`}>
+                <h1 className="chat-hero-compact-title m-0 p-0 text-[19px] font-bold font-sans text-[#193c33] leading-[1.2] whitespace-nowrap tracking-[-0.01em] flex items-center">{view === 'chat' ? 'Chat' : 'AI Employee'}</h1>
+                <span className={`dash-role-badge role-${roleClass} inline-flex items-center gap-[5px] px-[9px] py-[3px] rounded-[20px] text-[11px] font-bold tracking-[0.04em] uppercase`}>
                   {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
                   {roleLabel}
                 </span>
-                <span className="chat-hero-compact-sub">
+                <span className="chat-hero-compact-sub text-[13px] font-medium text-[#4b6354] whitespace-nowrap overflow-hidden text-ellipsis min-w-0 leading-[1.2]">
                   {view === 'chat'
                     ? 'Live messaging with your team'
                     : 'Natural language queries for people operations'}
                 </span>
               </div>
 
-              <div className="chat-hero-clock" title="Current Time">
-                <Clock3 size={14} className="chat-hero-clock-icon" />
+              <div className="chat-hero-clock inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[7px] bg-[rgba(255,255,255,0.9)] border border-[#dfe6db] text-[#3b4e42] text-[12px]" title="Current Time">
+                <Clock3 size={14} className="chat-hero-clock-icon text-[#517154]" />
                 <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </section>
           ) : (
             /* Executive Hero Banner */
-            <section className="dash-hero">
-              <div className="dash-hero-content">
-                <div className="dash-hero-topline">
-                  <span className="dash-kicker">
+            <section className="dash-hero relative overflow-hidden flex flex-wrap items-center justify-between gap-[20px] p-[26px_30px] mb-[24px] rounded-[14px] bg-[linear-gradient(135deg,rgba(25,60,51,0.04)_0%,rgba(217,237,116,0.08)_50%,rgba(25,60,51,0.02)_100%)] bg-white border border-[#e1e7de] shadow-[0_4px_20px_-2px_rgba(25,60,51,0.04)]">
+              <div className="dash-hero-content relative z-[1] flex flex-col gap-[6px]">
+                <div className="dash-hero-topline flex items-center flex-wrap gap-[10px]">
+                  <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">
                     {view === 'overview'
                       ? 'SNOWFLEX PEOPLE PLATFORM'
                       : view === 'users' || view === 'system'
                         ? 'ADMINISTRATION PORTAL'
                         : 'PEOPLE OPERATIONS'}
                   </span>
-                  <span className={`dash-role-badge role-${roleClass}`}>
+                  <span className={`dash-role-badge role-${roleClass} inline-flex items-center gap-[5px] px-[9px] py-[3px] rounded-[20px] text-[11px] font-bold tracking-[0.04em] uppercase`}>
                     {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
                     {roleLabel}
                   </span>
                 </div>
-                <h1 className="dash-hero-title">
+                <h1 className="dash-hero-title my-[4px_2px] text-[#193c33] font-sans text-[clamp(22px,2.5vw,30px)] font-extrabold leading-[1.15] tracking-[-0.02em]">
                   {view === 'overview'
                     ? `Good ${greetingTime}, ${user.fullName.split(' ')[0]}`
                     : activeItem?.label}
                 </h1>
-                <p className="dash-hero-sub">
+                <p className="dash-hero-sub m-0 text-[#63756a] text-[13px] max-w-[620px] leading-[1.5]">
                   {view === 'overview'
                     ? isAdminWorkspace
                       ? 'Executive Operations Console • Real-time synchronization across your Snowflake data warehouse.'
@@ -1285,13 +1287,13 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              <div className="dash-hero-actions">
+              <div className="dash-hero-actions relative z-[1] flex flex-wrap items-center gap-[10px]">
                 {view === 'attendance' && role === 'EMPLOYEE' && (
                   <>
-                    <button className="secondary-action" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
+                    <button className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
                       Check In
                     </button>
-                    <button className="primary-action" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
+                    <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
                       Check Out
                     </button>
                   </>
@@ -1299,7 +1301,7 @@ export default function Dashboard() {
 
                 {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
                   <button
-                    className="primary-action"
+                    className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors"
                     type="button"
                     onClick={() => {
                       setEditingRow(null)
@@ -1316,7 +1318,7 @@ export default function Dashboard() {
                   </button>
                 )}
 
-                <div className="dash-time-chip" title="Current Time">
+                <div className="dash-time-chip flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] bg-[rgba(255,255,255,0.85)] border border-[#dfe6db] text-[#4a5c51] text-[12px] font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.03)]" title="Current Time">
                   <Clock3 size={15} color="#517154" />
                   <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
@@ -1324,23 +1326,23 @@ export default function Dashboard() {
             </section>
           )}
 
-          {error && <div className="notice error-notice" role="alert">{error}</div>}
-          {notice && <div className="notice success-notice" role="status">{notice}</div>}
+          {error && <div className="notice error-notice p-[12px_16px] rounded-[8px] bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] text-[13px] mb-[16px]" role="alert">{error}</div>}
+          {notice && <div className="notice success-notice p-[12px_16px] rounded-[8px] bg-[#dcfce7] text-[#166534] border border-[#bbf7d0] text-[13px] mb-[16px]" role="status">{notice}</div>}
 
           {/* Create / Edit Modal Form */}
           {showCreate && (
-            <div className="modal-overlay" onClick={() => { setShowCreate(false); setEditingRow(null) }} role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
-              <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                  <h3 id="create-modal-title">
+            <div className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]" onClick={() => { setShowCreate(false); setEditingRow(null) }} role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+              <div className="modal modal-lg w-[min(100%,560px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
+                  <h3 id="create-modal-title" className="m-0 text-[#243a33] font-bold text-[16px] font-sans">
                     {editingRow ? 'Edit' : 'Add New'} {view === 'employees' ? 'Employee' : view === 'departments' ? 'Department' : view === 'tasks' ? 'Task' : 'Leave Request'}
                   </h3>
-                  <button className="modal-close" type="button" onClick={() => { setShowCreate(false); setEditingRow(null) }} aria-label="Close">
+                  <button className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]" type="button" onClick={() => { setShowCreate(false); setEditingRow(null) }} aria-label="Close">
                     <XIcon size={18} />
                   </button>
                 </div>
                 <form
-                  className="create-panel"
+                  className="create-panel flex flex-wrap gap-[12px] bg-white"
                   style={{ border: 'none', margin: 0, padding: '24px' }}
                   onSubmit={(event) => {
                     event.preventDefault()
@@ -1376,8 +1378,8 @@ export default function Dashboard() {
                   }}
                 >
                   {view === 'employees' && editingRow && (
-                    <div className="avatar-user-cell" style={{ width: '100%', marginBottom: '16px' }}>
-                      <UserAvatar name={String(editingRow.fullName || 'User')} avatarUrl={String(editingRow.avatarUrl || '') || null} size={38} className="avatar-circle" />
+                    <div className="avatar-user-cell flex items-center gap-[12px]" style={{ width: '100%', marginBottom: '16px' }}>
+                      <UserAvatar name={String(editingRow.fullName || 'User')} avatarUrl={String(editingRow.avatarUrl || '') || null} size={38} className="avatar-circle flex items-center justify-center rounded-full font-sans" />
                       <strong>{String(editingRow.fullName || 'Employee')}</strong>
                     </div>
                   )}
@@ -1514,9 +1516,9 @@ export default function Dashboard() {
                       <label style={{ width: '100%' }}>Reason for Absence<textarea required value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} placeholder="Describe details for approval..." rows={3} /></label>
                     </>
                   )}
-                  <div className="modal-footer" style={{ width: '100%', marginTop: '20px', padding: '16px 0 0' }}>
-                    <button type="button" className="secondary-action" onClick={() => { setShowCreate(false); setEditingRow(null) }}>Cancel</button>
-                    <button className="primary-action" disabled={saving} type="submit">{saving ? 'Saving to Snowflake…' : editingRow ? 'Update Record' : 'Create Record'}</button>
+                  <div className="modal-footer flex justify-end gap-[8px] border-t border-[#edf0eb]" style={{ width: '100%', marginTop: '20px', padding: '16px 0 0' }}>
+                    <button type="button" className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" onClick={() => { setShowCreate(false); setEditingRow(null) }}>Cancel</button>
+                    <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] disabled:opacity-60 disabled:cursor-wait transition-colors" disabled={saving} type="submit">{saving ? 'Saving to Snowflake…' : editingRow ? 'Update Record' : 'Create Record'}</button>
                   </div>
                 </form>
               </div>
@@ -1565,21 +1567,21 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* 4 Premium Metric Cards */}
-              <div className="kpi-metric-grid">
+              <div className="kpi-metric-grid grid grid-cols-4 max-[1100px]:grid-cols-2 max-[640px]:grid-cols-1 gap-[16px] mb-[24px]">
                 {metrics.map(({ label, value, detail, icon: Icon, iconClass, trend, trendClass }) => (
-                  <article className="kpi-card" key={label}>
-                    <div className="kpi-head">
-                      <span className="kpi-label">{label}</span>
-                      <div className={`kpi-icon-box ${iconClass}`}>
+                  <article className="kpi-card group relative overflow-hidden p-[20px_22px] rounded-[12px] bg-white border border-[#e2e8df] shadow-[0_3px_12px_-2px_rgba(25,60,51,0.03)] transition-[transform,box-shadow,border-color] duration-180 ease-in-out cursor-default hover:-translate-y-[3px] hover:shadow-[0_12px_24px_-4px_rgba(25,60,51,0.08)] hover:border-[#cbdbca]" key={label}>
+                    <div className="kpi-head flex items-start justify-between gap-[12px] mb-[14px]">
+                      <span className="kpi-label text-[#64756b] text-[12px] font-semibold uppercase tracking-[0.03em]">{label}</span>
+                      <div className={`kpi-icon-box flex items-center justify-center w-[38px] h-[38px] rounded-[10px] shrink-0 transition-transform duration-180 ease-in-out group-hover:scale-108 group-hover:rotate-3 ${iconClass}`}>
                         <Icon size={20} strokeWidth={2.2} />
                       </div>
                     </div>
-                    <div className="kpi-value-row">
-                      <strong className="kpi-value">{value}</strong>
+                    <div className="kpi-value-row flex items-baseline gap-[8px] mb-[6px]">
+                      <strong className="kpi-value text-[#193c33] font-sans text-[34px] font-extrabold leading-none tracking-[-0.02em]">{value}</strong>
                     </div>
-                    <div className="kpi-foot">
-                      <span className="kpi-detail">{detail}</span>
-                      <span className={`kpi-trend-pill ${trendClass}`}>
+                    <div className="kpi-foot flex items-center justify-between gap-[8px] mt-[12px] pt-[12px] border-t border-[#f0f4ee]">
+                      <span className="kpi-detail text-[#7b8c82] text-[11px] font-medium">{detail}</span>
+                      <span className={`kpi-trend-pill inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-[6px] text-[11px] font-bold ${trendClass}`}>
                         {trend}
                       </span>
                     </div>
@@ -1588,77 +1590,77 @@ export default function Dashboard() {
               </div>
 
               {/* Overview Workspace Main Grid */}
-              <div className="overview-dashboard-grid">
+              <div className="overview-dashboard-grid grid grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)] max-[1024px]:grid-cols-1 gap-[20px] mb-[24px]">
                 {/* Workforce Pulse Widget */}
-                <article className="overview-card">
-                  <div className="overview-card-header">
+                <article className="overview-card bg-white border border-[#e2e8df] rounded-[14px] p-[24px] shadow-[0_4px_16px_-2px_rgba(25,60,51,0.03)] flex flex-col">
+                  <div className="overview-card-header flex items-start justify-between gap-[16px] mb-[20px]">
                     <div>
-                      <span className="dash-kicker">{isEmployee ? 'PERSONAL SNAPSHOT' : 'WORKFORCE METRICS'}</span>
-                      <h2>{isEmployee ? 'Your Monthly Overview' : 'Live Attendance Pulse'}</h2>
-                      <p>{isEmployee ? 'Time tracking & leave status for the current billing cycle.' : 'Daily active status of employees synchronized in real time.'}</p>
+                      <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">{isEmployee ? 'PERSONAL SNAPSHOT' : 'WORKFORCE METRICS'}</span>
+                      <h2 className="my-[4px_0] text-[#193c33] font-sans text-[18px] font-bold">{isEmployee ? 'Your Monthly Overview' : 'Live Attendance Pulse'}</h2>
+                      <p className="m-0 text-[#7a8b81] text-[12px]">{isEmployee ? 'Time tracking & leave status for the current billing cycle.' : 'Daily active status of employees synchronized in real time.'}</p>
                     </div>
-                    <button className="icon-button" type="button" onClick={() => setView('attendance')} title="View detailed attendance">
+                    <button className="icon-button grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef] transition-colors" type="button" onClick={() => setView('attendance')} title="View detailed attendance">
                       <ArrowUpRight size={17} />
                     </button>
                   </div>
 
                   {isEmployee ? (
-                    <div className="pulse-rate-box">
-                      <div className="pulse-rate-primary">
-                        <strong>{stats.attendanceThisMonth ?? 0}</strong>
-                        <span>days recorded this month</span>
+                    <div className="pulse-rate-box flex items-center justify-between gap-[20px] p-[18px_20px] bg-[linear-gradient(135deg,#f7faf5_0%,#edf3e7_100%)] border border-[#dce8d6] rounded-[12px] mb-[20px]">
+                      <div className="pulse-rate-primary flex items-baseline gap-[8px]">
+                        <strong className="font-sans text-[36px] font-extrabold text-[#193c33]">{stats.attendanceThisMonth ?? 0}</strong>
+                        <span className="text-[18px] text-[#7b8e83] font-semibold">days recorded this month</span>
                       </div>
-                      <div className="pulse-rate-badge">
+                      <div className="pulse-rate-badge inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-[8px] bg-white border border-[#d7e4d2] text-[#1f4f39] font-bold text-[13px] shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
                         <CalendarDays size={16} />
                         <span>{stats.leaveBalance ?? 0} days remaining</span>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="pulse-rate-box">
-                        <div className="pulse-rate-primary">
-                          <strong>{attendancePresent}</strong>
-                          <span>/ {attendanceTotal} Active</span>
+                      <div className="pulse-rate-box flex items-center justify-between gap-[20px] p-[18px_20px] bg-[linear-gradient(135deg,#f7faf5_0%,#edf3e7_100%)] border border-[#dce8d6] rounded-[12px] mb-[20px]">
+                        <div className="pulse-rate-primary flex items-baseline gap-[8px]">
+                          <strong className="font-sans text-[36px] font-extrabold text-[#193c33]">{attendancePresent}</strong>
+                          <span className="text-[18px] text-[#7b8e83] font-semibold">/ {attendanceTotal} Active</span>
                         </div>
-                        <div className="pulse-rate-badge">
+                        <div className="pulse-rate-badge inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-[8px] bg-white border border-[#d7e4d2] text-[#1f4f39] font-bold text-[13px] shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
                           <CheckCircle2 size={16} color="#10b981" />
                           <span>{attendanceRate}% Attendance Rate</span>
                         </div>
                       </div>
 
                       {/* Segmented multi-color progress track */}
-                      <div className="pulse-multi-track" role="img" aria-label={`Attendance progress: ${attendanceRate}%`}>
-                        <div className="pulse-track-segment pulse-seg-ontime" style={{ width: `${onTimePercent}%` }} title={`On time: ${attendanceOnTime}`} />
-                        <div className="pulse-track-segment pulse-seg-late" style={{ width: `${latePercent}%` }} title={`Late: ${attendanceLate}`} />
-                        <div className="pulse-track-segment pulse-seg-absent" style={{ width: `${absentPercent}%` }} title={`Absent: ${attendanceAbsent}`} />
+                      <div className="pulse-multi-track flex h-[12px] rounded-[8px] bg-[#eef2ec] overflow-hidden mb-[20px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]" role="img" aria-label={`Attendance progress: ${attendanceRate}%`}>
+                        <div className="pulse-track-segment pulse-seg-ontime h-full transition-[width] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]" style={{ width: `${onTimePercent}%` }} title={`On time: ${attendanceOnTime}`} />
+                        <div className="pulse-track-segment pulse-seg-late h-full transition-[width] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]" style={{ width: `${latePercent}%` }} title={`Late: ${attendanceLate}`} />
+                        <div className="pulse-track-segment pulse-seg-absent h-full transition-[width] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]" style={{ width: `${absentPercent}%` }} title={`Absent: ${attendanceAbsent}`} />
                       </div>
 
-                      <div className="pulse-legend-cards">
-                        <div className="pulse-mini-card">
-                          <div className="pulse-mini-head">
-                            <span className="pulse-indicator-dot dot-ontime" />
+                      <div className="pulse-legend-cards grid grid-cols-3 max-[600px]:grid-cols-1 gap-[12px]">
+                        <div className="pulse-mini-card p-[14px_16px] rounded-[10px] border border-[#edf2ea] bg-white flex flex-col gap-[4px] transition-[border-color,transform] duration-160 ease-in-out hover:-translate-y-[2px] hover:border-[#d1ded0]">
+                          <div className="pulse-mini-head flex items-center gap-[8px] text-[#68796e] text-[11px] font-semibold">
+                            <span className="pulse-indicator-dot dot-ontime w-[8px] h-[8px] rounded-full bg-[#10b981]" />
                             <span>On Time</span>
                           </div>
-                          <strong>{attendanceOnTime}</strong>
-                          <small>{Math.round(onTimePercent)}% on schedule</small>
+                          <strong className="font-sans text-[22px] font-extrabold text-[#193c33]">{attendanceOnTime}</strong>
+                          <small className="text-[#8c9c92] text-[11px]">{Math.round(onTimePercent)}% on schedule</small>
                         </div>
 
-                        <div className="pulse-mini-card">
-                          <div className="pulse-mini-head">
-                            <span className="pulse-indicator-dot dot-late" />
+                        <div className="pulse-mini-card p-[14px_16px] rounded-[10px] border border-[#edf2ea] bg-white flex flex-col gap-[4px] transition-[border-color,transform] duration-160 ease-in-out hover:-translate-y-[2px] hover:border-[#d1ded0]">
+                          <div className="pulse-mini-head flex items-center gap-[8px] text-[#68796e] text-[11px] font-semibold">
+                            <span className="pulse-indicator-dot dot-late w-[8px] h-[8px] rounded-full bg-[#f59e0b]" />
                             <span>Late Arrival</span>
                           </div>
-                          <strong>{attendanceLate}</strong>
-                          <small>{Math.round(latePercent)}% after 09:00</small>
+                          <strong className="font-sans text-[22px] font-extrabold text-[#193c33]">{attendanceLate}</strong>
+                          <small className="text-[#8c9c92] text-[11px]">{Math.round(latePercent)}% after 09:00</small>
                         </div>
 
-                        <div className="pulse-mini-card">
-                          <div className="pulse-mini-head">
-                            <span className="pulse-indicator-dot dot-absent" />
+                        <div className="pulse-mini-card p-[14px_16px] rounded-[10px] border border-[#edf2ea] bg-white flex flex-col gap-[4px] transition-[border-color,transform] duration-160 ease-in-out hover:-translate-y-[2px] hover:border-[#d1ded0]">
+                          <div className="pulse-mini-head flex items-center gap-[8px] text-[#68796e] text-[11px] font-semibold">
+                            <span className="pulse-indicator-dot dot-absent w-[8px] h-[8px] rounded-full bg-[#f43f5e]" />
                             <span>Absent / Leave</span>
                           </div>
-                          <strong>{attendanceAbsent}</strong>
-                          <small>{Math.round(absentPercent)}% out today</small>
+                          <strong className="font-sans text-[22px] font-extrabold text-[#193c33]">{attendanceAbsent}</strong>
+                          <small className="text-[#8c9c92] text-[11px]">{Math.round(absentPercent)}% out today</small>
                         </div>
                       </div>
                     </>
@@ -1666,35 +1668,35 @@ export default function Dashboard() {
                 </article>
 
                 {/* Priority Needs Attention Card */}
-                <article className="overview-card">
-                  <div className="overview-card-header">
+                <article className="overview-card bg-white border border-[#e2e8df] rounded-[14px] p-[24px] shadow-[0_4px_16px_-2px_rgba(25,60,51,0.03)] flex flex-col">
+                  <div className="overview-card-header flex items-start justify-between gap-[16px] mb-[20px]">
                     <div>
-                      <span className="dash-kicker">ACTION REQUIRED</span>
-                      <h2>Needs Attention</h2>
-                      <p>Outstanding operational petitions awaiting decision.</p>
+                      <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">ACTION REQUIRED</span>
+                      <h2 className="my-[4px_0] text-[#193c33] font-sans text-[18px] font-bold">Needs Attention</h2>
+                      <p className="m-0 text-[#7a8b81] text-[12px]">Outstanding operational petitions awaiting decision.</p>
                     </div>
                     <Activity size={18} color="#10b981" />
                   </div>
 
-                  <div className="priority-list">
+                  <div className="priority-list flex flex-col gap-[10px] mt-[4px]">
                     {actionItems.map(({ label, count, view: targetView, icon: Icon }) => (
                       <button
-                        className="priority-item-btn"
+                        className="priority-item-btn flex items-center justify-between gap-[14px] p-[14px_16px] rounded-[10px] bg-[#fbfdfa] border border-[#e7ede4] text-[#2e4337] cursor-pointer transition-all duration-180 ease-in-out text-left hover:-translate-y-[2px] hover:border-[#c8dac6] hover:bg-[#f4f8f1] hover:shadow-[0_4px_14px_-2px_rgba(25,60,51,0.05)]"
                         key={label}
                         type="button"
                         onClick={() => setView(targetView)}
                       >
-                        <div className="priority-item-left">
-                          <div className="priority-item-icon">
+                        <div className="priority-item-left flex items-center gap-[12px]">
+                          <div className="priority-item-icon flex items-center justify-center w-[36px] h-[36px] rounded-[8px] bg-[#edf5eb] text-[#2f6542] shrink-0">
                             <Icon size={18} />
                           </div>
                           <div className="priority-item-info">
-                            <strong>{label}</strong>
-                            <small>{count > 0 ? 'Requires immediate action' : 'All caught up'}</small>
+                            <strong className="block text-[13px] font-bold text-[#1c3529]">{label}</strong>
+                            <small className="block text-[11px] text-[#798c81]">{count > 0 ? 'Requires immediate action' : 'All caught up'}</small>
                           </div>
                         </div>
-                        <div className="priority-item-right">
-                          <span className={`priority-count-pill ${count === 0 ? 'priority-count-zero' : ''}`}>
+                        <div className="priority-item-right flex items-center gap-[10px]">
+                          <span className={`priority-count-pill px-[10px] py-[4px] rounded-[20px] bg-[#193c33] text-[#d9ed74] font-mono text-[12px] font-bold ${count === 0 ? 'priority-count-zero bg-[#eaf1e8] text-[#6c7f73]' : ''}`}>
                             {count}
                           </span>
                           <ArrowUpRight size={16} />
@@ -1705,12 +1707,12 @@ export default function Dashboard() {
 
                   {recentLeaves.length > 0 && (
                     <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #edf1eb' }}>
-                      <span className="dash-kicker" style={{ fontSize: '10px' }}>RECENT TIME-OFF ACTIVITY</span>
+                      <span className="dash-kicker font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-[#517154]" style={{ fontSize: '10px' }}>RECENT TIME-OFF ACTIVITY</span>
                       <div style={{ display: 'grid', gap: '8px', marginTop: '10px' }}>
                         {recentLeaves.slice(0, 2).map((item) => (
                           <div key={String(item.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <UserAvatar name={String(item.fullName || 'User')} avatarUrl={String(item.avatarUrl || '') || null} size={26} className="avatar-circle" />
+                              <UserAvatar name={String(item.fullName || 'User')} avatarUrl={String(item.avatarUrl || '') || null} size={26} className="avatar-circle flex items-center justify-center rounded-full font-sans" />
                               <strong style={{ color: '#2b3f34' }}>{String(item.fullName || 'Employee')}</strong>
                             </div>
                             {renderStatusPill(item.status)}
@@ -1723,17 +1725,17 @@ export default function Dashboard() {
               </div>
 
               {/* Upcoming Holidays Dashboard Section */}
-              <div className="overview-holidays-banner-wrap">
+              <div className="overview-holidays-banner-wrap mb-[24px]">
                 <UpcomingHolidaysWidget onNavigate={() => setView('holidays')} />
               </div>
 
               {/* Quick Launch Shortcuts Hub */}
-              <section className="quick-launch-section">
-                <span className="dash-kicker">WORKPLACE TOOLS</span>
-                <div className="quick-launch-grid">
+              <section className="quick-launch-section mb-[24px]">
+                <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">WORKPLACE TOOLS</span>
+                <div className="quick-launch-grid grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-[14px] mt-[14px]">
                   {shortcuts.map(({ label, desc, view: targetView, icon: Icon }) => (
                     <button
-                      className="quick-launch-card"
+                      className="quick-launch-card group flex items-center gap-[14px] p-[16px_18px] rounded-[12px] bg-white border border-[#e2e8df] cursor-pointer transition-all duration-180 ease-in-out text-left hover:-translate-y-[2px] hover:border-[#b7cb9d] hover:shadow-[0_8px_18px_-4px_rgba(25,60,51,0.07)]"
                       key={label}
                       type="button"
                       onClick={() => {
@@ -1744,12 +1746,12 @@ export default function Dashboard() {
                         }
                       }}
                     >
-                      <div className="quick-launch-icon">
+                      <div className="quick-launch-icon flex items-center justify-center w-[42px] h-[42px] rounded-[10px] bg-[#f0f6ec] text-[#193c33] shrink-0 transition-[background,color] duration-180 ease-in-out group-hover:bg-[#193c33] group-hover:text-[#d9ed74]">
                         <Icon size={20} strokeWidth={2} />
                       </div>
                       <div className="quick-launch-text">
-                        <strong>{label}</strong>
-                        <small>{desc}</small>
+                        <strong className="block text-[13px] font-bold text-[#193c33]">{label}</strong>
+                        <small className="block text-[11px] text-[#798b80] mt-[2px]">{desc}</small>
                       </div>
                     </button>
                   ))}
@@ -1761,52 +1763,52 @@ export default function Dashboard() {
             <>
               {/* Employee KPI Summary Bar */}
               {view === 'employees' && employeeStats && (
-                <div className="employee-kpi-bar">
-                  <div className="employee-kpi-card active-card">
-                    <div className="emp-kpi-icon-box kpi-icon-emerald">
+                <div className="employee-kpi-bar grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-[16px] mb-[20px]">
+                  <div className="employee-kpi-card active-card flex items-center gap-[16px] p-[16px_20px] rounded-[12px] border border-[#e2e8df] border-l-[4px] border-l-[#10b981] bg-white shadow-[0_2px_8px_rgba(25,60,51,0.04)] transition-[transform,box-shadow] duration-160 ease-in-out hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(25,60,51,0.08)]">
+                    <div className="emp-kpi-icon-box kpi-icon-emerald flex items-center justify-center w-[44px] h-[44px] rounded-[10px] shrink-0">
                       <UserCheck size={20} strokeWidth={2.2} />
                     </div>
-                    <div className="emp-kpi-info">
-                      <span className="emp-kpi-label">Active Employees</span>
-                      <strong className="emp-kpi-val">{employeeStats.activeCount}</strong>
-                      <span className="emp-kpi-sub">Currently working</span>
+                    <div className="emp-kpi-info flex flex-col">
+                      <span className="emp-kpi-label text-[11.5px] font-bold uppercase tracking-[0.05em] text-[#657b6f] mb-[2px]">Active Employees</span>
+                      <strong className="emp-kpi-val text-[24px] font-extrabold text-[#193c33] leading-[1.1] font-sans">{employeeStats.activeCount}</strong>
+                      <span className="emp-kpi-sub text-[11.5px] text-[#8a9c90] mt-[3px]">Currently working</span>
                     </div>
                   </div>
 
-                  <div className="employee-kpi-card terminated-card">
-                    <div className="emp-kpi-icon-box kpi-icon-rose">
+                  <div className="employee-kpi-card terminated-card flex items-center gap-[16px] p-[16px_20px] rounded-[12px] border border-[#e2e8df] border-l-[4px] border-l-[#ef4444] bg-white shadow-[0_2px_8px_rgba(25,60,51,0.04)] transition-[transform,box-shadow] duration-160 ease-in-out hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(25,60,51,0.08)]">
+                    <div className="emp-kpi-icon-box kpi-icon-rose flex items-center justify-center w-[44px] h-[44px] rounded-[10px] shrink-0">
                       <UserX size={20} strokeWidth={2.2} />
                     </div>
-                    <div className="emp-kpi-info">
-                      <span className="emp-kpi-label">Terminated</span>
-                      <strong className="emp-kpi-val">{employeeStats.terminatedCount}</strong>
-                      <span className="emp-kpi-sub">Deactivated accounts</span>
+                    <div className="emp-kpi-info flex flex-col">
+                      <span className="emp-kpi-label text-[11.5px] font-bold uppercase tracking-[0.05em] text-[#657b6f] mb-[2px]">Terminated</span>
+                      <strong className="emp-kpi-val text-[24px] font-extrabold text-[#193c33] leading-[1.1] font-sans">{employeeStats.terminatedCount}</strong>
+                      <span className="emp-kpi-sub text-[11.5px] text-[#8a9c90] mt-[3px]">Deactivated accounts</span>
                     </div>
                   </div>
 
-                  <div className="employee-kpi-card roles-card">
-                    <div className="emp-kpi-info" style={{ width: '100%' }}>
-                      <span className="emp-kpi-label">Active Staff by Role</span>
-                      <div className="emp-role-pills">
-                        <span className="role-chip" title="Super Administrators">
-                          <small>SUPER ADMIN</small>
-                          <strong>{employeeStats.byRole?.SUPER_ADMIN ?? 0}</strong>
+                  <div className="employee-kpi-card roles-card flex items-center gap-[16px] p-[16px_20px] rounded-[12px] border border-[#e2e8df] border-l-[4px] border-l-[#6366f1] bg-white shadow-[0_2px_8px_rgba(25,60,51,0.04)] transition-[transform,box-shadow] duration-160 ease-in-out hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(25,60,51,0.08)]">
+                    <div className="emp-kpi-info flex flex-col" style={{ width: '100%' }}>
+                      <span className="emp-kpi-label text-[11.5px] font-bold uppercase tracking-[0.05em] text-[#657b6f] mb-[2px]">Active Staff by Role</span>
+                      <div className="emp-role-pills flex flex-wrap gap-[6px] mt-[6px]">
+                        <span className="role-chip inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] bg-[#f1f5f1] dark:bg-[#1e2c24] border border-[#dbe2d8] dark:border-[#2e3d35] text-[10.5px]" title="Super Administrators">
+                          <small className="text-[#62766b] font-bold text-[9.5px]">SUPER ADMIN</small>
+                          <strong className="text-[#193c33] font-extrabold">{employeeStats.byRole?.SUPER_ADMIN ?? 0}</strong>
                         </span>
-                        <span className="role-chip" title="Administrators">
-                          <small>ADMIN</small>
-                          <strong>{employeeStats.byRole?.ADMIN ?? 0}</strong>
+                        <span className="role-chip inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] bg-[#f1f5f1] dark:bg-[#1e2c24] border border-[#dbe2d8] dark:border-[#2e3d35] text-[10.5px]" title="Administrators">
+                          <small className="text-[#62766b] font-bold text-[9.5px]">ADMIN</small>
+                          <strong className="text-[#193c33] font-extrabold">{employeeStats.byRole?.ADMIN ?? 0}</strong>
                         </span>
-                        <span className="role-chip" title="HR Personnel">
-                          <small>HR</small>
-                          <strong>{employeeStats.byRole?.HR ?? 0}</strong>
+                        <span className="role-chip inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] bg-[#f1f5f1] dark:bg-[#1e2c24] border border-[#dbe2d8] dark:border-[#2e3d35] text-[10.5px]" title="HR Personnel">
+                          <small className="text-[#62766b] font-bold text-[9.5px]">HR</small>
+                          <strong className="text-[#193c33] font-extrabold">{employeeStats.byRole?.HR ?? 0}</strong>
                         </span>
-                        <span className="role-chip" title="Managers">
-                          <small>MANAGER</small>
-                          <strong>{employeeStats.byRole?.MANAGER ?? 0}</strong>
+                        <span className="role-chip inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] bg-[#f1f5f1] dark:bg-[#1e2c24] border border-[#dbe2d8] dark:border-[#2e3d35] text-[10.5px]" title="Managers">
+                          <small className="text-[#62766b] font-bold text-[9.5px]">MANAGER</small>
+                          <strong className="text-[#193c33] font-extrabold">{employeeStats.byRole?.MANAGER ?? 0}</strong>
                         </span>
-                        <span className="role-chip" title="Employees">
-                          <small>EMPLOYEE</small>
-                          <strong>{employeeStats.byRole?.EMPLOYEE ?? 0}</strong>
+                        <span className="role-chip inline-flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] bg-[#f1f5f1] dark:bg-[#1e2c24] border border-[#dbe2d8] dark:border-[#2e3d35] text-[10.5px]" title="Employees">
+                          <small className="text-[#62766b] font-bold text-[9.5px]">EMPLOYEE</small>
+                          <strong className="text-[#193c33] font-extrabold">{employeeStats.byRole?.EMPLOYEE ?? 0}</strong>
                         </span>
                       </div>
                     </div>
@@ -1815,24 +1817,25 @@ export default function Dashboard() {
               )}
 
               {/* SaaS Modern Data Table / Cards Grid */}
-              <section className="saas-table-card">
-                <div className="saas-table-top">
-                  <div className="saas-table-title-area">
-                    <span className="dash-kicker">LIVE FROM SNOWFLAKE</span>
-                    <h2>{activeItem?.label} Directory</h2>
+              <section className="saas-table-card bg-white border border-[#e1e7de] rounded-[14px] overflow-hidden shadow-[0_4px_18px_-2px_rgba(25,60,51,0.03)]">
+                <div className="saas-table-top flex flex-wrap items-center justify-between gap-[16px] p-[18px_24px] border-b border-[#edf1eb] bg-[#fafbf9]">
+                  <div className="saas-table-title-area flex flex-col">
+                    <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">LIVE FROM SNOWFLAKE</span>
+                    <h2 className="my-[3px_0] text-[#193c33] font-sans text-[18px] font-bold">{activeItem?.label} Directory</h2>
                   </div>
 
-                <div className="saas-table-actions">
+                <div className="saas-table-actions flex flex-wrap items-center gap-[10px]">
                   {/* Search Bar */}
-                  <div className="saas-search-box">
-                    <Search size={16} />
+                  <div className="saas-search-box relative flex items-center">
+                    <Search size={16} className="pointer-events-none text-[#7b8d82] absolute left-[12px]" />
                     <input
+                      className="h-[38px] w-[260px] pl-[38px] pr-[34px] rounded-[8px] border border-[#dbe2d8] bg-white text-[#193c33] text-[13px] outline-none transition-all duration-160 ease-in-out focus:border-[#193c33] focus:shadow-[0_0_0_3px_rgba(25,60,51,0.08)]"
                       placeholder={`Search ${activeItem?.label.toLowerCase()}…`}
                       value={searchQuery}
                       onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }}
                     />
                     {searchQuery && (
-                      <button className="saas-search-clear" type="button" onClick={() => setSearchQuery('')} aria-label="Clear search">
+                      <button className="saas-search-clear absolute right-[10px] border-0 bg-transparent text-[#8c9b91] cursor-pointer flex items-center p-[2px] hover:text-[#193c33]" type="button" onClick={() => setSearchQuery('')} aria-label="Clear search">
                         <X size={14} />
                       </button>
                     )}
@@ -1871,31 +1874,31 @@ export default function Dashboard() {
 
                   {/* Status Filter Tabs for Employees: Active | Terminated | All */}
                   {view === 'employees' && (
-                    <div className="employee-filter-tabs">
+                    <div className="employee-filter-tabs inline-flex items-center bg-[#edf3eb] p-[3px] rounded-[9px] gap-[3px]">
                       <button
                         type="button"
-                        className={`filter-tab-btn ${employeeStatusTab === 'ACTIVE' ? 'active' : ''}`}
+                        className={`filter-tab-btn inline-flex items-center gap-[6px] px-[14px] py-[6px] border-none rounded-[7px] bg-transparent text-[#556b5e] text-[12px] font-bold cursor-pointer transition-all duration-140 ease-in-out hover:text-[#193c33] ${employeeStatusTab === 'ACTIVE' ? 'active bg-white text-[#193c33]' : ''}`}
                         onClick={() => handleEmployeeStatusTabChange('ACTIVE')}
                       >
                         Active
-                        {employeeStats && <span className="tab-badge">{employeeStats.activeCount}</span>}
+                        {employeeStats && <span className="tab-badge inline-flex items-center justify-center px-[6px] py-[1px] rounded-[10px] text-[10.5px] font-extrabold bg-[#e2e8df] text-[#3b5044]">{employeeStats.activeCount}</span>}
                       </button>
                       <button
                         type="button"
-                        className={`filter-tab-btn ${employeeStatusTab === 'TERMINATED' ? 'active' : ''}`}
+                        className={`filter-tab-btn inline-flex items-center gap-[6px] px-[14px] py-[6px] border-none rounded-[7px] bg-transparent text-[#556b5e] text-[12px] font-bold cursor-pointer transition-all duration-140 ease-in-out hover:text-[#193c33] ${employeeStatusTab === 'TERMINATED' ? 'active bg-white text-[#193c33]' : ''}`}
                         onClick={() => handleEmployeeStatusTabChange('TERMINATED')}
                       >
                         Terminated
-                        {employeeStats && <span className="tab-badge badge-danger">{employeeStats.terminatedCount}</span>}
+                        {employeeStats && <span className="tab-badge badge-danger inline-flex items-center justify-center px-[6px] py-[1px] rounded-[10px] text-[10.5px] font-extrabold bg-[#fee2e2] text-[#dc2626]">{employeeStats.terminatedCount}</span>}
                       </button>
                       <button
                         type="button"
-                        className={`filter-tab-btn ${employeeStatusTab === 'ALL' ? 'active' : ''}`}
+                        className={`filter-tab-btn inline-flex items-center gap-[6px] px-[14px] py-[6px] border-none rounded-[7px] bg-transparent text-[#556b5e] text-[12px] font-bold cursor-pointer transition-all duration-140 ease-in-out hover:text-[#193c33] ${employeeStatusTab === 'ALL' ? 'active bg-white text-[#193c33]' : ''}`}
                         onClick={() => handleEmployeeStatusTabChange('ALL')}
                       >
                         All
                         {employeeStats && (
-                          <span className="tab-badge badge-neutral">
+                          <span className="tab-badge badge-neutral inline-flex items-center justify-center px-[6px] py-[1px] rounded-[10px] text-[10.5px] font-extrabold bg-[#e5e7eb] text-[#4b5563]">
                             {(employeeStats.activeCount ?? 0) + (employeeStats.terminatedCount ?? 0)}
                           </span>
                         )}
@@ -1905,9 +1908,9 @@ export default function Dashboard() {
 
                   {/* View Mode Toggle (Table vs Cards) for Employees & Departments */}
                   {isManagementView && (
-                    <div className="view-mode-toggle" title="Switch layout mode">
+                    <div className="view-mode-toggle flex p-[3px] rounded-[8px] bg-[#edf2eb] border border-[#dfe5dc] gap-[2px]" title="Switch layout mode">
                       <button
-                        className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+                        className={`view-mode-btn flex items-center justify-center w-[32px] h-[32px] rounded-[6px] border-0 bg-transparent text-[#63756a] cursor-pointer transition-all duration-140 ease-in-out hover:text-[#193c33] ${viewMode === 'table' ? 'active bg-white text-[#193c33] shadow-[0_1px_3px_rgba(0,0,0,0.08)]' : ''}`}
                         type="button"
                         onClick={() => setViewMode('table')}
                         aria-label="Table view"
@@ -1915,7 +1918,7 @@ export default function Dashboard() {
                         <List size={16} />
                       </button>
                       <button
-                        className={`view-mode-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                        className={`view-mode-btn flex items-center justify-center w-[32px] h-[32px] rounded-[6px] border-0 bg-transparent text-[#63756a] cursor-pointer transition-all duration-140 ease-in-out hover:text-[#193c33] ${viewMode === 'cards' ? 'active bg-white text-[#193c33] shadow-[0_1px_3px_rgba(0,0,0,0.08)]' : ''}`}
                         type="button"
                         onClick={() => setViewMode('cards')}
                         aria-label="Grid cards view"
@@ -1925,7 +1928,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <span className="saas-record-counter">{filteredRows.length} records</span>
+                  <span className="saas-record-counter px-[10px] py-[5px] rounded-[6px] bg-[#edf4eb] text-[#2f563d] font-mono text-[11px] font-semibold">{filteredRows.length} records</span>
                 </div>
               </div>
 
@@ -1940,19 +1943,19 @@ export default function Dashboard() {
                   />
                 )
               ) : filteredRows.length === 0 ? (
-                <div className="saas-empty-box">
-                  <div className="empty-icon-wrap">
+                <div className="saas-empty-box flex flex-col items-center justify-center p-[48px_24px] text-center">
+                  <div className="empty-icon-wrap grid w-[60px] h-[60px] place-items-center rounded-full bg-[#f1f5ee] text-[#193c33] mb-[16px]">
                     {view === 'employees' ? <Users size={30} /> : view === 'departments' ? <Building2 size={30} /> : view === 'tasks' ? <CheckSquare2 size={30} /> : <CalendarDays size={30} />}
                   </div>
-                  <h3>No {activeItem?.label.toLowerCase()} found</h3>
-                  <p>
+                  <h3 className="m-[0_0_6px] font-sans text-[18px] font-bold text-[#193c33]">No {activeItem?.label.toLowerCase()} found</h3>
+                  <p className="m-0 text-[13px] text-[#798b80] max-w-[420px]">
                     {searchQuery
                       ? `No results match "${searchQuery}". Try adjusting your search or filters.`
                       : `Get started by creating your first ${activeItem?.label.toLowerCase()} record in Snowflake.`}
                   </p>
                   {((view === 'employees' && canManage) || (view === 'departments' && canManage) || (view === 'tasks' && role !== 'EMPLOYEE')) && (
                     <button
-                      className="primary-action"
+                      className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors"
                       type="button"
                       style={{ marginTop: '8px' }}
                       onClick={() => {
@@ -1967,16 +1970,16 @@ export default function Dashboard() {
               ) : viewMode === 'cards' && isManagementView ? (
                 /* Card Grid View */
                 <>
-                  <div className="saas-cards-grid">
+                  <div className="saas-cards-grid grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 p-6">
                     {paginatedRows.map((row) => (
                       view === 'employees' ? (
-                        <article className="emp-profile-card" key={String(row.id)}>
-                          <div className="emp-card-top">
-                            <div className="emp-card-identity">
-                              <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={38} className="avatar-circle" />
+                        <article className="emp-profile-card flex flex-col gap-[14px] p-5 rounded-xl border border-[#e3e9e0] bg-white shadow-[0_2px_8px_-2px_rgba(25,60,51,0.03)] transition-all duration-[180ms] ease hover:-translate-y-[3px] hover:border-[#c4d7bf] hover:shadow-[0_10px_22px_-4px_rgba(25,60,51,0.08)] dark:bg-[#1c2720] dark:border-[#2c3a30] dark:hover:border-[#405445]" key={String(row.id)}>
+                          <div className="emp-card-top flex items-start justify-between gap-3">
+                            <div className="emp-card-identity flex items-center gap-3">
+                              <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={38} className="avatar-circle flex items-center justify-center w-[34px] h-[34px] rounded-full font-sans text-[12px] font-bold shrink-0 uppercase text-white" />
                               <div className="emp-card-name">
-                                <strong>{String(row.fullName || 'Unnamed')}</strong>
-                                <small>{String(row.email || 'No email')}</small>
+                                <strong className="block text-[14px] font-bold text-[#193c33] dark:text-[#eaf2ec]">{String(row.fullName || 'Unnamed')}</strong>
+                                <small className="block text-[12px] text-[#798b80]">{String(row.email || 'No email')}</small>
                               </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
@@ -1992,30 +1995,30 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          <div className="emp-card-meta-list">
-                            <div className="emp-meta-row">
-                              <span>Code</span>
-                              <strong>{String(row.employeeCode || '—')}</strong>
+                          <div className="emp-card-meta-list grid gap-2 p-[12px_14px] rounded-lg bg-[#f7f9f6] border border-[#ebf0e8] text-[12px] dark:bg-[#17211b] dark:border-[#243329]">
+                            <div className="emp-meta-row flex justify-between gap-[10px]">
+                              <span className="text-[#7b8d82]">Code</span>
+                              <strong className="text-[#233e31] font-semibold font-mono text-[11px] dark:text-[#d6e2d9]">{String(row.employeeCode || '—')}</strong>
                             </div>
-                            <div className="emp-meta-row">
-                              <span>Department</span>
-                              <strong>{String(row.departmentName || row.departmentId || 'Unassigned')}</strong>
+                            <div className="emp-meta-row flex justify-between gap-[10px]">
+                              <span className="text-[#7b8d82]">Department</span>
+                              <strong className="text-[#233e31] font-semibold font-mono text-[11px] dark:text-[#d6e2d9]">{String(row.departmentName || row.departmentId || 'Unassigned')}</strong>
                             </div>
-                            <div className="emp-meta-row">
-                              <span>Designation</span>
-                              <strong>{String(row.designation || '—')}</strong>
+                            <div className="emp-meta-row flex justify-between gap-[10px]">
+                              <span className="text-[#7b8d82]">Designation</span>
+                              <strong className="text-[#233e31] font-semibold font-mono text-[11px] dark:text-[#d6e2d9]">{String(row.designation || '—')}</strong>
                             </div>
                             {isAdminWorkspace && (
-                              <div className="emp-meta-row">
-                                <span>Leave Status</span>
+                              <div className="emp-meta-row flex justify-between gap-[10px]">
+                                <span className="text-[#7b8d82]">Leave Status</span>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
                                   {row.onLeaveToday ? (
-                                    <span className="on-leave-today-tag">
+                                    <span className="on-leave-today-tag inline-flex items-center gap-[5px] px-2 py-[3px] rounded-[5px] text-[11px] font-bold bg-[#fef3c7] text-[#92400e] border border-[#fde68a] whitespace-nowrap dark:bg-[#3a220a] dark:text-[#fde68a] dark:border-[#63390c]">
                                       🌴 On Leave ({String(row.todayLeaveName || 'Approved')})
                                     </span>
                                   ) : null}
                                   {Number(row.pendingLeaveCount) > 0 ? (
-                                    <div className="emp-leave-status-cell">
+                                    <div className="emp-leave-status-cell inline-flex items-center gap-1.5 flex-wrap">
                                       <LeaveTypeBadge
                                         name={String(row.firstPendingName || 'Pending Leave')}
                                         code={String(row.firstPendingCode || 'OTHER')}
@@ -2023,7 +2026,7 @@ export default function Dashboard() {
                                         status="Pending"
                                       />
                                       {Number(row.pendingLeaveCount) > 1 && (
-                                        <span className="more-leaves-chip" title={`All pending requests: ${String(row.pendingTypeNames || '')}`}>
+                                        <span className="more-leaves-chip inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-[10px] text-[10px] font-bold bg-[#e2e8f0] text-[#334155] cursor-help transition-colors duration-150 hover:bg-[#cbd5e1] dark:bg-[#334155] dark:text-[#cbd5e1] dark:hover:bg-[#475569]" title={`All pending requests: ${String(row.pendingTypeNames || '')}`}>
                                           +{Number(row.pendingLeaveCount) - 1}
                                         </span>
                                       )}
@@ -2036,16 +2039,16 @@ export default function Dashboard() {
                             )}
                           </div>
 
-                          <div className="emp-card-footer">
+                          <div className="emp-card-footer mt-auto flex items-center justify-between gap-[10px] pt-3 border-t border-[#f0f4ee]">
                             <span style={{ fontSize: '11px', color: '#798c80' }}>
                               Created {formatDate(row.createdAt)}
                             </span>
-                            <div className="table-action-btns">
-                              <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
-                              {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                            <div className="table-action-btns flex items-center justify-end gap-1.5">
+                              <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
+                              {canManage && <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
                               {view === 'employees' && canTerminateRow(row) && (
                                 <button
-                                  className="action-chip-btn action-terminate"
+                                  className="action-chip-btn action-terminate inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]"
                                   type="button"
                                   onClick={() => handleOpenTerminate(row)}
                                   title="Terminate employee"
@@ -2055,7 +2058,7 @@ export default function Dashboard() {
                               )}
                               {view === 'employees' && canReactivateRow(row) && (
                                 <button
-                                  className="action-chip-btn action-reactivate"
+                                  className="action-chip-btn action-reactivate inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]"
                                   type="button"
                                   onClick={() => handleOpenReactivate(row)}
                                   title="Reactivate employee"
@@ -2063,29 +2066,29 @@ export default function Dashboard() {
                                   <RotateCcw size={15} />
                                 </button>
                               )}
-                              {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete"><Trash2 size={15} /></button>}
+                              {canManage && <button className="action-chip-btn action-delete inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#fee2e2] hover:text-[#dc2626] hover:border-[#fca5a5] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3]" type="button" onClick={() => void handleDelete(row)} title="Delete"><Trash2 size={15} /></button>}
                             </div>
                           </div>
                         </article>
                       ) : (
-                        <article className="dept-card" key={String(row.id)}>
-                          <div className="dept-card-header">
-                            <div className="dept-card-icon">
+                        <article className="dept-card flex flex-col gap-[14px] p-[22px] rounded-xl border border-[#e3e9e0] bg-white transition-all duration-[180ms] ease hover:-translate-y-[3px] hover:border-[#c4d7bf] hover:shadow-[0_10px_22px_-4px_rgba(25,60,51,0.08)] dark:bg-[#1c2720] dark:border-[#2c3a30] dark:hover:border-[#405445]" key={String(row.id)}>
+                          <div className="dept-card-header flex items-center gap-[14px]">
+                            <div className="dept-card-icon flex items-center justify-center w-[44px] h-[44px] rounded-[10px] bg-[#ecf4e9] text-[#193c33] shrink-0 dark:bg-[#24332a] dark:text-[#d9ed74]">
                               <Building2 size={24} />
                             </div>
                             <div className="dept-card-info">
-                              <h3>{String(row.name || 'Unnamed')}</h3>
-                              <span>ID #{String(row.id)}</span>
+                              <h3 className="m-0 text-[16px] font-bold text-[#193c33] dark:text-[#eaf2ec]">{String(row.name || 'Unnamed')}</h3>
+                              <span className="text-[12px] text-[#798b80]">ID #{String(row.id)}</span>
                             </div>
                           </div>
-                          <div className="emp-card-footer" style={{ border: 'none', padding: 0 }}>
+                          <div className="emp-card-footer mt-auto flex items-center justify-between gap-[10px]" style={{ border: 'none', padding: 0 }}>
                             <span style={{ fontSize: '12px', color: '#798c80' }}>
                               Updated {formatDate(row.updatedAt || row.createdAt)}
                             </span>
-                            <div className="table-action-btns">
-                              <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
-                              {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit department"><Edit size={15} /></button>}
-                              {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete department"><Trash2 size={15} /></button>}
+                            <div className="table-action-btns flex items-center justify-end gap-1.5">
+                              <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
+                              {canManage && <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleEdit(row)} title="Edit department"><Edit size={15} /></button>}
+                              {canManage && <button className="action-chip-btn action-delete inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#fee2e2] hover:text-[#dc2626] hover:border-[#fca5a5] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3]" type="button" onClick={() => void handleDelete(row)} title="Delete department"><Trash2 size={15} /></button>}
                             </div>
                           </div>
                         </article>
@@ -2094,13 +2097,13 @@ export default function Dashboard() {
                   </div>
 
                   {/* Pagination Bar */}
-                  <div className="saas-pagination-bar">
+                  <div className="saas-pagination-bar flex flex-wrap items-center justify-between gap-[14px] p-[14px_24px] border-t border-[#edf1eb] bg-[#fafbf9] text-[12px] text-[#64756b] dark:bg-[#161f1a] dark:border-[#26332a] dark:text-[#8fa195]">
                     <span>
                       Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} records
                     </span>
-                    <div className="pagination-controls">
+                    <div className="pagination-controls flex items-center gap-2">
                       <button
-                        className="pagination-btn"
+                        className="pagination-btn flex items-center justify-center w-8 h-8 rounded-md border border-[#dce3d8] bg-white text-[#3b5043] cursor-pointer transition-all duration-[140ms] ease enabled:hover:bg-[#f0f5eb] enabled:hover:border-[#b7c7b4] enabled:hover:text-[#193c33] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-[#1f2c24] dark:border-[#314236] dark:text-[#c7d6cb]"
                         type="button"
                         disabled={currentPage <= 1}
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -2110,7 +2113,7 @@ export default function Dashboard() {
                       </button>
                       <span>Page {currentPage} of {Math.ceil(filteredRows.length / pageSize) || 1}</span>
                       <button
-                        className="pagination-btn"
+                        className="pagination-btn flex items-center justify-center w-8 h-8 rounded-md border border-[#dce3d8] bg-white text-[#3b5043] cursor-pointer transition-all duration-[140ms] ease enabled:hover:bg-[#f0f5eb] enabled:hover:border-[#b7c7b4] enabled:hover:text-[#193c33] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-[#1f2c24] dark:border-[#314236] dark:text-[#c7d6cb]"
                         type="button"
                         disabled={currentPage * pageSize >= filteredRows.length}
                         onClick={() => setCurrentPage((p) => p + 1)}
@@ -2124,8 +2127,8 @@ export default function Dashboard() {
               ) : (
                 /* Table View */
                 <>
-                  <div className="saas-table-container">
-                    <table className="saas-grid-table">
+                  <div className="saas-table-container w-full overflow-x-auto">
+                    <table className="saas-grid-table w-full border-collapse text-left text-[13px] [&_th]:p-[13px_20px] [&_th]:bg-[#f7f9f6] [&_th]:text-[#5d7064] [&_th]:font-mono [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-[0.04em] [&_th]:border-b [&_th]:border-[#e7ede4] [&_th]:whitespace-nowrap dark:[&_th]:bg-[#17211b] dark:[&_th]:text-[#92a698] dark:[&_th]:border-[#27342b] [&_td]:p-[14px_20px] [&_td]:border-b [&_td]:border-[#eef2ec] [&_td]:text-[#2b4237] [&_td]:align-middle dark:[&_td]:border-[#232f26] dark:[&_td]:text-[#cfded3] [&_tbody_tr]:transition-colors [&_tbody_tr]:duration-[120ms] hover:[&_tbody_tr]:bg-[#f8faf6] dark:hover:[&_tbody_tr]:bg-[#1f2c23]">
                       <thead>
                         {view === 'employees' ? (
                           <tr>
@@ -2182,11 +2185,11 @@ export default function Dashboard() {
                           paginatedRows.map((row, index) => (
                             <tr key={String(row.id ?? index)}>
                               <td>
-                                <div className="avatar-user-cell">
-                                  <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={28} className="avatar-circle" />
+                                <div className="avatar-user-cell flex items-center gap-3">
+                                  <UserAvatar name={String(row.fullName || 'User')} avatarUrl={String(row.avatarUrl || '') || null} size={28} className="avatar-circle flex items-center justify-center w-[34px] h-[34px] rounded-full font-sans text-[12px] font-bold shrink-0 uppercase text-white" />
                                   <div className="avatar-info-copy">
-                                    <strong>{String(row.fullName || '—')}</strong>
-                                    {row.email ? <small>{String(row.email)}</small> : null}
+                                    <strong className="block text-[13px] font-bold text-[#193c33] dark:text-[#eaf2ec]">{String(row.fullName || '—')}</strong>
+                                    {row.email ? <small className="block text-[11px] text-[#798b80] dark:text-[#8fa195]">{String(row.email)}</small> : null}
                                   </div>
                                 </div>
                               </td>
@@ -2210,12 +2213,12 @@ export default function Dashboard() {
                                 <td>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
                                     {row.onLeaveToday ? (
-                                      <span className="on-leave-today-tag" title="Employee has an approved leave covering today">
+                                      <span className="on-leave-today-tag inline-flex items-center gap-[5px] px-2 py-[3px] rounded-[5px] text-[11px] font-bold bg-[#fef3c7] text-[#92400e] border border-[#fde68a] whitespace-nowrap dark:bg-[#3a220a] dark:text-[#fde68a] dark:border-[#63390c]" title="Employee has an approved leave covering today">
                                         🌴 On Leave Today ({String(row.todayLeaveName || 'Approved')})
                                       </span>
                                     ) : null}
                                     {Number(row.pendingLeaveCount) > 0 ? (
-                                      <div className="emp-leave-status-cell">
+                                      <div className="emp-leave-status-cell inline-flex items-center gap-1.5 flex-wrap">
                                         <LeaveTypeBadge
                                           name={String(row.firstPendingName || 'Pending Leave')}
                                           code={String(row.firstPendingCode || 'OTHER')}
@@ -2224,7 +2227,7 @@ export default function Dashboard() {
                                         />
                                         {Number(row.pendingLeaveCount) > 1 && (
                                           <span
-                                            className="more-leaves-chip"
+                                            className="more-leaves-chip inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-[10px] text-[10px] font-bold bg-[#e2e8f0] text-[#334155] cursor-help transition-colors duration-150 hover:bg-[#cbd5e1] dark:bg-[#334155] dark:text-[#cbd5e1] dark:hover:bg-[#475569]"
                                             title={`All pending requests: ${String(row.pendingTypeNames || '')}`}
                                           >
                                             +{Number(row.pendingLeaveCount) - 1}
@@ -2239,12 +2242,12 @@ export default function Dashboard() {
                               )}
                               {showActions && (
                                 <td style={{ textAlign: 'right' }}>
-                                  <div className="table-action-btns">
-                                    <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
-                                    {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
+                                  <div className="table-action-btns flex items-center justify-end gap-1.5">
+                                    <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleView(row)} title="View profile"><Eye size={15} /></button>
+                                    {canManage && <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleEdit(row)} title="Edit profile"><Edit size={15} /></button>}
                                     {view === 'employees' && canTerminateRow(row) && (
                                       <button
-                                        className="action-chip-btn action-terminate"
+                                        className="action-chip-btn action-terminate inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]"
                                         type="button"
                                         onClick={() => handleOpenTerminate(row)}
                                         title="Terminate employee"
@@ -2254,7 +2257,7 @@ export default function Dashboard() {
                                     )}
                                     {view === 'employees' && canReactivateRow(row) && (
                                       <button
-                                        className="action-chip-btn action-reactivate"
+                                        className="action-chip-btn action-reactivate inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]"
                                         type="button"
                                         onClick={() => handleOpenReactivate(row)}
                                         title="Reactivate employee"
@@ -2262,7 +2265,7 @@ export default function Dashboard() {
                                         <RotateCcw size={15} />
                                       </button>
                                     )}
-                                    {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
+                                    {canManage && <button className="action-chip-btn action-delete inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#fee2e2] hover:text-[#dc2626] hover:border-[#fca5a5] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3]" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
                                   </div>
                                 </td>
                               )}
@@ -2274,16 +2277,16 @@ export default function Dashboard() {
                               {Object.entries(row).filter(([key]) => !['description'].includes(key) && !key.toLowerCase().includes('avatar')).slice(0, 7).map(([key, value]) => (
                                 <td key={key}>
                                   {['fullname', 'assignedtoname', 'assignedbyname'].includes(key.toLowerCase()) ? (
-                                    <div className="avatar-user-cell">
+                                    <div className="avatar-user-cell flex items-center gap-3">
                                       <UserAvatar
                                         name={String(value || 'User')}
                                         avatarUrl={String(key.toLowerCase() === 'assignedtoname' ? row.assignedToAvatarUrl || '' : key.toLowerCase() === 'assignedbyname' ? row.assignedByAvatarUrl || '' : row.avatarUrl || '') || null}
                                         size={28}
-                                        className="avatar-circle"
+                                        className="avatar-circle flex items-center justify-center w-[34px] h-[34px] rounded-full font-sans text-[12px] font-bold shrink-0 uppercase text-white"
                                       />
                                       <div className="avatar-info-copy">
-                                        <strong>{String(value || '—')}</strong>
-                                        {key.toLowerCase() === 'fullname' && row.email ? <small>{String(row.email)}</small> : null}
+                                        <strong className="block text-[13px] font-bold text-[#193c33] dark:text-[#eaf2ec]">{String(value || '—')}</strong>
+                                        {key.toLowerCase() === 'fullname' && row.email ? <small className="block text-[11px] text-[#798b80] dark:text-[#8fa195]">{String(row.email)}</small> : null}
                                       </div>
                                     </div>
                                   ) : key.toLowerCase().includes('status') ? (
@@ -2320,10 +2323,10 @@ export default function Dashboard() {
                               {/* Action Buttons */}
                               {showActions && (
                                 <td style={{ textAlign: 'right' }}>
-                                  <div className="table-action-btns">
-                                    <button className="action-chip-btn" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
-                                    {canManage && <button className="action-chip-btn" type="button" onClick={() => handleEdit(row)} title="Edit record"><Edit size={15} /></button>}
-                                    {canManage && <button className="action-chip-btn action-delete" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
+                                  <div className="table-action-btns flex items-center justify-end gap-1.5">
+                                    <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleView(row)} title="View details"><Eye size={15} /></button>
+                                    {canManage && <button className="action-chip-btn inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#f2f6ee] hover:text-[#193c33] hover:border-[#cbd8c8] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3] dark:hover:bg-[#2b3b30] dark:hover:text-[#f1f7f2]" type="button" onClick={() => handleEdit(row)} title="Edit record"><Edit size={15} /></button>}
+                                    {canManage && <button className="action-chip-btn action-delete inline-flex items-center justify-center w-8 h-8 rounded-[7px] border border-[#e1e7de] bg-white text-[#55695d] cursor-pointer transition-all duration-[140ms] ease hover:bg-[#fee2e2] hover:text-[#dc2626] hover:border-[#fca5a5] dark:bg-[#202c24] dark:border-[#314236] dark:text-[#bed0c3]" type="button" onClick={() => void handleDelete(row)} title="Delete record"><Trash2 size={15} /></button>}
                                   </div>
                                 </td>
                               )}
@@ -2335,7 +2338,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Pagination Bar */}
-                  <div className="saas-pagination-bar">
+                  <div className="saas-pagination-bar flex flex-wrap items-center justify-between gap-[14px] p-[14px_24px] border-t border-[#edf1eb] bg-[#fafbf9] text-[12px] text-[#64756b] dark:bg-[#161f1a] dark:border-[#26332a] dark:text-[#8fa195]">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span>
                         Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} records
@@ -2351,9 +2354,9 @@ export default function Dashboard() {
                       </select>
                     </div>
 
-                    <div className="pagination-controls">
+                    <div className="pagination-controls flex items-center gap-2">
                       <button
-                        className="pagination-btn"
+                        className="pagination-btn flex items-center justify-center w-8 h-8 rounded-md border border-[#dce3d8] bg-white text-[#3b5043] cursor-pointer transition-all duration-[140ms] ease enabled:hover:bg-[#f0f5eb] enabled:hover:border-[#b7c7b4] enabled:hover:text-[#193c33] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-[#1f2c24] dark:border-[#314236] dark:text-[#c7d6cb]"
                         type="button"
                         disabled={currentPage <= 1}
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -2363,7 +2366,7 @@ export default function Dashboard() {
                       </button>
                       <span>Page {currentPage} of {Math.ceil(filteredRows.length / pageSize) || 1}</span>
                       <button
-                        className="pagination-btn"
+                        className="pagination-btn flex items-center justify-center w-8 h-8 rounded-md border border-[#dce3d8] bg-white text-[#3b5043] cursor-pointer transition-all duration-[140ms] ease enabled:hover:bg-[#f0f5eb] enabled:hover:border-[#b7c7b4] enabled:hover:text-[#193c33] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-[#1f2c24] dark:border-[#314236] dark:text-[#c7d6cb]"
                         type="button"
                         disabled={currentPage * pageSize >= filteredRows.length}
                         onClick={() => setCurrentPage((p) => p + 1)}
@@ -2379,9 +2382,9 @@ export default function Dashboard() {
             </>
           )}
 
-          <footer className="content-foot">
+          <footer className="content-foot flex justify-between mt-[26px] text-[#9aa49c] font-mono text-[9px] max-[760px]:gap-[10px] max-[760px]:text-[8px] dark:text-[#88978d]">
             <span>Snowflex People Operations Platform • Enterprise Data Warehouse Edition</span>
-            <span>Connected to Snowflake <span className="connection-dot" /></span>
+            <span>Connected to Snowflake <span className="connection-dot inline-block w-1.5 h-1.5 ml-1 rounded-full bg-[#7da457]" /></span>
           </footer>
         </div>
       </section>

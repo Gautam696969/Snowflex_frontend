@@ -78,17 +78,17 @@ export default function ResetPassword() {
       description="Choose a secure new password for your Northstar account."
     >
       {!token ? (
-        <div className="auth-form">
-          <div className="notice error-notice" role="alert">
+        <div className="auth-form flex flex-col gap-[18px] mt-[30px]">
+          <div className="notice error-notice mb-[14px] p-[10px_12px] border border-[#efd1c9] rounded-[4px] text-[11px] text-[#9a483c] bg-[#fff7f4] dark:border-[#5a2e28] dark:text-[#f8b4ab] dark:bg-[#2f1715]" role="alert">
             Invalid or missing reset token. Please request a new password reset link.
           </div>
-          <Link to="/forgot-password" className="text-link" style={{ display: 'inline-block', marginTop: '12px' }}>
+          <Link to="/forgot-password" className="text-link inline-block mt-[12px] p-0 border-0 bg-transparent text-[#bc503b] text-[13px] font-semibold no-underline cursor-pointer transition-colors duration-150 ease-out hover:text-[#913b2b] hover:underline hover:underline-offset-[3px] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2">
             Request new reset link
           </Link>
         </div>
       ) : success ? (
-        <div className="auth-form">
-          <div className="notice success-notice" role="status">
+        <div className="auth-form flex flex-col gap-[18px] mt-[30px]">
+          <div className="notice success-notice mb-[14px] p-[10px_12px] border border-[#d5e6cb] rounded-[4px] text-[11px] text-[#446a43] bg-[#f4f9ef] dark:border-[#3e6147] dark:text-[#c6e3c0] dark:bg-[#1b3023]" role="status">
             Password reset successful! Redirecting to sign in...
           </div>
           <Button
@@ -99,8 +99,8 @@ export default function ResetPassword() {
           </Button>
         </div>
       ) : (
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          {serverError && <div className="notice error-notice" role="alert">{serverError}</div>}
+        <form className="auth-form flex flex-col gap-[18px] mt-[30px]" onSubmit={handleSubmit} noValidate>
+          {serverError && <div className="notice error-notice mb-[14px] p-[10px_12px] border border-[#efd1c9] rounded-[4px] text-[11px] text-[#9a483c] bg-[#fff7f4] dark:border-[#5a2e28] dark:text-[#f8b4ab] dark:bg-[#2f1715]" role="alert">{serverError}</div>}
 
           <PasswordInput
             id="new-password"
@@ -130,8 +130,8 @@ export default function ResetPassword() {
         </form>
       )}
 
-      <p className="auth-switch">
-        Remember your password?<Link className="text-link" to="/login">Sign in</Link>
+      <p className="auth-switch mt-[25px] mb-0 text-[#788176] text-[13px] text-center [&_.text-link]:ml-[4px]">
+        Remember your password?<Link className="text-link p-0 border-0 bg-transparent text-[#bc503b] text-[13px] font-semibold no-underline cursor-pointer transition-colors duration-150 ease-out hover:text-[#913b2b] hover:underline hover:underline-offset-[3px] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2 ml-[4px]" to="/login">Sign in</Link>
       </p>
     </AuthLayout>
   )

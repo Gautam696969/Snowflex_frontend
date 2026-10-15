@@ -346,13 +346,13 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
   const isDisconnected = connectionStatus === 'disconnected' || connectionStatus === 'reconnecting'
 
   return (
-    <div className="chat-thread-container">
+    <div className="chat-thread-container flex flex-col h-full min-h-0 relative overflow-hidden">
       {/* Header */}
-      <div className="chat-thread-header">
+      <div className="chat-thread-header flex items-center gap-[12px] px-[20px] py-[12px] border-b border-[#e5ebe2] dark:border-[#27342d] bg-white dark:bg-[#18201c] shrink-0">
         {onBack && (
           <button
             type="button"
-            className="chat-thread-back-btn"
+            className="chat-thread-back-btn grid place-items-center w-[32px] h-[32px] border border-[#dfe5dc] dark:border-[#2e3d35] rounded-[6px] bg-transparent text-[#193c33] dark:text-[#e3ebe5] cursor-pointer hover:bg-[#f2f5f0] dark:hover:bg-[#222d27] transition-colors"
             onClick={onBack}
             aria-label="Back to conversations list"
           >
@@ -360,8 +360,8 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
           </button>
         )}
 
-        <div className="chat-thread-user-info">
-          <div className="chat-thread-avatar-wrap">
+        <div className="chat-thread-user-info flex items-center gap-[12px] min-w-0">
+          <div className="chat-thread-avatar-wrap relative shrink-0">
             <UserAvatar
               name={conversation.otherUser.fullName}
               avatarUrl={conversation.otherUser.avatarUrl}
@@ -369,30 +369,32 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
               className="chat-thread-avatar"
             />
             <span
-              className={`chat-online-indicator ${isOtherOnline ? 'is-online' : 'is-offline'}`}
+              className={`chat-online-indicator absolute bottom-0 right-0 w-[10px] h-[10px] rounded-full border-[2px] border-white dark:border-[#18201c] ${
+                isOtherOnline ? 'is-online bg-[#10b981]' : 'is-offline bg-[#9aa89d]'
+              }`}
               title={isOtherOnline ? 'Online' : 'Offline'}
             />
           </div>
 
-          <div className="chat-thread-user-details">
-            <div className="chat-thread-name-row">
-              <strong className="chat-thread-name">{conversation.otherUser.fullName}</strong>
+          <div className="chat-thread-user-details flex flex-col gap-[2px] min-w-0">
+            <div className="chat-thread-name-row flex items-center gap-[8px]">
+              <strong className="chat-thread-name text-[14.5px] font-bold text-[#193c33] dark:text-[#e3ebe5]">{conversation.otherUser.fullName}</strong>
               <RoleBadge role={conversation.otherUser.role} />
             </div>
-            <div className="chat-thread-status-row">
+            <div className="chat-thread-status-row text-[11.5px]">
               {isTyping ? (
-                <span className="chat-typing-status">
-                  <span className="chat-typing-dots">
-                    <span />
-                    <span />
-                    <span />
+                <span className="chat-typing-status inline-flex items-center gap-[5px] text-[#193c33] dark:text-[#e3ebe5] font-medium">
+                  <span className="chat-typing-dots inline-flex gap-[3px]">
+                    <span className="w-[4px] h-[4px] rounded-full bg-[#193c33] dark:bg-[#e3ebe5] animate-[chat-bounce_1.4s_infinite_ease-in-out_both] [animation-delay:-0.32s]" />
+                    <span className="w-[4px] h-[4px] rounded-full bg-[#193c33] dark:bg-[#e3ebe5] animate-[chat-bounce_1.4s_infinite_ease-in-out_both] [animation-delay:-0.16s]" />
+                    <span className="w-[4px] h-[4px] rounded-full bg-[#193c33] dark:bg-[#e3ebe5] animate-[chat-bounce_1.4s_infinite_ease-in-out_both]" />
                   </span>
                   {isTyping} is typing...
                 </span>
               ) : isOtherOnline ? (
-                <span className="chat-status-online">Online</span>
+                <span className="chat-status-online text-[#10b981] font-semibold">Online</span>
               ) : (
-                <span className="chat-status-offline">{formatLastSeen(otherLastSeen)}</span>
+                <span className="chat-status-offline text-[#8c988e]">{formatLastSeen(otherLastSeen)}</span>
               )}
             </div>
           </div>
@@ -401,14 +403,14 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
       {/* Connection & Read-Only Status Banners */}
       {isDisconnected && (
-        <div className="chat-connection-banner">
+        <div className="chat-connection-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fef3c7] text-[#92400e] border-b border-[#fde68a]">
           <WifiOff size={14} />
           <span>{connectionStatus === 'reconnecting' ? 'Reconnecting to live chat...' : 'Disconnected from chat server. Reconnecting...'}</span>
         </div>
       )}
 
       {conversation.isReadOnly && (
-        <div className="chat-readonly-banner">
+        <div className="chat-readonly-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fee2e2] text-[#991b1b] border-b border-[#fecaca]">
           <AlertTriangle size={15} />
           <span>This conversation is read-only. Policy restricts messaging between your current roles.</span>
         </div>
@@ -416,34 +418,34 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
       {/* Messages Scroll Area */}
       <div
-        className="chat-messages-scroll"
+        className="chat-messages-scroll flex-1 min-h-0 overflow-y-auto overscroll-contain p-[20px_24px] flex flex-col outline-none bg-[#fdfdfc] dark:bg-[#141a17]"
         ref={messagesContainerRef}
         onScroll={handleScroll}
         tabIndex={0}
         aria-label="Message history"
       >
         {loadingOlder && (
-          <div className="chat-loading-older">
-            <Loader2 className="chat-spinner" size={18} />
+          <div className="chat-loading-older flex items-center justify-center p-[12px] gap-[8px] text-[12px] text-[#8c988e]">
+            <Loader2 className="chat-spinner animate-spin" size={18} />
             <span>Loading older messages...</span>
           </div>
         )}
 
         {loading ? (
-          <div className="chat-messages-loading">
-            <Loader2 className="chat-spinner" size={32} />
+          <div className="chat-messages-loading flex items-center justify-center p-[12px] gap-[8px] text-[12px] text-[#8c988e]">
+            <Loader2 className="chat-spinner animate-spin" size={32} />
             <p>Loading messages...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="chat-messages-empty">
-            <div className="chat-empty-icon">
+          <div className="chat-messages-empty m-auto flex flex-col items-center justify-center p-[30px] text-center text-[#8c988e]">
+            <div className="chat-empty-icon grid place-items-center w-[56px] h-[56px] rounded-full bg-[#f1f5ee] dark:bg-[#1d2722] text-[#193c33] dark:text-[#d9ed74] mb-[14px]">
               <Sparkles size={28} />
             </div>
-            <h4>No messages yet</h4>
-            <p>Say hello to start the conversation with {conversation.otherUser.fullName}!</p>
+            <h4 className="m-[0_0_6px] text-[16px] font-bold text-[#193c33] dark:text-[#e3ebe5]">No messages yet</h4>
+            <p className="m-0 text-[13px] max-w-[320px]">Say hello to start the conversation with {conversation.otherUser.fullName}!</p>
           </div>
         ) : (
-          <div className="chat-messages-list">
+          <div className="chat-messages-list flex flex-col gap-[8px]">
             {renderedElements}
           </div>
         )}
@@ -453,7 +455,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
       {showScrollBottom && (
         <button
           type="button"
-          className="chat-scroll-bottom-btn"
+          className="chat-scroll-bottom-btn absolute right-[28px] bottom-[84px] grid place-items-center w-[38px] h-[38px] rounded-full bg-[#193c33] hover:bg-[#255448] text-white border border-[#285448] shadow-[0_4px_12px_rgba(25,60,51,0.25)] cursor-pointer transition-transform duration-150 ease-in-out hover:-translate-y-[2px] z-[4]"
           onClick={scrollToBottom}
           aria-label="Scroll to newest messages"
           title="Scroll to newest messages"
@@ -464,17 +466,17 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
       {/* Send Error Notice */}
       {sendError && (
-        <div className="chat-send-error">
+        <div className="chat-send-error flex items-center gap-[6px] px-[16px] py-[6px] bg-[#fee2e2] text-[#991b1b] text-[12px]">
           <AlertTriangle size={14} />
           <span>{sendError}</span>
         </div>
       )}
 
       {/* Message Input Bar */}
-      <div className={`chat-input-container ${conversation.isReadOnly ? 'is-disabled' : ''}`}>
-        <div className="chat-input-box">
+      <div className={`chat-input-container p-[12px_20px_14px] border-t border-[#e5ebe2] dark:border-[#27342d] bg-white dark:bg-[#18201c] shrink-0 relative z-[3] ${conversation.isReadOnly ? 'is-disabled bg-[#f8faf7] dark:bg-[#18201c] opacity-80' : ''}`}>
+        <div className="chat-input-box flex items-end gap-[10px] p-[6px_10px_6px_14px] border border-[#d4ded1] dark:border-[#2e3d35] rounded-[10px] bg-white dark:bg-[#151b18] transition-[border-color,box-shadow] duration-140 ease-in-out focus-within:border-[#193c33] dark:focus-within:border-[#4b6255] focus-within:shadow-[0_0_0_3px_rgba(25,60,51,0.08)] dark:focus-within:shadow-[0_0_0_3px_rgba(217,237,116,0.08)]">
           <textarea
-            className="chat-textarea"
+            className="chat-textarea flex-1 min-h-[24px] max-h-[120px] py-[4px] border-none bg-transparent text-[#193c33] dark:text-[#e3ebe5] placeholder:text-[#97a499] text-[13.5px] font-[inherit] leading-[1.4] outline-none resize-none"
             rows={1}
             placeholder={
               conversation.isReadOnly
@@ -491,9 +493,9 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
             aria-label="Write a message"
           />
 
-          <div className="chat-input-actions">
+          <div className="chat-input-actions flex items-center gap-[8px] mb-[2px]">
             <span
-              className={`chat-char-counter ${inputValue.length > 1800 ? 'counter-warning' : ''}`}
+              className={`chat-char-counter text-[11px] text-[#9aa89d] font-mono ${inputValue.length > 1800 ? 'counter-warning text-[#d97706] font-semibold' : ''}`}
               title="Character count"
             >
               {inputValue.length}/2000
@@ -501,17 +503,17 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
             <button
               type="button"
-              className="chat-send-btn"
+              className="chat-send-btn grid place-items-center w-[34px] h-[34px] rounded-[7px] border-none bg-[#193c33] text-white cursor-pointer transition-all duration-140 ease-in-out hover:not-disabled:bg-[#255448] hover:not-disabled:text-[#d9ed74] disabled:bg-[#d8e0d6] disabled:text-[#9aa89d] disabled:cursor-not-allowed"
               onClick={handleSend}
               disabled={!inputValue.trim() || sending || conversation.isReadOnly || isDisconnected}
               aria-label="Send message"
               title="Send (Enter)"
             >
-              {sending ? <Loader2 className="chat-spinner" size={16} /> : <Send size={16} />}
+              {sending ? <Loader2 className="chat-spinner animate-spin" size={16} /> : <Send size={16} />}
             </button>
           </div>
         </div>
-        <div className="chat-input-hint">
+        <div className="chat-input-hint mt-[6px] text-[11px] text-[#8c988e] text-right">
           <span>Press <strong>Enter</strong> to send, <strong>Shift + Enter</strong> for new line</span>
         </div>
       </div>

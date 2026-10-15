@@ -367,27 +367,31 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
   }
 
   return (
-    <div className="holidays-view-root">
+    <div className="holidays-view-root flex flex-col gap-[20px]">
       {/* Top Header & Action Bar */}
-      <header className="holidays-header">
+      <header className="holidays-header flex items-center justify-between gap-[16px] flex-wrap pb-[16px] border-b border-[#edf1eb] dark:border-[#25352c]">
         <div className="holidays-title-area">
-          <div className="holidays-title-row">
-            <div className="holidays-icon-badge">
+          <div className="holidays-title-row flex items-center gap-[14px]">
+            <div className="holidays-icon-badge w-[44px] h-[44px] rounded-[10px] bg-[#fff5f2] dark:bg-[#2b1f1a] border border-[#fcd8d0] dark:border-[#542d22] text-[#ed6b4f] flex items-center justify-center shrink-0">
               <CalendarDays size={22} />
             </div>
             <div>
-              <h1>Holidays & Observances</h1>
-              <p>Organization calendar schedule, public holidays, and official breaks.</p>
+              <h1 className="text-[22px] font-extrabold text-[#14241d] dark:text-[#f1f7f2] m-0">Holidays & Observances</h1>
+              <p className="text-[13px] text-[#65776d] dark:text-[#8c9d92] m-0 mt-[2px]">Organization calendar schedule, public holidays, and official breaks.</p>
             </div>
           </div>
         </div>
 
-        <div className="holidays-top-actions">
+        <div className="holidays-top-actions flex items-center gap-[10px] flex-wrap">
           {/* View mode toggle */}
-          <div className="view-toggle-group">
+          <div className="view-toggle-group inline-flex p-[3px] bg-[#edf1eb] dark:bg-[#1c2520] border border-[#dce2d7] dark:border-[#303b34] rounded-[8px]">
             <button
               type="button"
-              className={`view-toggle-btn ${viewMode === 'calendar' ? 'active' : ''}`}
+              className={`view-toggle-btn inline-flex items-center gap-[6px] px-[12px] py-[6px] text-[12px] font-bold rounded-[6px] cursor-pointer transition-all border-0 ${
+                viewMode === 'calendar'
+                  ? 'active bg-white dark:bg-[#27362e] text-[#14241d] dark:text-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]'
+                  : 'text-[#55675c] dark:text-[#8c9d92] bg-transparent hover:text-[#14241d] dark:hover:text-white'
+              }`}
               onClick={() => {
                 setViewMode('calendar')
                 if (selectedMonth === 'ALL') setSelectedMonth(currentMonth)
@@ -400,7 +404,11 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
             </button>
             <button
               type="button"
-              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              className={`view-toggle-btn inline-flex items-center gap-[6px] px-[12px] py-[6px] text-[12px] font-bold rounded-[6px] cursor-pointer transition-all border-0 ${
+                viewMode === 'list'
+                  ? 'active bg-white dark:bg-[#27362e] text-[#14241d] dark:text-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]'
+                  : 'text-[#55675c] dark:text-[#8c9d92] bg-transparent hover:text-[#14241d] dark:hover:text-white'
+              }`}
               onClick={() => setViewMode('list')}
               title="List agenda view"
               aria-label="List view"
@@ -412,7 +420,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
           <button
             type="button"
-            className="icon-button"
+            className="icon-button p-[8px] rounded-[8px] border border-[#dce2d7] dark:border-[#27372e] bg-white dark:bg-[#19231e] text-[#55675c] dark:text-[#c4d6cb] hover:bg-[#edf1eb] dark:hover:bg-[#25352c] cursor-pointer transition-all"
             onClick={() => {
               setRefreshing(true)
               void loadHolidays()
@@ -420,13 +428,13 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
             title="Refresh holidays"
             disabled={refreshing}
           >
-            <RefreshCw size={16} className={refreshing ? 'spin-slow' : ''} />
+            <RefreshCw size={16} className={refreshing ? 'spin-slow animate-spin' : ''} />
           </button>
 
           {canManage && (
             <button
               type="button"
-              className="primary-action-btn"
+              className="primary-action-btn inline-flex items-center gap-[6px] px-[16px] py-[8px] text-[12px] font-bold rounded-[8px] bg-[#193c33] dark:bg-[#d9ed74] text-[#d9ed74] dark:text-[#14241d] hover:bg-[#14241d] dark:hover:bg-[#c8dc65] cursor-pointer transition-all border-0"
               onClick={() => handleOpenCreate()}
             >
               <Plus size={16} />
@@ -437,14 +445,14 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
       </header>
 
       {/* Filter & Selector Toolbar */}
-      <section className="holidays-toolbar">
-        <div className="toolbar-left">
+      <section className="holidays-toolbar flex items-center justify-between gap-[14px] flex-wrap px-[16px] py-[12px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[12px]">
+        <div className="toolbar-left flex items-center gap-[10px] flex-wrap">
           {/* Year selector */}
           <div className="toolbar-field">
             <label htmlFor="holiday-year-select" className="sr-only">Year</label>
             <select
               id="holiday-year-select"
-              className="toolbar-select"
+              className="toolbar-select px-[12px] py-[7px] text-[12px] font-semibold text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none cursor-pointer"
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
             >
@@ -459,7 +467,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
             <label htmlFor="holiday-month-select" className="sr-only">Month</label>
             <select
               id="holiday-month-select"
-              className="toolbar-select"
+              className="toolbar-select px-[12px] py-[7px] text-[12px] font-semibold text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none cursor-pointer"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
             >
@@ -473,11 +481,11 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
           {/* Type filter */}
           <div className="toolbar-field">
             <label htmlFor="holiday-type-select" className="sr-only">Holiday Type</label>
-            <div className="select-with-icon">
-              <Filter size={14} className="select-prefix-icon" />
+            <div className="select-with-icon relative flex items-center">
+              <Filter size={14} className="select-prefix-icon absolute left-[10px] text-[#8a9c90] pointer-events-none" />
               <select
                 id="holiday-type-select"
-                className="toolbar-select with-prefix"
+                className="toolbar-select with-prefix pl-[30px] pr-[12px] py-[7px] text-[12px] font-semibold text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none cursor-pointer"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
               >
@@ -491,21 +499,21 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
           </div>
         </div>
 
-        <div className="toolbar-right">
+        <div className="toolbar-right flex items-center gap-[10px]">
           {/* Search box */}
-          <div className="search-input-wrap">
-            <Search size={15} className="search-icon" />
+          <div className="search-input-wrap relative flex items-center">
+            <Search size={15} className="search-icon absolute left-[10px] text-[#8a9c90] pointer-events-none" />
             <input
               type="text"
               placeholder="Search holidays..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              className="search-input pl-[34px] pr-[30px] py-[7px] text-[12px] text-[#193c33] dark:text-[#edf5ef] bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#2a3d31] rounded-[8px] outline-none w-[200px] focus:w-[260px] transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
-                className="search-clear-btn"
+                className="search-clear-btn absolute right-[8px] text-[#8a9c90] hover:text-[#193c33] cursor-pointer border-0 bg-transparent p-0"
                 onClick={() => setSearchQuery('')}
                 aria-label="Clear search"
               >
@@ -518,18 +526,18 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Month Navigation for Calendar view */}
       {viewMode === 'calendar' && selectedMonth !== 'ALL' && (
-        <div className="calendar-nav-bar">
+        <div className="calendar-nav-bar flex items-center justify-between gap-[16px] flex-wrap px-[18px] py-[14px] bg-white dark:bg-[#19231e] border border-[#dce2d7] dark:border-[#27372e] rounded-[12px]">
           <div className="calendar-month-heading">
-            <h2>{MONTH_NAMES[(selectedMonth as number) - 1]} {selectedYear}</h2>
-            <span className="month-badge-count">
+            <h2 className="text-[18px] font-extrabold text-[#14241d] dark:text-[#f1f7f2] m-0">{MONTH_NAMES[(selectedMonth as number) - 1]} {selectedYear}</h2>
+            <span className="month-badge-count text-[11px] font-semibold text-[#708477] dark:text-[#8c9d92]">
               {holidays.length} {holidays.length === 1 ? 'holiday' : 'holidays'} this month
             </span>
           </div>
 
-          <div className="calendar-nav-buttons">
+          <div className="calendar-nav-buttons flex items-center gap-[8px]">
             <button
               type="button"
-              className="calendar-nav-btn"
+              className="calendar-nav-btn inline-flex items-center gap-[4px] px-[12px] py-[6px] text-[12px] font-bold rounded-[8px] border border-[#dce2d7] dark:border-[#2a3d31] bg-white dark:bg-[#19231e] text-[#55675c] dark:text-[#c4d6cb] hover:bg-[#edf1eb] dark:hover:bg-[#25352c] cursor-pointer transition-all"
               onClick={handlePrevMonth}
               title="Previous month"
             >
@@ -538,14 +546,14 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
             </button>
             <button
               type="button"
-              className="calendar-today-btn"
+              className="calendar-today-btn px-[14px] py-[6px] text-[12px] font-bold rounded-[8px] bg-[#193c33] dark:bg-[#d9ed74] text-[#d9ed74] dark:text-[#14241d] hover:bg-[#14241d] dark:hover:bg-[#c8dc65] cursor-pointer transition-all border-0"
               onClick={handleJumpToday}
             >
               Today
             </button>
             <button
               type="button"
-              className="calendar-nav-btn"
+              className="calendar-nav-btn inline-flex items-center gap-[4px] px-[12px] py-[6px] text-[12px] font-bold rounded-[8px] border border-[#dce2d7] dark:border-[#2a3d31] bg-white dark:bg-[#19231e] text-[#55675c] dark:text-[#c4d6cb] hover:bg-[#edf1eb] dark:hover:bg-[#25352c] cursor-pointer transition-all"
               onClick={handleNextMonth}
               title="Next month"
             >
@@ -558,10 +566,10 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Error state */}
       {error && (
-        <div className="holidays-error-banner" role="alert">
+        <div className="holidays-error-banner flex items-center gap-[8px] p-[12px_16px] bg-[#fff5f5] dark:bg-[#3b1c1c] border border-[#fecaca] dark:border-[#7f1d1d] text-[#dc2626] dark:text-[#f87171] rounded-[10px] text-[13px]" role="alert">
           <AlertTriangle size={18} />
           <span>{error}</span>
-          <button type="button" onClick={() => void loadHolidays()} className="text-link">
+          <button type="button" onClick={() => void loadHolidays()} className="text-link text-[12px] font-bold text-[#dc2626] dark:text-[#f87171] underline ml-[auto] cursor-pointer bg-transparent border-0">
             Retry
           </button>
         </div>
@@ -570,15 +578,15 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
       {/* Main Content Area */}
       {loading ? (
         <div className="holidays-loading-state">
-          <div className="skeleton-line" style={{ height: '300px', borderRadius: '12px' }} />
+          <div className="skeleton-line w-full bg-[#f0f4ee] dark:bg-[#233129] animate-pulse rounded-[12px] h-[300px]" />
         </div>
       ) : holidays.length === 0 && viewMode === 'list' ? (
-        <div className="holidays-empty-card">
-          <div className="empty-icon-box">
+        <div className="holidays-empty-card flex flex-col items-center justify-center text-center p-[56px_24px] bg-white dark:bg-[#1c2520] border border-[#e2e8df] dark:border-[#303b34] rounded-[14px]">
+          <div className="empty-icon-box grid w-[64px] h-[64px] place-items-center rounded-[16px] bg-[#f3f6f0] dark:bg-[#27362e] text-[#517154] dark:text-[#a4b2a8] mb-[16px]">
             <Calendar size={36} />
           </div>
-          <h3>No holidays added yet</h3>
-          <p>
+          <h3 className="m-0 text-[18px] font-bold text-[#193c33] dark:text-[#edf5ef]">No holidays added yet</h3>
+          <p className="max-w-[440px] mt-[8px] mb-0 text-[14px] text-[#517154] dark:text-[#a4b2a8] leading-[1.5]">
             {searchQuery || selectedType !== 'ALL' || selectedMonth !== 'ALL'
               ? 'No holidays match your current filter settings. Try adjusting the search or filters.'
               : `There are currently no holidays scheduled for ${selectedYear}.`}
@@ -586,9 +594,8 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
           {canManage && (
             <button
               type="button"
-              className="primary-action-btn"
+              className="primary-action-btn inline-flex items-center gap-[8px] p-[10px_18px] rounded-[10px] bg-[#193c33] text-[#d9ed74] font-semibold text-[13px] hover:bg-[#142e27] transition-colors cursor-pointer border-0 mt-[16px]"
               onClick={() => handleOpenCreate()}
-              style={{ marginTop: '16px' }}
             >
               <Plus size={16} />
               <span>Add Holiday</span>
@@ -597,25 +604,25 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
         </div>
       ) : viewMode === 'calendar' ? (
         /* Calendar View */
-        <div className="calendar-grid-container">
+        <div className="calendar-grid-container bg-white dark:bg-[#1c2520] border border-[#e2e8df] dark:border-[#303b34] rounded-[14px] overflow-hidden shadow-[0_4px_16px_-2px_rgba(25,60,51,0.03)]">
           {selectedMonth === 'ALL' ? (
-            <div className="calendar-all-months-notice">
+            <div className="calendar-all-months-notice flex items-center gap-[10px] p-[24px] text-[#517154] dark:text-[#a4b2a8] text-[14px]">
               <Info size={16} />
               <span>Please select a specific month to display the month grid, or switch to List view to see the full year agenda.</span>
             </div>
           ) : (
-            <div className="calendar-table" role="grid">
+            <div className="calendar-table w-full flex flex-col" role="grid">
               {/* Day headers */}
-              <div className="calendar-header-row" role="row">
+              <div className="calendar-header-row grid grid-cols-7 bg-[#f8faf6] dark:bg-[#18211b] border-b border-[#e2e8df] dark:border-[#303b34]" role="row">
                 {DAYS_OF_WEEK.map((day) => (
-                  <div key={day} className="calendar-col-header" role="columnheader">
+                  <div key={day} className="calendar-col-header p-[10px_8px] text-center text-[12px] font-bold uppercase tracking-[0.04em] text-[#517154] dark:text-[#a4b2a8]" role="columnheader">
                     {day}
                   </div>
                 ))}
               </div>
 
               {/* Day cells grid */}
-              <div className="calendar-body-grid">
+              <div className="calendar-body-grid grid grid-cols-7">
                 {calendarDays.map(({ dateStr, dayNum, isCurrentMonth, holidays: dayHolidays }) => {
                   const isToday = dateStr === todayIso
                   const hasHolidays = dayHolidays.length > 0
@@ -623,7 +630,13 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                   return (
                     <div
                       key={dateStr}
-                      className={`calendar-day-cell${!isCurrentMonth ? ' is-outside-month' : ''}${isToday ? ' is-today' : ''}${hasHolidays ? ' has-holiday' : ''}`}
+                      className={`calendar-day-cell min-h-[72px] md:min-h-[108px] p-[4px] md:p-[8px] border-r border-b border-[#edf1eb] dark:border-[#27352d] [&:nth-child(7n)]:border-r-0 flex flex-col gap-[4px] transition-colors duration-150 cursor-pointer ${
+                        !isCurrentMonth
+                          ? 'is-outside-month bg-[#fafbf9] dark:bg-[#141a17] opacity-55 cursor-default'
+                          : isToday
+                            ? 'is-today bg-[rgba(237,107,79,0.03)] dark:bg-[rgba(239,128,104,0.08)] hover:bg-[#fbfdf9] dark:hover:bg-[#232f27]'
+                            : 'bg-white dark:bg-[#1c2520] hover:bg-[#fbfdf9] dark:hover:bg-[#232f27]'
+                      }${hasHolidays ? ' has-holiday' : ''}`}
                       onClick={() => {
                         if (hasHolidays) {
                           setSelectedDayHolidays({ date: dateStr, items: dayHolidays })
@@ -634,14 +647,22 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                       role="gridcell"
                       tabIndex={0}
                     >
-                      <div className="day-cell-header">
-                        <span className={`day-number${isToday ? ' today-pill' : ''}`}>
+                      <div className="day-cell-header flex items-center justify-between">
+                        <span className={`day-number inline-grid w-[24px] h-[24px] place-items-center text-[12px] rounded-full ${
+                          isToday
+                            ? 'today-pill bg-[#ed6b4f] text-white font-bold'
+                            : 'font-semibold text-[#193c33] dark:text-[#edf5ef]'
+                        }`}>
                           {dayNum}
                         </span>
-                        {isToday && <span className="today-label">TODAY</span>}
+                        {isToday && (
+                          <span className="today-label text-[9px] font-bold px-[5px] py-[1px] rounded-[4px] bg-[rgba(237,107,79,0.15)] text-[#c94a2f] dark:text-[#f87171] tracking-[0.02em]">
+                            TODAY
+                          </span>
+                        )}
                       </div>
 
-                      <div className="day-holidays-container">
+                      <div className="day-holidays-container flex flex-col gap-[3px] overflow-y-auto max-h-[74px]">
                         {dayHolidays.map((h) => {
                           const isNext = h.id === nextUpcomingId
                           const chipColor = h.color || '#ed6b4f'
@@ -649,7 +670,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                           return (
                             <div
                               key={h.id}
-                              className={`calendar-holiday-chip${isNext ? ' is-next-chip' : ''}`}
+                              className={`calendar-holiday-chip${isNext ? ' is-next-chip ring-1 ring-[#ed6b4f]' : ''} flex items-center justify-between gap-[4px] px-[6px] py-[3px] rounded-[4px] border-l-[3px] text-[11px] font-semibold leading-[1.25] cursor-pointer hover:translate-x-[1px] hover:opacity-90 transition-all duration-120 whitespace-nowrap overflow-hidden text-ellipsis`}
                               style={{
                                 backgroundColor: `${chipColor}20`,
                                 borderLeftColor: chipColor,
@@ -661,8 +682,8 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                                 setSelectedDayHolidays({ date: dateStr, items: dayHolidays })
                               }}
                             >
-                              <span className="chip-name">{h.name}</span>
-                              {h.isRecurring && <Repeat size={10} className="chip-recurring-icon" />}
+                              <span className="chip-name overflow-hidden text-ellipsis text-[10px] md:text-[11px]">{h.name}</span>
+                              {h.isRecurring && <Repeat size={10} className="chip-recurring-icon shrink-0 opacity-80" />}
                             </div>
                           )
                         })}
@@ -676,54 +697,68 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
         </div>
       ) : (
         /* List View */
-        <div className="holidays-list-container">
-          <div className="holidays-list-grid">
+        <div className="holidays-list-container w-full">
+          <div className="holidays-list-grid grid gap-[14px]">
             {holidays.map((h) => {
               const remaining = getDaysRemaining(h.holidayDate)
               const isToday = remaining === 'Today'
               const isNext = h.id === nextUpcomingId
               const itemColor = h.color || '#ed6b4f'
+              const typePillClass =
+                h.type === 'PUBLIC'
+                  ? 'bg-[rgba(16,185,129,0.12)] text-[#059669]'
+                  : h.type === 'COMPANY'
+                  ? 'bg-[rgba(237,107,79,0.12)] text-[#d9543a]'
+                  : h.type === 'OPTIONAL'
+                  ? 'bg-[rgba(245,158,11,0.12)] text-[#d97706]'
+                  : 'bg-[rgba(139,92,246,0.12)] text-[#7c3aed]'
 
               return (
                 <article
                   key={h.id}
-                  className={`holiday-card${isToday ? ' is-today' : ''}${isNext ? ' is-next' : ''}`}
+                  className={`holiday-card flex flex-col md:flex-row md:items-stretch justify-between p-[16px_20px] rounded-[12px] border border-[#e2e8df] dark:border-[#303b34] border-l-[5px] bg-white dark:bg-[#1c2520] transition-all duration-150 hover:-translate-y-[1px] gap-[12px] md:gap-0 ${
+                    isToday
+                      ? 'is-today shadow-[0_0_0_2px_rgba(237,107,79,0.28),0_6px_18px_rgba(25,60,51,0.06)]'
+                      : isNext
+                      ? 'is-next shadow-[0_2px_8px_rgba(25,60,51,0.02)] dark:shadow-[0_4px_18px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_rgba(25,60,51,0.06)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
+                      : 'shadow-[0_2px_8px_rgba(25,60,51,0.02)] dark:shadow-[0_4px_18px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_rgba(25,60,51,0.06)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
+                  }`}
                   style={{ borderLeftColor: itemColor }}
                 >
-                  <div className="holiday-card-main">
-                    <div className="holiday-date-column">
+                  <div className="holiday-card-main flex items-center gap-[18px] flex-1">
+                    <div className="holiday-date-column shrink-0">
                       <div
-                        className="holiday-big-date-badge"
+                        className="holiday-big-date-badge flex flex-col items-center justify-center w-[62px] h-[64px] rounded-[10px] shrink-0 text-center"
                         style={{ backgroundColor: `${itemColor}15`, color: itemColor }}
                       >
-                        <span className="badge-month">
+                        <span className="badge-month text-[11px] font-bold tracking-[0.04em] uppercase">
                           {new Date(`${h.holidayDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
                         </span>
-                        <strong className="badge-day">
+                        <strong className="badge-day text-[22px] font-extrabold leading-none">
                           {new Date(`${h.holidayDate}T00:00:00`).getDate()}
                         </strong>
-                        <span className="badge-year">
+                        <span className="badge-year text-[10px] font-medium opacity-80">
                           {new Date(`${h.holidayDate}T00:00:00`).getFullYear()}
                         </span>
                       </div>
                     </div>
 
-                    <div className="holiday-content-column">
-                      <div className="holiday-card-head">
-                        <div className="title-and-badges">
-                          <h3>{h.name}</h3>
-                          <div className="holiday-card-tags">
-                            <span className={`holiday-type-pill type-${h.type.toLowerCase()}`}>
+                    <div className="holiday-content-column flex flex-col gap-[5px] flex-1">
+                      <div className="holiday-card-head flex items-start justify-between gap-[12px]">
+                        <div className="title-and-badges flex items-center gap-[10px] flex-wrap">
+                          <h3 className="m-0 text-[16px] font-bold text-[#193c33] dark:text-[#edf5ef]">{h.name}</h3>
+                          <div className="holiday-card-tags inline-flex items-center gap-[6px]">
+                            <span className={`holiday-type-pill inline-flex items-center px-[8px] py-[2px] rounded-full text-[11px] font-bold uppercase tracking-[0.03em] ${typePillClass}`}>
                               {h.type}
                             </span>
                             {h.isRecurring && (
-                              <span className="holiday-recurring-pill" title="Repeats yearly on this date">
+                              <span className="holiday-recurring-pill inline-flex items-center gap-[4px] px-[7px] py-[2px] rounded-full bg-[#f1f4ed] dark:bg-[#27362e] text-[#517154] dark:text-[#c9d6cc] text-[11px] font-semibold" title="Repeats yearly on this date">
                                 <Repeat size={12} />
                                 <span>Yearly</span>
                               </span>
                             )}
                             {isNext && (
-                              <span className="holiday-next-pill">
+                              <span className="holiday-next-pill inline-flex items-center gap-[4px] px-[8px] py-[2px] rounded-full bg-[rgba(237,107,79,0.16)] text-[#c94a2f] dark:text-[#f87171] text-[11px] font-bold">
                                 <Sparkles size={11} />
                                 <span>Next Upcoming</span>
                               </span>
@@ -732,28 +767,34 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                         </div>
 
                         <div className="holiday-countdown-box">
-                          <span className={`countdown-badge${isToday ? ' is-today' : isNext ? ' is-next' : ''}`}>
+                          <span className={`countdown-badge inline-flex items-center gap-[4px] px-[9px] py-[3px] rounded-[6px] text-[12px] ${
+                            isToday
+                              ? 'is-today bg-[#ed6b4f] text-white font-bold'
+                              : isNext
+                              ? 'is-next bg-[rgba(237,107,79,0.12)] text-[#c94a2f] dark:text-[#f87171] font-bold'
+                              : 'bg-[#f2f5ee] dark:bg-[#27362e] text-[#517154] dark:text-[#c9d6cc] font-semibold'
+                          }`}>
                             {remaining}
                           </span>
                         </div>
                       </div>
 
-                      <div className="holiday-date-details">
-                        <Calendar size={14} className="calendar-detail-icon" />
+                      <div className="holiday-date-details flex items-center gap-[6px] text-[13px] text-[#517154] dark:text-[#a4b2a8]">
+                        <Calendar size={14} className="calendar-detail-icon text-[#517154] dark:text-[#a4b2a8]" />
                         <span>{formatDisplayDate(h.holidayDate)}</span>
                         {h.endDate && h.endDate !== h.holidayDate && (
-                          <span className="multi-day-span">
+                          <span className="multi-day-span font-medium">
                             &nbsp;to {formatDisplayDate(h.endDate)} ({h.daysCount} days)
                           </span>
                         )}
                       </div>
 
                       {h.description && (
-                        <p className="holiday-description">{h.description}</p>
+                        <p className="holiday-description mt-[4px] mb-0 text-[13px] leading-[1.5] text-[#193c33] dark:text-[#edf5ef] opacity-85">{h.description}</p>
                       )}
 
                       {h.createdByName && (
-                        <div className="holiday-author-footnote">
+                        <div className="holiday-author-footnote mt-[4px] text-[11px] text-[#517154] dark:text-[#a4b2a8]">
                           <span>Added by {h.createdByName}</span>
                         </div>
                       )}
@@ -761,10 +802,10 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                   </div>
 
                   {canManage && (
-                    <div className="holiday-card-actions">
+                    <div className="holiday-card-actions flex items-center justify-end md:justify-start gap-[6px] ml-0 md:ml-[14px] pt-[8px] md:pt-0 border-t md:border-t-0 border-[#edf1eb] dark:border-[#303b34]">
                       <button
                         type="button"
-                        className="icon-action-btn edit-btn"
+                        className="icon-action-btn edit-btn grid w-[32px] h-[32px] place-items-center border border-[#dfe5dc] dark:border-[#303b34] rounded-[6px] bg-white dark:bg-[#1c2520] text-[#517154] dark:text-[#a4b2a8] hover:bg-[#f7f9f5] dark:hover:bg-[#27362e] hover:text-[#193c33] dark:hover:text-[#edf2ec] transition-all duration-140 cursor-pointer"
                         onClick={() => handleOpenEdit(h)}
                         title="Edit holiday"
                         aria-label={`Edit ${h.name}`}
@@ -773,7 +814,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                       </button>
                       <button
                         type="button"
-                        className="icon-action-btn delete-btn"
+                        className="icon-action-btn delete-btn grid w-[32px] h-[32px] place-items-center border border-[#dfe5dc] dark:border-[#303b34] rounded-[6px] bg-white dark:bg-[#1c2520] text-[#517154] dark:text-[#a4b2a8] hover:border-[#fca5a5] hover:bg-[#fef2f2] dark:hover:bg-[#382323] hover:text-[#dc2626] transition-all duration-140 cursor-pointer"
                         onClick={() => {
                           setDeleteTarget(h)
                           setHardDelete(false)
@@ -794,16 +835,16 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Selected Day Popup in Calendar View */}
       {selectedDayHolidays && (
-        <div className="modal-backdrop" onClick={() => setSelectedDayHolidays(null)}>
-          <div className="modal-content holiday-day-popup" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-backdrop fixed inset-0 bg-black/45 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease]" onClick={() => setSelectedDayHolidays(null)}>
+          <div className="modal-content holiday-day-popup bg-white dark:bg-[#19231e] rounded-[16px] border border-[#e2e8df] dark:border-[#27372e] p-[24px] w-[min(92vw,480px)] max-h-[90vh] overflow-y-auto shadow-2xl animate-[fadeIn_0.15s_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between pb-4 border-b border-[#edf1eb] dark:border-[#27372e]">
               <div>
-                <span className="dash-kicker">DAY SCHEDULE</span>
-                <h3>{formatDisplayDate(selectedDayHolidays.date)}</h3>
+                <span className="dash-kicker text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#517154] dark:text-[#7f9f82]">DAY SCHEDULE</span>
+                <h3 className="m-0 text-[18px] font-bold text-[#193c33] dark:text-[#edf5ef]">{formatDisplayDate(selectedDayHolidays.date)}</h3>
               </div>
               <button
                 type="button"
-                className="icon-button"
+                className="icon-button w-8 h-8 rounded-lg flex items-center justify-center text-[#517154] dark:text-[#a4b2a8] hover:bg-[#f0f4ee] dark:hover:bg-[#233129] hover:text-[#193c33] dark:hover:text-[#edf5ef] transition-colors border-0 bg-transparent cursor-pointer"
                 onClick={() => setSelectedDayHolidays(null)}
                 aria-label="Close"
               >
@@ -811,60 +852,71 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
               </button>
             </div>
 
-            <div className="day-popup-list">
-              {selectedDayHolidays.items.map((h) => (
-                <div key={h.id} className="day-popup-item" style={{ borderLeftColor: h.color || '#ed6b4f' }}>
-                  <div className="popup-item-header">
-                    <strong>{h.name}</strong>
-                    <span className={`holiday-type-pill type-${h.type.toLowerCase()}`}>
-                      {h.type}
-                    </span>
-                  </div>
-                  {h.endDate && h.endDate !== h.holidayDate && (
-                    <span className="popup-duration">
-                      Multi-day break: {h.holidayDate} to {h.endDate} ({h.daysCount} days)
-                    </span>
-                  )}
-                  {h.description && <p className="popup-desc">{h.description}</p>}
-                  {h.isRecurring && (
-                    <div className="popup-recurring">
-                      <Repeat size={12} />
-                      <span>Repeats yearly</span>
-                    </div>
-                  )}
+            <div className="day-popup-list flex flex-col gap-[10px] max-h-[380px] overflow-y-auto py-[10px]">
+              {selectedDayHolidays.items.map((h) => {
+                const typePillClass =
+                  h.type === 'PUBLIC'
+                    ? 'bg-[rgba(16,185,129,0.12)] text-[#059669]'
+                    : h.type === 'COMPANY'
+                    ? 'bg-[rgba(237,107,79,0.12)] text-[#d9543a]'
+                    : h.type === 'OPTIONAL'
+                    ? 'bg-[rgba(245,158,11,0.12)] text-[#d97706]'
+                    : 'bg-[rgba(139,92,246,0.12)] text-[#7c3aed]'
 
-                  {canManage && (
-                    <div className="popup-item-actions">
-                      <button
-                        type="button"
-                        className="btn-outline-sm"
-                        onClick={() => handleOpenEdit(h)}
-                      >
-                        <Edit size={14} />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-danger-sm"
-                        onClick={() => {
-                          setDeleteTarget(h)
-                          setHardDelete(false)
-                        }}
-                      >
-                        <Trash2 size={14} />
-                        <span>Delete</span>
-                      </button>
+                return (
+                  <div key={h.id} className="day-popup-item p-[12px_14px] rounded-[8px] border border-[#e2e8df] dark:border-[#303b34] border-l-[4px] bg-[#fafbf9] dark:bg-[#141b17] flex flex-col gap-[6px]" style={{ borderLeftColor: h.color || '#ed6b4f' }}>
+                    <div className="popup-item-header flex items-center justify-between gap-[10px]">
+                      <strong className="text-[14px] font-bold text-[#193c33] dark:text-[#edf5ef]">{h.name}</strong>
+                      <span className={`holiday-type-pill inline-flex items-center px-[8px] py-[2px] rounded-full text-[11px] font-bold uppercase tracking-[0.03em] ${typePillClass}`}>
+                        {h.type}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {h.endDate && h.endDate !== h.holidayDate && (
+                      <span className="popup-duration text-[12px] font-medium text-[#517154] dark:text-[#a4b2a8]">
+                        Multi-day break: {h.holidayDate} to {h.endDate} ({h.daysCount} days)
+                      </span>
+                    )}
+                    {h.description && <p className="popup-desc m-0 text-[13px] text-[#193c33] dark:text-[#edf5ef] leading-[1.45]">{h.description}</p>}
+                    {h.isRecurring && (
+                      <div className="popup-recurring flex items-center gap-[5px] text-[11px] text-[#517154] dark:text-[#a4b2a8]">
+                        <Repeat size={12} />
+                        <span>Repeats yearly</span>
+                      </div>
+                    )}
+
+                    {canManage && (
+                      <div className="popup-item-actions flex items-center gap-[8px] mt-[4px]">
+                        <button
+                          type="button"
+                          className="btn-outline-sm inline-flex items-center gap-[4px] px-[10px] py-[4px] border border-[#dfe5dc] dark:border-[#303b34] rounded-[6px] bg-white dark:bg-[#1c2520] text-[#193c33] dark:text-[#edf2ec] text-[12px] font-semibold cursor-pointer hover:bg-[#f7f9f5] dark:hover:bg-[#27362e]"
+                          onClick={() => handleOpenEdit(h)}
+                        >
+                          <Edit size={14} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger-sm inline-flex items-center gap-[4px] px-[10px] py-[4px] border border-[#fecaca] dark:border-[#7f1d1d] rounded-[6px] bg-[#fef2f2] dark:bg-[#2c1515] text-[#dc2626] dark:text-[#f87171] text-[12px] font-semibold cursor-pointer hover:bg-[#fee2e2] dark:hover:bg-[#381a1a]"
+                          onClick={() => {
+                            setDeleteTarget(h)
+                            setHardDelete(false)
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
             {canManage && (
-              <div className="modal-footer" style={{ borderTop: '1px solid #edf1eb', paddingTop: '12px' }}>
+              <div className="modal-footer flex items-center justify-end pt-[12px] border-t border-[#edf1eb] dark:border-[#27372e]" style={{ borderTop: '1px solid #edf1eb', paddingTop: '12px' }}>
                 <button
                   type="button"
-                  className="primary-action-btn"
+                  className="primary-action-btn inline-flex items-center gap-[8px] p-[10px_18px] rounded-[10px] bg-[#193c33] text-[#d9ed74] font-semibold text-[13px] hover:bg-[#142e27] transition-colors cursor-pointer border-0"
                   onClick={() => {
                     handleOpenCreate(selectedDayHolidays.date)
                     setSelectedDayHolidays(null)
@@ -881,16 +933,16 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Add / Edit Holiday Modal */}
       {showModal && (
-        <div className="modal-backdrop" onClick={() => !saving && setShowModal(false)}>
-          <div className="modal-content holiday-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-backdrop fixed inset-0 bg-black/45 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease]" onClick={() => !saving && setShowModal(false)}>
+          <div className="modal-content holiday-modal bg-white dark:bg-[#19231e] rounded-[16px] border border-[#e2e8df] dark:border-[#27372e] p-[24px] w-[min(92vw,540px)] max-h-[90vh] overflow-y-auto shadow-2xl animate-[fadeIn_0.15s_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header flex items-center justify-between pb-4 border-b border-[#edf1eb] dark:border-[#27372e]">
               <div>
-                <span className="dash-kicker">{editingHoliday ? 'EDIT RECORD' : 'NEW OBSERVANCE'}</span>
-                <h2>{editingHoliday ? 'Edit Holiday' : 'Add Holiday'}</h2>
+                <span className="dash-kicker text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#517154] dark:text-[#7f9f82]">{editingHoliday ? 'EDIT RECORD' : 'NEW OBSERVANCE'}</span>
+                <h2 className="m-0 text-[20px] font-bold text-[#193c33] dark:text-[#edf5ef]">{editingHoliday ? 'Edit Holiday' : 'Add Holiday'}</h2>
               </div>
               <button
                 type="button"
-                className="icon-button"
+                className="icon-button w-8 h-8 rounded-lg flex items-center justify-center text-[#517154] dark:text-[#a4b2a8] hover:bg-[#f0f4ee] dark:hover:bg-[#233129] hover:text-[#193c33] dark:hover:text-[#edf5ef] transition-colors border-0 bg-transparent cursor-pointer"
                 onClick={() => !saving && setShowModal(false)}
                 disabled={saving}
                 aria-label="Close"
@@ -899,11 +951,11 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="holiday-form">
+            <form onSubmit={handleSave} className="holiday-form flex flex-col gap-[16px] pt-[14px]">
               {/* Name */}
-              <div className="field">
-                <label className="field-label" htmlFor="holiday-name">
-                  Holiday Name <span className="required-star">*</span>
+              <div className="field flex flex-col gap-[6px]">
+                <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] flex items-center gap-1" htmlFor="holiday-name">
+                  Holiday Name <span className="required-star text-[#ed6b4f]">*</span>
                 </label>
                 <input
                   id="holiday-name"
@@ -911,19 +963,19 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                   placeholder="e.g. Diwali, Independence Day, Annual Company Break"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`field-control ${formErrors.name ? 'has-error' : ''}`}
+                  className={`field-control w-full px-[14px] py-[10px] rounded-[10px] border border-[#e2e8df] dark:border-[#303b34] bg-white dark:bg-[#141b17] text-[#193c33] dark:text-[#edf5ef] text-[14px] focus:outline-none focus:border-[#193c33] dark:focus:border-[#d9ed74] transition-colors ${formErrors.name ? 'has-error border-[#dc2626] dark:border-[#f87171]' : ''}`}
                   disabled={saving}
                   maxLength={100}
                   autoFocus
                 />
-                {formErrors.name && <span className="field-error-text">{formErrors.name}</span>}
+                {formErrors.name && <span className="field-error-text text-[12px] font-medium text-[#dc2626] dark:text-[#f87171] mt-[2px]">{formErrors.name}</span>}
               </div>
 
               {/* Dates row */}
-              <div className="field-row-grid">
-                <div className="field">
-                  <label className="field-label" htmlFor="holiday-date">
-                    Start Date <span className="required-star">*</span>
+              <div className="field-row-grid grid grid-cols-1 md:grid-cols-2 gap-[14px]">
+                <div className="field flex flex-col gap-[6px]">
+                  <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] flex items-center gap-1" htmlFor="holiday-date">
+                    Start Date <span className="required-star text-[#ed6b4f]">*</span>
                   </label>
                   <input
                     id="holiday-date"
@@ -937,15 +989,15 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                         endDate: prev.endDate && prev.endDate >= newStart ? prev.endDate : newStart,
                       }))
                     }}
-                    className={`field-control ${formErrors.holidayDate ? 'has-error' : ''}`}
+                    className={`field-control w-full px-[14px] py-[10px] rounded-[10px] border border-[#e2e8df] dark:border-[#303b34] bg-white dark:bg-[#141b17] text-[#193c33] dark:text-[#edf5ef] text-[14px] focus:outline-none focus:border-[#193c33] dark:focus:border-[#d9ed74] transition-colors ${formErrors.holidayDate ? 'has-error border-[#dc2626] dark:border-[#f87171]' : ''}`}
                     disabled={saving}
                   />
-                  {formErrors.holidayDate && <span className="field-error-text">{formErrors.holidayDate}</span>}
+                  {formErrors.holidayDate && <span className="field-error-text text-[12px] font-medium text-[#dc2626] dark:text-[#f87171] mt-[2px]">{formErrors.holidayDate}</span>}
                 </div>
 
-                <div className="field">
-                  <label className="field-label" htmlFor="holiday-end-date">
-                    End Date <span className="field-hint-inline">(optional for multi-day)</span>
+                <div className="field flex flex-col gap-[6px]">
+                  <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] flex items-center gap-1" htmlFor="holiday-end-date">
+                    End Date <span className="field-hint-inline text-[11px] font-normal text-[#517154] dark:text-[#a4b2a8] ml-1">(optional for multi-day)</span>
                   </label>
                   <input
                     id="holiday-end-date"
@@ -953,24 +1005,24 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                     value={formData.endDate}
                     min={formData.holidayDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className={`field-control ${formErrors.endDate ? 'has-error' : ''}`}
+                    className={`field-control w-full px-[14px] py-[10px] rounded-[10px] border border-[#e2e8df] dark:border-[#303b34] bg-white dark:bg-[#141b17] text-[#193c33] dark:text-[#edf5ef] text-[14px] focus:outline-none focus:border-[#193c33] dark:focus:border-[#d9ed74] transition-colors ${formErrors.endDate ? 'has-error border-[#dc2626] dark:border-[#f87171]' : ''}`}
                     disabled={saving}
                   />
-                  {formErrors.endDate && <span className="field-error-text">{formErrors.endDate}</span>}
+                  {formErrors.endDate && <span className="field-error-text text-[12px] font-medium text-[#dc2626] dark:text-[#f87171] mt-[2px]">{formErrors.endDate}</span>}
                 </div>
               </div>
 
               {/* Type and Color row */}
-              <div className="field-row-grid">
-                <div className="field">
-                  <label className="field-label" htmlFor="holiday-type">
+              <div className="field-row-grid grid grid-cols-1 md:grid-cols-2 gap-[14px]">
+                <div className="field flex flex-col gap-[6px]">
+                  <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef]" htmlFor="holiday-type">
                     Classification
                   </label>
                   <select
                     id="holiday-type"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as HolidayType })}
-                    className="field-control"
+                    className="field-control w-full px-[14px] py-[10px] rounded-[10px] border border-[#e2e8df] dark:border-[#303b34] bg-white dark:bg-[#141b17] text-[#193c33] dark:text-[#edf5ef] text-[14px] focus:outline-none focus:border-[#193c33] dark:focus:border-[#d9ed74] transition-colors"
                     disabled={saving}
                   >
                     <option value="PUBLIC">Public (National / Gazetted)</option>
@@ -980,14 +1032,18 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                   </select>
                 </div>
 
-                <div className="field">
-                  <label className="field-label">Calendar Accent Color</label>
-                  <div className="color-swatches-wrap">
+                <div className="field flex flex-col gap-[6px]">
+                  <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef]">Calendar Accent Color</label>
+                  <div className="color-swatches-wrap flex items-center gap-[8px] flex-wrap pt-[4px]">
                     {PRESET_COLORS.map((col) => (
                       <button
                         key={col}
                         type="button"
-                        className={`color-swatch-circle ${formData.color === col ? 'is-selected' : ''}`}
+                        className={`color-swatch-circle grid w-[26px] h-[26px] place-items-center rounded-full border-2 transition-transform duration-120 hover:scale-115 cursor-pointer ${
+                          formData.color === col
+                            ? 'is-selected border-[#193c33] dark:border-[#edf5ef] scale-110'
+                            : 'border-transparent'
+                        }`}
                         style={{ backgroundColor: col }}
                         onClick={() => setFormData({ ...formData, color: col })}
                         aria-label={`Color ${col}`}
@@ -999,7 +1055,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                       type="color"
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="custom-color-picker"
+                      className="custom-color-picker w-[28px] h-[28px] p-0 border border-[#dfe5dc] dark:border-[#303b34] rounded-full cursor-pointer bg-transparent"
                       title="Custom color"
                     />
                   </div>
@@ -1007,8 +1063,8 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
               </div>
 
               {/* Recurring Toggle */}
-              <div className="field-checkbox-row">
-                <label className="checkbox-container">
+              <div className="field-checkbox-row flex items-center p-[10px_12px] border border-[#e2e8df] dark:border-[#303b34] rounded-[8px] bg-[#f8faf6] dark:bg-[#141b17]">
+                <label className="checkbox-container flex items-start gap-[10px] cursor-pointer w-full">
                   <input
                     type="checkbox"
                     checked={formData.isRecurring}
@@ -1016,17 +1072,17 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                     disabled={saving}
                   />
                   <span className="checkbox-checkmark" />
-                  <span className="checkbox-label-text">
-                    <strong>Repeat yearly</strong>
-                    <small>Automatically display this holiday on the same month and day each year.</small>
+                  <span className="checkbox-label-text flex flex-col gap-[2px]">
+                    <strong className="text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef]">Repeat yearly</strong>
+                    <small className="text-[11px] text-[#517154] dark:text-[#a4b2a8]">Automatically display this holiday on the same month and day each year.</small>
                   </span>
                 </label>
               </div>
 
               {/* Description */}
-              <div className="field">
-                <label className="field-label" htmlFor="holiday-desc">
-                  Description <span className="field-hint-inline">(optional)</span>
+              <div className="field flex flex-col gap-[6px]">
+                <label className="field-label text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] flex items-center gap-1" htmlFor="holiday-desc">
+                  Description <span className="field-hint-inline text-[11px] font-normal text-[#517154] dark:text-[#a4b2a8] ml-1">(optional)</span>
                 </label>
                 <textarea
                   id="holiday-desc"
@@ -1034,16 +1090,16 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="field-control textarea-control"
+                  className="field-control textarea-control w-full min-h-[70px] p-[10px_14px] resize-y rounded-[10px] border border-[#e2e8df] dark:border-[#303b34] bg-white dark:bg-[#141b17] text-[#193c33] dark:text-[#edf5ef] text-[14px] focus:outline-none focus:border-[#193c33] dark:focus:border-[#d9ed74] transition-colors"
                   disabled={saving}
                   maxLength={1000}
                 />
               </div>
 
-              <div className="modal-actions-bar">
+              <div className="modal-actions-bar flex items-center justify-end gap-[10px] mt-[10px] pt-[14px] border-t border-[#edf1eb] dark:border-[#303b34]">
                 <button
                   type="button"
-                  className="secondary-btn"
+                  className="secondary-btn px-[16px] py-[10px] rounded-[10px] border border-[#dfe5dc] dark:border-[#303b34] bg-transparent text-[#193c33] dark:text-[#edf5ef] font-semibold text-[13px] hover:bg-[#f3f6f0] dark:hover:bg-[#233129] transition-colors cursor-pointer"
                   onClick={() => setShowModal(false)}
                   disabled={saving}
                 >
@@ -1051,12 +1107,12 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                 </button>
                 <button
                   type="submit"
-                  className="primary-action-btn"
+                  className="primary-action-btn inline-flex items-center gap-[8px] p-[10px_18px] rounded-[10px] bg-[#193c33] text-[#d9ed74] font-semibold text-[13px] hover:bg-[#142e27] transition-colors cursor-pointer border-0"
                   disabled={saving}
                 >
                   {saving ? (
                     <>
-                      <RefreshCw size={15} className="spin-slow" />
+                      <RefreshCw size={15} className="spin-slow animate-spin" />
                       <span>Saving...</span>
                     </>
                   ) : (
@@ -1071,13 +1127,13 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Delete / Cancel Confirmation Modal */}
       {deleteTarget && (
-        <div className="modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div className="modal-content delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="delete-modal-icon">
+        <div className="modal-backdrop fixed inset-0 bg-black/45 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease]" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="modal-content delete-confirm-modal bg-white dark:bg-[#19231e] rounded-[16px] border border-[#e2e8df] dark:border-[#27372e] p-[24px] w-[min(92vw,440px)] text-center shadow-2xl animate-[fadeIn_0.15s_ease]" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-icon grid w-[56px] h-[56px] place-items-center rounded-full bg-[#fef2f2] dark:bg-[#382323] text-[#dc2626] mx-auto mb-[12px]">
               <AlertTriangle size={32} />
             </div>
-            <h3>Remove Holiday?</h3>
-            <p>
+            <h3 className="m-0 text-[18px] font-bold text-[#193c33] dark:text-[#edf5ef]">Remove Holiday?</h3>
+            <p className="mt-[10px] mb-0 text-[13px] text-[#517154] dark:text-[#a4b2a8] leading-[1.5]">
               Are you sure you want to remove <strong>"{deleteTarget.name}"</strong>?
               {hardDelete
                 ? ' This record will be permanently deleted from the database.'
@@ -1085,8 +1141,8 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
             </p>
 
             {isSuperAdmin && (
-              <div className="hard-delete-toggle">
-                <label className="checkbox-container">
+              <div className="hard-delete-toggle mt-[14px] p-[10px] rounded-[8px] bg-[#f8faf6] dark:bg-[#141b17] border border-[#e2e8df] dark:border-[#303b34] text-left">
+                <label className="checkbox-container flex items-start gap-[10px] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={hardDelete}
@@ -1094,17 +1150,17 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
                     disabled={deleting}
                   />
                   <span className="checkbox-checkmark" />
-                  <span className="checkbox-label-text">
-                    <strong>Permanently delete record (SUPER_ADMIN)</strong>
+                  <span className="checkbox-label-text flex flex-col gap-[2px]">
+                    <strong className="text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef]">Permanently delete record (SUPER_ADMIN)</strong>
                   </span>
                 </label>
               </div>
             )}
 
-            <div className="modal-actions-bar">
+            <div className="modal-actions-bar flex items-center justify-end gap-[10px] mt-[10px] pt-[14px] border-t border-[#edf1eb] dark:border-[#303b34]">
               <button
                 type="button"
-                className="secondary-btn"
+                className="secondary-btn px-[16px] py-[10px] rounded-[10px] border border-[#dfe5dc] dark:border-[#303b34] bg-transparent text-[#193c33] dark:text-[#edf5ef] font-semibold text-[13px] hover:bg-[#f3f6f0] dark:hover:bg-[#233129] transition-colors cursor-pointer"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
               >
@@ -1112,7 +1168,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
               </button>
               <button
                 type="button"
-                className="danger-btn"
+                className="danger-btn px-[16px] py-[8px] border border-[#dc2626] rounded-[8px] bg-[#dc2626] text-white text-[13px] font-semibold cursor-pointer hover:bg-[#b91c1c] transition-colors"
                 onClick={handleDeleteConfirm}
                 disabled={deleting}
               >

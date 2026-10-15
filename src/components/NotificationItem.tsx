@@ -66,7 +66,7 @@ export default function NotificationItem({ notification, onClick }: Notification
 
   return (
     <div
-      className={`notif-item-row ${!notification.isRead ? 'is-unread' : 'is-read'} ${bgClass}`}
+      className={`notif-item-row flex items-start gap-[12px] p-[12px_16px] border-b border-[#edf3eb] last:border-b-0 cursor-pointer transition-colors duration-150 relative text-left w-full box-border hover:bg-[#f6faf4] dark:border-[#27352d] dark:hover:bg-[#202c24] ${!notification.isRead ? 'is-unread bg-[#fcfdfa] dark:bg-[rgba(26,35,29,0.7)]' : 'is-read'} ${bgClass}`}
       onClick={() => onClick(notification)}
       role="button"
       tabIndex={0}
@@ -77,28 +77,28 @@ export default function NotificationItem({ notification, onClick }: Notification
         }
       }}
     >
-      <div className={`notif-item-icon-box ${badgeClass}`}>
+      <div className={`notif-item-icon-box w-[32px] h-[32px] rounded-[8px] grid place-items-center shrink-0 mt-[2px] ${badgeClass}`}>
         <Icon size={16} strokeWidth={2} />
       </div>
 
-      <div className="notif-item-content">
-        <div className="notif-item-header-row">
-          <span className="notif-item-title">{notification.title}</span>
-          <span className="notif-item-time" title={new Date(notification.createdAt).toLocaleString()}>
+      <div className="notif-item-content flex-1 min-w-0">
+        <div className="notif-item-header-row flex items-baseline justify-between gap-[8px] mb-[3px]">
+          <span className="notif-item-title text-[12px] font-bold text-[#193c33] leading-[1.3] truncate dark:text-[#edf2ec]">{notification.title}</span>
+          <span className="notif-item-time text-[10.5px] text-[#8c9e93] whitespace-nowrap inline-flex items-center dark:text-[#7f8f84]" title={new Date(notification.createdAt).toLocaleString()}>
             <Clock size={11} style={{ marginRight: '3px' }} />
             {relativeTime}
           </span>
         </div>
 
-        <p className="notif-item-message">{notification.message}</p>
+        <p className="notif-item-message text-[12px] text-[#3f4e45] m-0 mb-[4px] leading-[1.45] break-words dark:text-[#c4d2c7]">{notification.message}</p>
 
         {notification.link && (
-          <span className="notif-item-link-hint">Click to view details →</span>
+          <span className="notif-item-link-hint text-[10.5px] font-semibold text-[#059669] block dark:text-[#34d399]">Click to view details →</span>
         )}
       </div>
 
       {!notification.isRead && (
-        <span className="notif-item-unread-dot" title="Unread notification" />
+        <span className="notif-item-unread-dot w-[8px] h-[8px] rounded-full bg-[#10b981] shrink-0 mt-[6px] shadow-[0_0_0_2px_rgba(16,185,129,0.2)]" title="Unread notification" />
       )}
     </div>
   )
