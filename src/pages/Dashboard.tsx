@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import {
   Activity, ArrowUpRight, Building2, Calendar, CalendarDays, Check, CheckSquare2,
-  ChevronRight, CircleHelp, Clock3, LayoutDashboard, LogOut, Menu,
-  PanelLeftOpen, Plus, RefreshCw, Snowflake, Sparkles, Users, X,
+  Clock3, LayoutDashboard, Menu,
+  Plus, RefreshCw, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck, UserX, RotateCcw, AlertTriangle,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
   Server, ShieldCheck, UserCircle2, MessageSquare
@@ -24,8 +24,8 @@ import AdminUsersView from '../components/AdminUsersView'
 import AdminSystemView from '../components/AdminSystemView'
 import TopProfileDropdown from '../components/TopProfileDropdown'
 import NotificationBell from '../components/NotificationBell'
+import Sidebar from '../components/Sidebar'
 import UserAvatar from '../components/UserAvatar'
-import UnreadBadge from '../components/UnreadBadge'
 import LeaveManagementView from '../components/LeaveManagementView'
 import LeaveTypeBadge from '../components/LeaveTypeBadge'
 import HolidaysView from '../components/HolidaysView'
@@ -85,7 +85,6 @@ export default function Dashboard() {
     phone: '', designation: '', joiningDate: '', fullName: '', email: '',
     title: '', assignedTo: '', leaveTypeId: '1', startDate: '', endDate: '', reason: ''
   })
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [editingRow, setEditingRow] = useState<Row | null>(null)
   const [viewingRow, setViewingRow] = useState<Row | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -359,12 +358,7 @@ export default function Dashboard() {
     }
   }
 
-  async function handleLogout() {
-    setShowLogoutConfirm(true)
-  }
-
   async function confirmLogout() {
-    setShowLogoutConfirm(false)
     const currentToken = readToken()
     try {
       if (currentToken) await logout(currentToken)
@@ -818,122 +812,26 @@ export default function Dashboard() {
   const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
 
   return (
-    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out ${sidebarCollapsed ? 'is-sidebar-collapsed grid-cols-[76px_minmax(0,1fr)]' : 'grid-cols-[248px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
+    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out ${sidebarCollapsed ? 'is-sidebar-collapsed grid-cols-[76px_minmax(0,1fr)]' : 'grid-cols-[256px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
       {/* Sidebar Navigation */}
-      <aside className="workbench-sidebar sticky z-[5] top-0 flex h-screen min-w-0 flex-col p-[25px_16px_17px] text-[#e9eee7] bg-[#193c33]" aria-label="Workspace sidebar">
-        <div className="sidebar-brand-row flex items-center justify-between mb-[38px]">
-          <a className="workbench-brand flex items-center gap-[10px] mx-[4px] my-0 text-inherit font-extrabold text-[16px] font-sans no-underline min-w-0" href="/dashboard" title="Snowflex People Operations">
-            <Snowflake className="workbench-mark grid w-[33px] h-[33px] place-items-center rounded-[8px_8px_8px_2px] text-[#193c33] bg-[#d9ed74] shrink-0" size={20} strokeWidth={2.5} />
-            <span className="sidebar-brand-copy brand-copy min-w-0 flex flex-col">
-              snowflex
-              <span className="brand-caption block mt-[1px] text-[#a7b9ab] font-mono text-[8px] tracking-[0.08em]">PEOPLE OPERATIONS</span>
-            </span>
-          </a>
-          <button
-            className="sidebar-toggle grid w-[30px] h-[30px] shrink-0 place-items-center border border-[rgba(230,239,228,0.2)] rounded-[5px] text-[#d8e5dc] bg-transparent cursor-pointer hover:text-white hover:bg-[rgba(255,255,255,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2"
-            type="button"
-            title={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={mobileSidebarOpen ? 'Close navigation' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-expanded={mobileSidebarOpen || !sidebarCollapsed}
-            onClick={() => {
-              if (window.matchMedia('(max-width: 680px)').matches) setMobileSidebarOpen(false)
-              else setSidebarCollapsed((collapsed) => !collapsed)
-            }}
-          >
-            {mobileSidebarOpen ? <X size={19} /> : sidebarCollapsed ? <PanelLeftOpen size={17} /> : <Menu size={19} />}
-          </button>
-        </div>
-
-        <nav className="workbench-nav grid gap-[3px]" aria-label="Workspace navigation">
-          {navGroups.map(({ label: groupLabel, items }, groupIndex) => (
-            <div className="nav-group grid gap-[3px]" key={groupLabel}>
-              <div className="workspace-label px-[11px] mb-[10px] text-[#93aa9d] font-mono text-[9px] font-medium tracking-[0.08em] uppercase">{groupLabel}</div>
-              {items.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  className={`nav-item relative flex w-full min-h-[42px] items-center gap-[11px] px-[11px] border-0 rounded-[5px] text-[#c3d0c6] bg-transparent text-left text-[12px] cursor-pointer transition-[background,color] duration-140 ease-in-out hover:text-white hover:bg-[rgba(255,255,255,0.07)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2 ${
-                    view === id ? 'selected text-white bg-[rgba(255,255,255,0.12)] before:absolute before:top-[9px] before:bottom-[9px] before:-left-[16px] before:w-[3px] before:rounded-[0_3px_3px_0] before:bg-[#d9ed74] before:content-[\'\']' : ''
-                  }`}
-                  title={sidebarCollapsed ? label : undefined}
-                  aria-label={label}
-                  onClick={() => {
-                    if (id === 'profile') {
-                      navigate('/profile')
-                    } else {
-                      setView(id)
-                    }
-                    setMobileSidebarOpen(false)
-                  }}
-                  type="button"
-                >
-                  <Icon size={17} strokeWidth={1.8} />
-                  <span>{label}</span>
-                  {id === 'leaves' && <UnreadBadge count={leaveActionCount} className="sidebar-leave-badge" />}
-                  {id === 'chat' && <UnreadBadge count={chatUnreadCount} className="sidebar-chat-badge" />}
-                  {view === id && <ChevronRight className="nav-chevron ml-auto text-[#d9ed74]" size={15} />}
-                </button>
-              ))}
-              {groupIndex < navGroups.length - 1 && <div className="nav-separator h-[1px] my-[10px] bg-[rgba(230,239,228,0.1)]" />}
-            </div>
-          ))}
-        </nav>
-
-        <div className="sidebar-bottom grid gap-[15px] mt-auto">
-          <div className="help-row flex items-center gap-[9px] px-[10px] pb-[14px] border-b border-[rgba(230,239,228,0.13)] text-[#b7c6bb] text-[11px]" title="Snowflake Connected Workspace">
-            <CircleHelp size={16} />
-            <span>Snowflake DB v2.4</span>
-          </div>
-          <div
-            className="profile-chip flex items-center gap-[10px] p-[7px] border-0 rounded-[5px] text-[#e9eee7] bg-transparent text-left cursor-pointer hover:bg-[rgba(255,255,255,0.08)]"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/profile')}
-            title="My Profile & Security"
-          >
-            <UserAvatar name={user.fullName} avatarUrl={user.avatarUrl} size={34} className="profile-avatar" />
-            <span className="profile-copy grid min-w-0 gap-[2px] flex-1">
-              <strong className="overflow-hidden text-[11px] text-ellipsis whitespace-nowrap">{user.fullName}</strong>
-              <small className="text-[#a8b9ad] font-mono text-[9px]">{roleLabel}</small>
-            </span>
-            <button
-              type="button"
-              className="sidebar-logout-icon-btn grid w-[26px] h-[26px] place-items-center rounded-[4px] border border-transparent text-[#a8b9ad] hover:text-white hover:bg-[rgba(255,255,255,0.1)] transition-colors cursor-pointer ml-auto bg-transparent"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleLogout()
-              }}
-              title="Sign out"
-            >
-              <LogOut size={16} aria-label="Sign out" />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {mobileSidebarOpen && (
-        <button
-          className="mobile-sidebar-backdrop fixed inset-0 z-[40] bg-[rgba(25,60,51,0.5)] backdrop-blur-[2px]"
-          type="button"
-          aria-label="Close navigation"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* Logout Modal */}
-      {showLogoutConfirm && (
-        <div className="modal-overlay fixed inset-0 z-50 grid place-items-center bg-[rgba(25,60,51,0.45)] p-[24px] animate-[fade-in_150ms_ease]" onClick={() => setShowLogoutConfirm(false)} role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
-          <div className="modal w-[min(100%,360px)] border border-[#e2e8df] rounded-[8px] bg-white shadow-[0_24px_48px_rgba(31,54,39,0.15)] animate-[slide-up_180ms_ease]" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header flex items-center justify-between p-[16px_20px] border-b border-[#edf0eb]">
-              <h3 id="logout-modal-title" className="m-0 text-[#243a33] font-bold text-[16px] font-sans">Sign Out</h3>
-              <button className="modal-close grid w-[32px] h-[32px] place-items-center border-0 rounded-[5px] text-[#7d8980] bg-transparent cursor-pointer hover:bg-[#f3f6ef] hover:text-[#243a33]" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Close"><X size={18} /></button>
-            </div>
-            <p className="modal-body m-0 p-[20px] text-[#546a5d] text-[14px] leading-[1.5]">Are you sure you want to end your Snowflex session?</p>
-            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
-              <button className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" type="button" onClick={() => setShowLogoutConfirm(false)}>Cancel</button>
-              <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={confirmLogout}>Sign Out</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Sidebar
+        currentView={view}
+        onSelectView={(v) => {
+          if (v === 'profile') {
+            navigate('/profile')
+          } else {
+            setView(v)
+          }
+        }}
+        user={user}
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        mobileSidebarOpen={mobileSidebarOpen}
+        setMobileSidebarOpen={setMobileSidebarOpen}
+        leaveUnreadCount={leaveActionCount}
+        chatUnreadCount={chatUnreadCount}
+        onLogout={confirmLogout}
+      />
 
       {/* Delete Record Confirmation Modal */}
       {deleteTarget && (
