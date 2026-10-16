@@ -14,6 +14,7 @@ import Sidebar from '../components/Sidebar'
 import { useNotifications } from '../hooks/useNotifications'
 import { clearToken, getCurrentUser, readToken, type SafeUser } from '../lib/auth-api'
 import { useProfile } from '../hooks/useProfile'
+import { Skeleton } from '../components/Skeleton'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -176,9 +177,9 @@ export default function Profile() {
                 <div className="profile-header-card profile-card-loading">
                   <div className="profile-header-cover" />
                   <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                    <div className="skeleton-bar" style={{ width: '96px', height: '96px', borderRadius: '50%' }} />
-                    <div className="skeleton-bar" style={{ width: '180px', height: '22px', borderRadius: '4px' }} />
-                    <div className="skeleton-bar" style={{ width: '120px', height: '14px', borderRadius: '4px' }} />
+                    <Skeleton variant="circular" width={96} height={96} />
+                    <Skeleton variant="rounded" width={180} height={22} />
+                    <Skeleton variant="text" width={120} height={14} />
                   </div>
                 </div>
               ) : profile ? (

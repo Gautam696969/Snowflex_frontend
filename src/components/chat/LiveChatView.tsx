@@ -86,7 +86,7 @@ export default function LiveChatView({ currentUser }: LiveChatViewProps) {
             </div>
             <button
               type="button"
-              className="chat-new-btn inline-flex items-center gap-[5px] px-[11px] py-[6px] rounded-[6px] bg-[#193c33] text-white border border-[#193c33] text-[11.5px] font-semibold cursor-pointer transition-all duration-150 ease-in-out hover:bg-[#255448] hover:border-[#255448] hover:text-[#d9ed74]"
+              className="chat-new-btn inline-flex items-center gap-[5px] px-[11px] py-[6px] rounded-[6px] bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] border border-[#193c33] dark:border-[#d9ed74] text-[11.5px] font-semibold cursor-pointer transition-all duration-150 ease-in-out hover:bg-[#255448] dark:hover:bg-[#e5f79b] hover:border-[#255448] dark:hover:border-[#e5f79b] hover:text-[#d9ed74] dark:hover:text-[#193c33]"
               onClick={() => setShowNewChatModal(true)}
               aria-label="Start new chat"
               title="New conversation"
@@ -133,7 +133,7 @@ export default function LiveChatView({ currentUser }: LiveChatViewProps) {
               {!search && (
                 <button
                   type="button"
-                  className="chat-start-first-btn inline-flex items-center gap-[6px] mt-[8px] px-[14px] py-[6px] rounded-[6px] bg-[#193c33] text-white border-none text-[12px] font-semibold cursor-pointer"
+                  className="chat-start-first-btn inline-flex items-center gap-[6px] mt-[8px] px-[14px] py-[6px] rounded-[6px] bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] border-none text-[12px] font-semibold cursor-pointer hover:bg-[#255448] dark:hover:bg-[#e5f79b] transition-colors"
                   onClick={() => setShowNewChatModal(true)}
                 >
                   <Plus size={14} /> Start a conversation
@@ -220,10 +220,10 @@ export default function LiveChatView({ currentUser }: LiveChatViewProps) {
               <Sparkles size={40} />
             </div>
             <h3 className="m-[0_0_8px] text-[19px] font-bold font-sans text-[#193c33] dark:text-[#e3ebe5]">Select a Conversation</h3>
-            <p className="m-[0_0_20px] text-[13.5px] text-[#728175] leading-[1.5]">Choose an existing thread from the left or start a new chat with an authorized colleague.</p>
+            <p className="m-[0_0_20px] text-[13.5px] text-[#728175] dark:text-[#9aa99d] leading-[1.5]">Choose an existing thread from the left or start a new chat with an authorized colleague.</p>
             <button
               type="button"
-              className="chat-placeholder-btn inline-flex items-center gap-[7px] px-[18px] py-[9px] rounded-[6px] bg-[#193c33] hover:bg-[#255448] text-white border-none text-[13px] font-semibold cursor-pointer transition-colors duration-150 ease-in-out"
+              className="chat-placeholder-btn inline-flex items-center gap-[7px] px-[18px] py-[9px] rounded-[6px] bg-[#193c33] dark:bg-[#d9ed74] hover:bg-[#255448] dark:hover:bg-[#e5f79b] text-white dark:text-[#193c33] border-none text-[13px] font-semibold cursor-pointer transition-colors duration-150 ease-in-out"
               onClick={() => setShowNewChatModal(true)}
             >
               <Plus size={16} /> Start New Chat
@@ -240,10 +240,10 @@ export default function LiveChatView({ currentUser }: LiveChatViewProps) {
       />
 
       {modalError && (
-        <div className="chat-floating-error fixed bottom-[24px] right-[24px] flex items-center gap-[8px] p-[10px_16px] rounded-[8px] bg-[#fee2e2] text-[#991b1b] border border-[#fecaca] shadow-[0_4px_15px_rgba(0,0,0,0.1)] text-[13px] z-[110]">
+        <div className="chat-floating-error fixed bottom-[24px] right-[24px] flex items-center gap-[8px] p-[10px_16px] rounded-[8px] bg-[#fee2e2] dark:bg-[#451212] text-[#991b1b] dark:text-[#fca5a5] border border-[#fecaca] dark:border-[#7f1d1d] shadow-[0_4px_15px_rgba(0,0,0,0.1)] text-[13px] z-[110]">
           <AlertCircle size={16} />
           <span>{modalError}</span>
-          <button type="button" onClick={() => setModalError('')} className="border-none bg-transparent text-[#991b1b] cursor-pointer"><X size={14} /></button>
+          <button type="button" onClick={() => setModalError('')} className="border-none bg-transparent text-[#991b1b] dark:text-[#fca5a5] cursor-pointer"><X size={14} /></button>
         </div>
       )}
     </div>

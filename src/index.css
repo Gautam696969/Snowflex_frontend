@@ -2,6 +2,8 @@
 @import url('https://fonts.googleapis.com/css?family=Anton|Passion+One|PT+Sans+Caption');
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
+
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #20251f;
@@ -15,6 +17,12 @@
   --muted: #778077;
   --accent: #ed6b4f;
   --accent-dark: #d9543a;
+  --border: #e2e8df;
+  --border-subtle: #edf2eb;
+  --skeleton-base: #e5e7eb;
+  --skeleton-highlight: #f3f4f6;
+  --skeleton-card-bg: #ffffff;
+  --skeleton-card-border: #e2e8df;
 }
 
 * { box-sizing: border-box; }
@@ -563,12 +571,19 @@ a { color: inherit; }
 .topbar-theme-toggle { min-height: 32px; }
 .mobile-sidebar-open-button { display: none; }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+html.dark {
   color-scheme: dark;
   --ink: #edf2ec;
   --muted: #a4b2a8;
   --accent: #ef8068;
   --accent-dark: #de6b54;
+  --border: #27372e;
+  --border-subtle: #1e2b24;
+  --skeleton-base: #27272a;
+  --skeleton-highlight: #3f3f46;
+  --skeleton-card-bg: #19231e;
+  --skeleton-card-border: #27372e;
   background: #141a17;
   color: #edf2ec;
 }
@@ -4197,12 +4212,19 @@ a { color: inherit; }
 .skeleton-shimmer,
 .skeleton-bar,
 .skeleton-box,
-.title-skeleton {
+.title-skeleton,
+.skeleton-line {
   background: linear-gradient(
     90deg,
-    rgba(227, 233, 224, 0.7) 0%,
-    rgba(245, 248, 243, 0.96) 50%,
-    rgba(227, 233, 224, 0.7) 100%
+    #e5e7eb 0%,
+    #f3f4f6 50%,
+    #e5e7eb 100%
+  );
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #e5e7eb) 0%,
+    var(--skeleton-highlight, #f3f4f6) 50%,
+    var(--skeleton-base, #e5e7eb) 100%
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
@@ -4337,31 +4359,147 @@ a { color: inherit; }
 
 /* Skeleton Dark Mode Overrides */
 :root[data-theme='dark'] .skeleton-shimmer,
+html.dark .skeleton-shimmer,
 :root[data-theme='dark'] .skeleton-bar,
+html.dark .skeleton-bar,
 :root[data-theme='dark'] .skeleton-box,
-:root[data-theme='dark'] .title-skeleton {
+html.dark .skeleton-box,
+:root[data-theme='dark'] .title-skeleton,
+html.dark .title-skeleton,
+:root[data-theme='dark'] .skeleton-line,
+html.dark .skeleton-line {
   background: linear-gradient(
     90deg,
-    rgba(28, 38, 32, 0.7) 0%,
-    rgba(44, 60, 50, 0.95) 50%,
-    rgba(28, 38, 32, 0.7) 100%
+    #27272a 0%,
+    #3f3f46 50%,
+    #27272a 100%
+  );
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #27272a) 0%,
+    var(--skeleton-highlight, #3f3f46) 50%,
+    var(--skeleton-base, #27272a) 100%
   );
   background-size: 200% 100%;
 }
 
 :root[data-theme='dark'] .profile-form-skeleton,
+html.dark .profile-form-skeleton,
 :root[data-theme='dark'] .skeleton-card-item,
+html.dark .skeleton-card-item,
 :root[data-theme='dark'] .skeleton-kpi-card,
+html.dark .skeleton-kpi-card,
 :root[data-theme='dark'] .skeleton-overview-card,
+html.dark .skeleton-overview-card,
 :root[data-theme='dark'] .skeleton-leave-balance-card,
+html.dark .skeleton-leave-balance-card,
 :root[data-theme='dark'] .skeleton-diag-card,
-:root[data-theme='dark'] .skeleton-account-card {
+html.dark .skeleton-diag-card,
+:root[data-theme='dark'] .skeleton-account-card,
+html.dark .skeleton-account-card {
   background: #19231e;
   border-color: #27372e;
 }
 
-:root[data-theme='dark'] .skeleton-table-row {
+:root[data-theme='dark'] .skeleton-table-row,
+html.dark .skeleton-table-row {
   border-bottom-color: rgba(39, 55, 46, 0.6);
+}
+
+/* Chat Code Blocks and Markdown Styling */
+.chat-inline-code {
+  padding: 1px 5px;
+  border: 1px solid #dfe5dc;
+  border-radius: 4px;
+  color: #2c4a3b;
+  background: #f0f4ee;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.9em;
+}
+
+:root[data-theme='dark'] .chat-inline-code,
+html.dark .chat-inline-code {
+  border-color: #38483e;
+  color: #d7e9b2;
+  background: #202d26;
+}
+
+.user .chat-inline-code,
+.from-user .chat-inline-code,
+.bubble-mine .chat-inline-code {
+  border-color: rgba(217, 237, 116, 0.3);
+  color: #d9ed74;
+  background: rgba(217, 237, 116, 0.12);
+}
+
+.chat-code-block-wrapper {
+  margin: 8px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #dce4d9;
+  background: #f4f6f2;
+}
+
+:root[data-theme='dark'] .chat-code-block-wrapper,
+html.dark .chat-code-block-wrapper {
+  border-color: #2f3e34;
+  background: #16201b;
+}
+
+.chat-code-block-header {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #637569;
+  background: #ebf0e8;
+  border-bottom: 1px solid #dce4d9;
+}
+
+:root[data-theme='dark'] .chat-code-block-header,
+html.dark .chat-code-block-header {
+  color: #8e9f93;
+  background: #1c2822;
+  border-bottom-color: #2f3e34;
+}
+
+.chat-code-block {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  font-size: 11.5px;
+  line-height: 1.5;
+  font-family: 'DM Mono', monospace;
+  color: #1c352b;
+}
+
+:root[data-theme='dark'] .chat-code-block,
+html.dark .chat-code-block {
+  color: #e4eee6;
+}
+
+/* Theme-aware Chat Scrollbars */
+.ai-messages,
+.ai-history-list,
+.floating-chat-messages,
+.chat-conversations-list,
+.chat-messages-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(25, 60, 51, 0.2) transparent;
+}
+
+:root[data-theme='dark'] .ai-messages,
+html.dark .ai-messages,
+:root[data-theme='dark'] .ai-history-list,
+html.dark .ai-history-list,
+:root[data-theme='dark'] .floating-chat-messages,
+html.dark .floating-chat-messages,
+:root[data-theme='dark'] .chat-conversations-list,
+html.dark .chat-conversations-list,
+:root[data-theme='dark'] .chat-messages-scroll,
+html.dark .chat-messages-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* Responsive adjustments */

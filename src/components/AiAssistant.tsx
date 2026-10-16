@@ -13,6 +13,7 @@ import type { AiConversation, AiMessage } from '../lib/auth-api'
 import { renderMarkdown } from '../lib/render-markdown'
 import UserAvatar from './UserAvatar'
 import { SkeletonConversationHistory, SkeletonMessageBubbles } from './Skeleton'
+import { useTheme } from '../lib/theme'
 
 const MAX_MESSAGE_LENGTH = 4000
 
@@ -43,6 +44,7 @@ interface AiAssistantProps {
 }
 
 export default function AiAssistant({ token, onError, userName, avatarUrl }: AiAssistantProps) {
+  const { theme } = useTheme()
   const [conversations, setConversations] = useState<AiConversation[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
   const [messages, setMessages] = useState<AiMessage[]>([])
@@ -262,7 +264,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
       </aside>
 
       <div className="ai-thread grid min-w-0 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-        <header className="ai-thread-head flex min-w-0 min-h-[54px] sm:min-h-[62px] items-center max-[900px]:items-start max-[900px]:flex-wrap justify-between gap-[14px] p-[11px_13px] sm:p-[12px_18px] border-b border-[#e9ede7] dark:border-[#354239] dark:bg-[#1a231e]">
+        <header className="ai-thread-head flex min-w-0 min-h-[54px] sm:min-h-[62px] items-center max-[900px]:items-start max-[900px]:flex-wrap justify-between gap-[14px] p-[11px_13px] sm:p-[12px_18px] border-b border-[#e9ede7] dark:border-[#354239] bg-white dark:bg-[#1a231e]">
           <div className="ai-identity flex min-w-0 items-center gap-[11px] max-[900px]:flex-[1_1_220px]">
             <span className="ai-avatar grid shrink-0 place-items-center text-[#193c33] dark:text-[#1a241d] bg-[#d9ed74] w-[32px] h-[32px] rounded-[6px_6px_6px_2px]"><Sparkles size={15} /></span>
             <div className="grid min-w-0 gap-[2px]">
@@ -361,7 +363,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
             {voice.state === 'listening' ? (
               <>
                 <div className="ai-voice-ui flex flex-col gap-[6px] py-[4px] px-0">
-                  <Waveform analyserRef={voice.analyserRef} active={voice.state === 'listening'} color="#2f4a3f" />
+                  <Waveform analyserRef={voice.analyserRef} active={voice.state === 'listening'} color={theme === 'dark' ? '#d9ed74' : '#2f4a3f'} />
                   {voice.transcript && <small className="ai-voice-transcript text-[#617166] text-[11px] leading-[1.5] max-w-[70%]">{voice.transcript}</small>}
                 </div>
                 <button
@@ -371,7 +373,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                   aria-label="Stop and confirm"
                   title="Stop and confirm"
                 >
-                  <Square size={16} fill="#2f4a3f" />
+                  <Square size={16} fill="currentColor" />
                 </button>
                 <button
                   type="button"
