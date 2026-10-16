@@ -7,7 +7,7 @@ import {
   Plus, RefreshCw, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck, UserX, RotateCcw, AlertTriangle,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
-  Server, ShieldCheck, UserCircle2, MessageSquare
+  Server, ShieldCheck, UserCircle2, MessageSquare, Palette, ShieldAlert
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
@@ -35,8 +35,9 @@ import { useNotifications } from '../hooks/useNotifications'
 import { SkeletonOverview, SkeletonTable, SkeletonCards } from '../components/Skeleton'
 import LiveChatView from '../components/chat/LiveChatView'
 import { useChat } from '../context/ChatContext'
+import ThemeCustomizationView from '../components/ThemeCustomizationView'
 
-type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'holidays' | 'tasks' | 'users' | 'system' | 'profile'
+type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'holidays' | 'tasks' | 'users' | 'system' | 'themes' | 'profile'
 type Row = Record<string, unknown>
 type ViewMode = 'table' | 'cards'
 
@@ -66,6 +67,18 @@ export default function Dashboard() {
       setView(qView)
     }
   }, [searchParams])
+
+  // Route guard: prevent unauthorized users from accessing theme settings
+  useEffect(() => {
+    if (view === 'themes' && user) {
+      const currentRole = user.role === 'USER' ? 'EMPLOYEE' : user.role
+      if (currentRole !== 'ADMIN' && currentRole !== 'SUPER_ADMIN') {
+        toast.error('You do not have permission to access Theme Settings.')
+        setView('overview')
+        navigate('/dashboard?view=overview', { replace: true })
+      }
+    }
+  }, [view, user, navigate])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [stats, setStats] = useState<DashboardData>({})
@@ -201,6 +214,10 @@ export default function Dashboard() {
       } else if (currentView === 'system') {
         const sys = await getAdminSystemInfo(currentToken)
         setAdminSystemInfo(sys)
+        setRows([])
+      } else if (currentView === 'themes') {
+        const users = await getUsers(currentToken)
+        setAdminUsers(users)
         setRows([])
       } else {
         const path = currentView === 'attendance'
@@ -525,6 +542,7 @@ export default function Dashboard() {
         items: [
           { id: 'users' as View, label: 'Users & Roles', icon: ShieldCheck as unknown as typeof LayoutDashboard },
           { id: 'system' as View, label: 'System Diagnostics', icon: Server as unknown as typeof LayoutDashboard },
+          { id: 'themes' as View, label: 'Theme Settings', icon: Palette as unknown as typeof LayoutDashboard },
         ],
       })
     }
@@ -1156,7 +1174,7 @@ export default function Dashboard() {
                   <span className="dash-kicker font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#517154]">
                     {view === 'overview'
                       ? 'SNOWFLEX PEOPLE PLATFORM'
-                      : view === 'users' || view === 'system'
+                      : view === 'users' || view === 'system' || view === 'themes'
                         ? 'ADMINISTRATION PORTAL'
                         : 'PEOPLE OPERATIONS'}
                   </span>
@@ -1181,7 +1199,9 @@ export default function Dashboard() {
                       ? 'Governance console: configure user access levels, manage role promotions, and audit registered accounts.'
                       : view === 'system'
                         ? 'Telemetry console: monitor live Snowflake cloud connections, runtime status, and test SMTP email delivery.'
-                        : `Centralized registry and workflows for ${activeItem?.label?.toLowerCase() || 'this module'}.`}
+                        : view === 'themes'
+                          ? 'Theme Customization: configure custom workspace color palettes per user or in bulk by role.'
+                          : `Centralized registry and workflows for ${activeItem?.label?.toLowerCase() || 'this module'}.`}
                 </p>
               </div>
 
@@ -1448,6 +1468,25 @@ export default function Dashboard() {
               }}
               loading={loading}
             />
+          ) : view === 'themes' ? (
+            user && (role === 'ADMIN' || role === 'SUPER_ADMIN') ? (
+              <ThemeCustomizationView
+                currentUser={user}
+                token={token || ''}
+                users={adminUsers}
+                onRefreshUsers={() => {
+                  if (token && user) void loadData(token, user, 'themes')
+                }}
+              />
+            ) : (
+              <div className="p-8 text-center bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Access Restricted</h3>
+                <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
+                  Only Administrators and Super Administrators have permission to customize workspace themes.
+                </p>
+              </div>
+            )
           ) : view === 'leaves' ? (
             <LeaveManagementView
               userRole={role || 'EMPLOYEE'}

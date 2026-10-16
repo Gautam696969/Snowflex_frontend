@@ -40,6 +40,40 @@
             document.documentElement.classList.remove('dark')
           }
           document.documentElement.style.colorScheme = theme
+
+          var customThemeRaw = localStorage.getItem('snowflex.custom_theme')
+          if (customThemeRaw) {
+            try {
+              var ct = JSON.parse(customThemeRaw)
+              var hexRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+              if (ct) {
+                // Only use ct.mode if user hasn't made an explicit manual toggle in snowflex.theme
+                if (!savedTheme && (ct.mode === 'light' || ct.mode === 'dark')) {
+                  theme = ct.mode
+                  document.documentElement.dataset.theme = theme
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark')
+                  } else {
+                    document.documentElement.classList.remove('dark')
+                  }
+                  document.documentElement.style.colorScheme = theme
+                }
+                var s = document.documentElement.style
+                s.setProperty('--has-custom-theme', '1')
+                if (ct.sidebarColor && hexRegex.test(ct.sidebarColor)) s.setProperty('--custom-sidebar', ct.sidebarColor)
+                if (ct.accentColor && hexRegex.test(ct.accentColor)) s.setProperty('--custom-accent', ct.accentColor)
+
+                if (theme === 'dark') {
+                  if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-dark-bg', ct.bgColor)
+                  if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-dark-card', ct.cardColor)
+                } else {
+                  if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-bg', ct.bgColor)
+                  if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-card', ct.cardColor)
+                  if (ct.textColor && hexRegex.test(ct.textColor)) s.setProperty('--custom-text', ct.textColor)
+                }
+              }
+            } catch (e) {}
+          }
         } catch (e) {}
       })()
     </script>
