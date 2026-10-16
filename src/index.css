@@ -25,6 +25,122 @@
   --skeleton-card-border: #e2e8df;
 }
 
+/* -------------------------------------------------------------
+   ROLE-BASED CUSTOM THEME TOKENS & SYSTEM OVERRIDES
+   ------------------------------------------------------------- */
+/* Primary Action Button (Light Mode) */
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-primary'] .primary-button,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-primary'] .primary-action {
+  background-color: var(--custom-primary) !important;
+  border-color: var(--custom-primary) !important;
+  color: var(--custom-primary-text, #ffffff) !important;
+}
+
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-primary'] .workbench-mark {
+  background-color: var(--custom-primary) !important;
+  color: var(--custom-primary-text, #ffffff) !important;
+}
+
+/* Primary Action Button (Dark Mode) */
+:root[data-theme='dark'][style*='--custom-dark-primary'] .primary-button,
+:root[data-theme='dark'][style*='--custom-dark-primary'] .primary-action,
+html.dark[style*='--custom-dark-primary'] .primary-button,
+html.dark[style*='--custom-dark-primary'] .primary-action {
+  background-color: var(--custom-dark-primary) !important;
+  border-color: var(--custom-dark-primary) !important;
+  color: var(--custom-dark-primary-text, #1a241d) !important;
+}
+
+:root[data-theme='dark'][style*='--custom-dark-primary'] .workbench-mark,
+html.dark[style*='--custom-dark-primary'] .workbench-mark {
+  background-color: var(--custom-dark-primary) !important;
+  color: var(--custom-dark-primary-text, #1a241d) !important;
+}
+
+/* Accent Highlights (links, selected indicators, checkmarks) */
+:root[style*='--custom-accent'] {
+  --accent: var(--custom-accent);
+}
+
+:root[style*='--custom-accent'] .nav-item.selected::before {
+  background-color: var(--custom-accent) !important;
+}
+
+:root[style*='--custom-accent'] .check-control:checked {
+  accent-color: var(--custom-accent) !important;
+}
+
+/* Sidebar Custom Background (applies in both modes) */
+:root[style*='--custom-sidebar'] .workbench-sidebar {
+  background-color: var(--custom-sidebar) !important;
+}
+
+:root[style*='--custom-sidebar-text'] .workbench-sidebar,
+:root[style*='--custom-sidebar-text'] .workbench-sidebar .nav-item,
+:root[style*='--custom-sidebar-text'] .workbench-sidebar .workbench-brand {
+  color: var(--custom-sidebar-text) !important;
+}
+
+/* LIGHT MODE CUSTOM CANVAS & CARDS (Strictly ONLY active when NOT in dark mode) */
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-bg'] .workbench {
+  background-color: var(--custom-bg) !important;
+}
+
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .workbench-topbar {
+  background-color: var(--custom-card) !important;
+}
+
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .metric-panel,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .panel-section,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .table-panel,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .overview-panel,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .kpi-card,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .dash-hero,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .overview-card,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .saas-table-card,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .quick-launch-card,
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-card'] .employee-kpi-card {
+  background-color: var(--custom-card) !important;
+}
+
+:root:not([data-theme='dark']):not(.dark)[style*='--custom-text'] .workbench {
+  color: var(--custom-text) !important;
+}
+
+/* DARK MODE CUSTOM CANVAS & CARDS (Strictly ONLY active when IN dark mode) */
+:root[data-theme='dark'][style*='--custom-dark-bg'] .workbench,
+html.dark[style*='--custom-dark-bg'] .workbench {
+  background-color: var(--custom-dark-bg) !important;
+}
+
+:root[data-theme='dark'][style*='--custom-dark-card'] .workbench-topbar,
+html.dark[style*='--custom-dark-card'] .workbench-topbar {
+  background-color: var(--custom-dark-card) !important;
+}
+
+:root[data-theme='dark'][style*='--custom-dark-card'] .metric-panel,
+:root[data-theme='dark'][style*='--custom-dark-card'] .panel-section,
+:root[data-theme='dark'][style*='--custom-dark-card'] .table-panel,
+:root[data-theme='dark'][style*='--custom-dark-card'] .overview-panel,
+:root[data-theme='dark'][style*='--custom-dark-card'] .kpi-card,
+:root[data-theme='dark'][style*='--custom-dark-card'] .dash-hero,
+:root[data-theme='dark'][style*='--custom-dark-card'] .overview-card,
+:root[data-theme='dark'][style*='--custom-dark-card'] .saas-table-card,
+:root[data-theme='dark'][style*='--custom-dark-card'] .quick-launch-card,
+:root[data-theme='dark'][style*='--custom-dark-card'] .employee-kpi-card,
+html.dark[style*='--custom-dark-card'] .metric-panel,
+html.dark[style*='--custom-dark-card'] .panel-section,
+html.dark[style*='--custom-dark-card'] .table-panel,
+html.dark[style*='--custom-dark-card'] .overview-panel,
+html.dark[style*='--custom-dark-card'] .kpi-card,
+html.dark[style*='--custom-dark-card'] .dash-hero,
+html.dark[style*='--custom-dark-card'] .overview-card,
+html.dark[style*='--custom-dark-card'] .saas-table-card,
+html.dark[style*='--custom-dark-card'] .quick-launch-card,
+html.dark[style*='--custom-dark-card'] .employee-kpi-card {
+  background-color: var(--custom-dark-card) !important;
+}
+
 * { box-sizing: border-box; }
 body { min-width: 0; min-height: 100vh; margin: 0; }
 button, input { font: inherit; }

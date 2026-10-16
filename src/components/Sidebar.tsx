@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Palette,
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -37,6 +38,7 @@ export type SidebarView =
   | 'tasks'
   | 'users'
   | 'system'
+  | 'themes'
   | 'profile'
 
 export interface SidebarProps {
@@ -145,6 +147,7 @@ export default function Sidebar({
         items: [
           { id: 'users', label: 'Users & Roles', icon: ShieldCheck, path: '/dashboard?view=users' },
           { id: 'system', label: 'System Diagnostics', icon: Server, path: '/dashboard?view=system' },
+          { id: 'themes', label: 'Theme Settings', icon: Palette, path: '/dashboard?view=themes' },
         ],
       })
     }

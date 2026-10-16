@@ -307,6 +307,15 @@ export function ChatProvider({ children, currentUser: propsUser }: { children: R
       if (existing) clearTimeout(existing)
     })
 
+    // Listen to real-time role-based theme events
+    newSocket.on('theme:updated', (theme: unknown) => {
+      window.dispatchEvent(new CustomEvent('snowflex:theme-updated', { detail: theme }))
+    })
+
+    newSocket.on('theme:reset', () => {
+      window.dispatchEvent(new CustomEvent('snowflex:theme-reset'))
+    })
+
     setSocket(newSocket)
 
     // Listen to logout or token change
