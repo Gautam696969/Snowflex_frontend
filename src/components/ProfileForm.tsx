@@ -4,6 +4,7 @@ import {
   Lock, AlertCircle, Loader2, Sparkles
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { Skeleton } from './Skeleton'
 import type { UserProfile, UpdateProfilePayload } from '../lib/profile-api'
 
 interface ProfileFormProps {
@@ -135,12 +136,12 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
   if (loading) {
     return (
       <div className="profile-form-skeleton">
-        <div className="skeleton-bar title-skeleton" />
+        <Skeleton variant="rounded" width="240px" height="24px" className="mb-[20px]" />
         <div className="skeleton-grid">
-          <div className="skeleton-box" />
-          <div className="skeleton-box" />
-          <div className="skeleton-box" />
-          <div className="skeleton-box" />
+          <Skeleton variant="rounded" width="100%" height="48px" />
+          <Skeleton variant="rounded" width="100%" height="48px" />
+          <Skeleton variant="rounded" width="100%" height="48px" />
+          <Skeleton variant="rounded" width="100%" height="48px" />
         </div>
       </div>
     )

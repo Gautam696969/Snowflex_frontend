@@ -230,7 +230,7 @@ export function SkeletonOverview() {
             <Skeleton variant="rounded" width={32} height={32} style={{ borderRadius: '8px' }} />
           </div>
 
-          <div style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="bg-black/[0.02] dark:bg-white/[0.04]" style={{ marginTop: '20px', padding: '16px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <Skeleton variant="rounded" width="90px" height="30px" />
               <Skeleton variant="text" width="130px" height="12px" />

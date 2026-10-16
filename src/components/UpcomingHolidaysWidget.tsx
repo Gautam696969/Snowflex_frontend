@@ -3,6 +3,7 @@ import { Calendar, ChevronRight, Sparkles, Repeat } from 'lucide-react'
 import { fetchUpcomingHolidays } from '../lib/holiday-api'
 import type { Holiday } from '../lib/holiday-api'
 import { useChat } from '../context/ChatContext'
+import { Skeleton } from './Skeleton'
 
 interface UpcomingHolidaysWidgetProps {
   onNavigate: () => void
@@ -86,10 +87,8 @@ export default function UpcomingHolidaysWidget({ onNavigate, limit = 4 }: Upcomi
       </div>
 
       {loading ? (
-        <div className="holiday-widget-loading flex flex-col gap-[8px]">
-          <div className="skeleton-line h-[48px] rounded-[8px] bg-[#eef3eb] dark:bg-[#202d26] animate-pulse" />
-          <div className="skeleton-line h-[48px] rounded-[8px] bg-[#eef3eb] dark:bg-[#202d26] animate-pulse" />
-          <div className="skeleton-line h-[48px] rounded-[8px] bg-[#eef3eb] dark:bg-[#202d26] animate-pulse" />
+        <div className="holiday-widget-loading flex flex-col gap-[8px]" role="status" aria-label="Loading upcoming holidays">
+          <Skeleton count={3} height={48} variant="rounded" />
         </div>
       ) : holidays.length === 0 ? (
         <div className="holiday-widget-empty flex flex-col items-center justify-center p-[32px_16px] text-center gap-[8px]">

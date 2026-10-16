@@ -29,6 +29,17 @@
           if (metaTheme) {
             metaTheme.content = isLanding ? '#0284c7' : '#193c33'
           }
+          var savedTheme = localStorage.getItem('snowflex.theme')
+          var theme = savedTheme === 'light' || savedTheme === 'dark'
+            ? savedTheme
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          document.documentElement.dataset.theme = theme
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark')
+          } else {
+            document.documentElement.classList.remove('dark')
+          }
+          document.documentElement.style.colorScheme = theme
         } catch (e) {}
       })()
     </script>

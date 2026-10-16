@@ -12,6 +12,7 @@ import type {
   Holiday, HolidayType, CreateHolidayPayload, UpdateHolidayPayload
 } from '../lib/holiday-api'
 import { useChat } from '../context/ChatContext'
+import { Skeleton } from './Skeleton'
 
 interface HolidaysViewProps {
   userRole: string
@@ -577,8 +578,8 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="holidays-loading-state">
-          <div className="skeleton-line w-full bg-[#f0f4ee] dark:bg-[#233129] animate-pulse rounded-[12px] h-[300px]" />
+        <div className="holidays-loading-state" role="status" aria-label="Loading holidays calendar">
+          <Skeleton variant="rounded" width="100%" height={300} />
         </div>
       ) : holidays.length === 0 && viewMode === 'list' ? (
         <div className="holidays-empty-card flex flex-col items-center justify-center text-center p-[56px_24px] bg-white dark:bg-[#1c2520] border border-[#e2e8df] dark:border-[#303b34] rounded-[14px]">

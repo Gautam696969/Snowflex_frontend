@@ -403,14 +403,14 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
       {/* Connection & Read-Only Status Banners */}
       {isDisconnected && (
-        <div className="chat-connection-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fef3c7] text-[#92400e] border-b border-[#fde68a]">
+        <div className="chat-connection-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fef3c7] dark:bg-[#422006] text-[#92400e] dark:text-[#fef08a] border-b border-[#fde68a] dark:border-[#713f12]">
           <WifiOff size={14} />
           <span>{connectionStatus === 'reconnecting' ? 'Reconnecting to live chat...' : 'Disconnected from chat server. Reconnecting...'}</span>
         </div>
       )}
 
       {conversation.isReadOnly && (
-        <div className="chat-readonly-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fee2e2] text-[#991b1b] border-b border-[#fecaca]">
+        <div className="chat-readonly-banner flex items-center justify-center gap-[8px] px-[16px] py-[8px] text-[12px] font-medium shrink-0 bg-[#fee2e2] dark:bg-[#451212] text-[#991b1b] dark:text-[#fca5a5] border-b border-[#fecaca] dark:border-[#7f1d1d]">
           <AlertTriangle size={15} />
           <span>This conversation is read-only. Policy restricts messaging between your current roles.</span>
         </div>
@@ -455,7 +455,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
       {showScrollBottom && (
         <button
           type="button"
-          className="chat-scroll-bottom-btn absolute right-[28px] bottom-[84px] grid place-items-center w-[38px] h-[38px] rounded-full bg-[#193c33] hover:bg-[#255448] text-white border border-[#285448] shadow-[0_4px_12px_rgba(25,60,51,0.25)] cursor-pointer transition-transform duration-150 ease-in-out hover:-translate-y-[2px] z-[4]"
+          className="chat-scroll-bottom-btn absolute right-[28px] bottom-[84px] grid place-items-center w-[38px] h-[38px] rounded-full bg-[#193c33] dark:bg-[#27342d] hover:bg-[#255448] dark:hover:bg-[#34443b] text-white dark:text-[#d9ed74] border border-[#285448] dark:border-[#3b4d43] shadow-[0_4px_12px_rgba(25,60,51,0.25)] cursor-pointer transition-transform duration-150 ease-in-out hover:-translate-y-[2px] z-[4]"
           onClick={scrollToBottom}
           aria-label="Scroll to newest messages"
           title="Scroll to newest messages"
@@ -466,7 +466,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
       {/* Send Error Notice */}
       {sendError && (
-        <div className="chat-send-error flex items-center gap-[6px] px-[16px] py-[6px] bg-[#fee2e2] text-[#991b1b] text-[12px]">
+        <div className="chat-send-error flex items-center gap-[6px] px-[16px] py-[6px] bg-[#fee2e2] dark:bg-[#451212] text-[#991b1b] dark:text-[#fca5a5] text-[12px]">
           <AlertTriangle size={14} />
           <span>{sendError}</span>
         </div>
@@ -503,7 +503,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
 
             <button
               type="button"
-              className="chat-send-btn grid place-items-center w-[34px] h-[34px] rounded-[7px] border-none bg-[#193c33] text-white cursor-pointer transition-all duration-140 ease-in-out hover:not-disabled:bg-[#255448] hover:not-disabled:text-[#d9ed74] disabled:bg-[#d8e0d6] disabled:text-[#9aa89d] disabled:cursor-not-allowed"
+              className="chat-send-btn grid place-items-center w-[34px] h-[34px] rounded-[7px] border-none bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] cursor-pointer transition-all duration-140 ease-in-out hover:not-disabled:bg-[#255448] dark:hover:not-disabled:bg-[#e5f79b] hover:not-disabled:text-[#d9ed74] dark:hover:not-disabled:text-[#193c33] disabled:bg-[#d8e0d6] dark:disabled:bg-[#27342d] disabled:text-[#9aa89d] dark:disabled:text-[#5e7166] disabled:cursor-not-allowed"
               onClick={handleSend}
               disabled={!inputValue.trim() || sending || conversation.isReadOnly || isDisconnected}
               aria-label="Send message"
