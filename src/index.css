@@ -101,8 +101,8 @@ a { color: inherit; }
 .password-wrap { position: relative; }
 .password-wrap .field-control { padding-right: 48px; }
 .visibility-button {
-  position: absolute; top: 50%; right: 9px; display: grid; width: 34px; height: 34px;
-  transform: translateY(-50%); place-items: center; border: 0; border-radius: 4px;
+  position: absolute; top: 0; bottom: 0; right: 9px; margin-top: auto; margin-bottom: auto; display: grid; width: 34px; height: 34px;
+  place-items: center; border: 0; border-radius: 4px;
   background: transparent; color: #788176; cursor: pointer;
 }
 .visibility-button:hover { background: #f3f5f1; color: var(--ink); }

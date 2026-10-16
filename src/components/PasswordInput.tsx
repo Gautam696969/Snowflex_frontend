@@ -45,7 +45,7 @@ export default function PasswordInput({
           onBlur={onBlur}
         />
         <button
-          className="visibility-button absolute top-1/2 right-[9px] -translate-y-1/2 grid w-[34px] h-[34px] place-items-center border-0 rounded-[4px] bg-transparent text-[#788176] cursor-pointer hover:bg-[#f3f5f1] hover:text-[var(--ink,#20251f)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2"
+          className="visibility-button absolute inset-y-0 right-[9px] my-auto grid w-[34px] h-[34px] place-items-center border-0 rounded-[4px] bg-transparent text-[#788176] dark:text-[#a4b2a8] cursor-pointer hover:bg-[#f3f5f1] dark:hover:bg-[#2b3730] hover:text-[var(--ink,#20251f)] dark:hover:text-[#edf2ec] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(237,107,79,0.35)] focus-visible:outline-offset-2"
           type="button"
           aria-label={visible ? 'Hide password' : 'Show password'}
           aria-pressed={visible}
