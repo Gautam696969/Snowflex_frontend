@@ -36,6 +36,9 @@ import { SkeletonOverview, SkeletonTable, SkeletonCards } from '../components/Sk
 import LiveChatView from '../components/chat/LiveChatView'
 import { useChat } from '../context/ChatContext'
 import ThemeCustomizationView from '../components/ThemeCustomizationView'
+import AttendanceRequestsWidget from '../components/AttendanceRequestsWidget'
+import AttendanceManagementView from '../components/AttendanceManagementView'
+import { useAttendanceRequests } from '../hooks/useAttendanceRequests'
 
 type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'holidays' | 'tasks' | 'users' | 'system' | 'themes' | 'profile'
 type Row = Record<string, unknown>
@@ -119,13 +122,16 @@ export default function Dashboard() {
   const [leaveActionCount, setLeaveActionCount] = useState(0)
   const { markByTypeAsRead, clear: clearNotifications } = useNotifications()
   const { totalUnreadCount: chatUnreadCount } = useChat()
+  const attendanceReq = useAttendanceRequests({ currentUser: user })
 
-  // Mark leave and holiday notifications as read when opening their respective views
+  // Mark leave, holiday, and attendance notifications as read when opening their respective views
   useEffect(() => {
     if (view === 'leaves') {
       void markByTypeAsRead('LEAVE')
     } else if (view === 'holidays') {
       void markByTypeAsRead('HOLIDAY')
+    } else if (view === 'attendance') {
+      void markByTypeAsRead('ATTENDANCE')
     }
   }, [view, markByTypeAsRead])
 
@@ -189,7 +195,7 @@ export default function Dashboard() {
         } catch {
           // Non-critical if recent leaves fail to load
         }
-      } else if (currentView === 'assistant' || currentView === 'chat' || currentView === 'holidays') {
+      } else if (currentView === 'assistant' || currentView === 'chat' || currentView === 'holidays' || currentView === 'attendance' || currentView === 'leaves') {
         setRows([])
       } else if (currentView === 'employees') {
         const [empData, deptData, statsData] = await Promise.all([
@@ -220,12 +226,7 @@ export default function Dashboard() {
         setAdminUsers(users)
         setRows([])
       } else {
-        const path = currentView === 'attendance'
-          ? currentUser.role === 'EMPLOYEE' ? '/attendance/me' : '/attendance'
-          : currentView === 'leaves'
-            ? ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role) ? '/leaves' : '/leaves/me'
-            : '/tasks'
-        const result = await apiRequest<Row[]>(path, currentToken)
+        const result = await apiRequest<Row[]>('/tasks', currentToken)
         setRows(result)
       }
     } catch (requestError) {
@@ -608,6 +609,7 @@ export default function Dashboard() {
 
   const actionItems = [
     { label: 'Leave requests to review', count: stats.pendingLeaves ?? stats.pendingLeaveRequests ?? 0, view: 'leaves' as View, icon: CalendarDays },
+    { label: isEmployee ? 'My pending attendance requests' : 'Attendance requests to review', count: attendanceReq.pendingCount, view: 'attendance' as View, icon: Clock3 },
     { label: 'Active tasks in progress', count: isEmployee ? stats.assignedTasks ?? 0 : stats.pendingTasks ?? 0, view: 'tasks' as View, icon: CheckSquare2 },
   ]
 
@@ -848,6 +850,7 @@ export default function Dashboard() {
         setMobileSidebarOpen={setMobileSidebarOpen}
         leaveUnreadCount={leaveActionCount}
         chatUnreadCount={chatUnreadCount}
+        attendanceUnreadCount={attendanceReq.pendingCount}
         onLogout={confirmLogout}
       />
 
@@ -1487,6 +1490,12 @@ export default function Dashboard() {
                 </p>
               </div>
             )
+          ) : view === 'attendance' ? (
+            <AttendanceManagementView
+              currentUser={user}
+              onCheckIn={() => perform('/attendance/check-in', 'POST')}
+              onCheckOut={() => perform('/attendance/check-out', 'POST')}
+            />
           ) : view === 'leaves' ? (
             <LeaveManagementView
               userRole={role || 'EMPLOYEE'}
@@ -1661,6 +1670,23 @@ export default function Dashboard() {
                 </article>
               </div>
 
+              {/* Approvers Dashboard Widget: Pending Attendance Requests */}
+              {canManage && (
+                <div className="overview-attendance-requests-wrap mb-[24px]">
+                  <AttendanceRequestsWidget
+                    pendingRequests={attendanceReq.pendingRequests}
+                    handledRequests={attendanceReq.handledRequests}
+                    loading={attendanceReq.loading}
+                    submittingIds={attendanceReq.submittingIds}
+                    newArrivalIds={attendanceReq.newArrivalIds}
+                    onApprove={attendanceReq.handleApprove}
+                    onReject={attendanceReq.handleReject}
+                    onRefresh={attendanceReq.refresh}
+                    onNavigate={() => setView('attendance')}
+                  />
+                </div>
+              )}
+
               {/* Upcoming Holidays Dashboard Section */}
               <div className="overview-holidays-banner-wrap mb-[24px]">
                 <UpcomingHolidaysWidget onNavigate={() => setView('holidays')} />
@@ -1796,13 +1822,6 @@ export default function Dashboard() {
                             <option value="TODO">To Do</option>
                             <option value="IN_PROGRESS">In Progress</option>
                             <option value="COMPLETED">Completed</option>
-                          </>
-                        )}
-                        {view === 'attendance' && (
-                          <>
-                            <option value="PRESENT">Present</option>
-                            <option value="HALF_DAY">Half Day</option>
-                            <option value="LATE">Late</option>
                           </>
                         )}
                       </select>
