@@ -51,6 +51,7 @@ export interface SidebarProps {
   setMobileSidebarOpen: (open: boolean | ((o: boolean) => boolean)) => void
   leaveUnreadCount?: number
   chatUnreadCount?: number
+  attendanceUnreadCount?: number
   onLogout?: () => void
   className?: string
 }
@@ -65,6 +66,7 @@ export default function Sidebar({
   setMobileSidebarOpen,
   leaveUnreadCount = 0,
   chatUnreadCount = 0,
+  attendanceUnreadCount = 0,
   onLogout,
   className = '',
 }: SidebarProps) {
@@ -108,7 +110,7 @@ export default function Sidebar({
         icon: LucideIcon
         path: string
         badgeCount?: number
-        badgeType?: 'leave' | 'chat'
+        badgeType?: 'leave' | 'chat' | 'attendance'
       }[]
     }[] = [
       {
@@ -134,7 +136,7 @@ export default function Sidebar({
     groups.push({
       label: 'TIME & WORK',
       items: [
-        { id: 'attendance', label: 'Attendance', icon: Clock3, path: '/dashboard?view=attendance' },
+        { id: 'attendance', label: 'Attendance', icon: Clock3, path: '/dashboard?view=attendance', badgeCount: attendanceUnreadCount, badgeType: 'attendance' },
         { id: 'leaves', label: 'Leave requests', icon: CalendarDays, path: '/dashboard?view=leaves', badgeCount: leaveUnreadCount, badgeType: 'leave' },
         { id: 'holidays', label: 'Holidays', icon: Calendar, path: '/dashboard?view=holidays' },
         { id: 'tasks', label: 'Tasks', icon: CheckSquare2, path: '/dashboard?view=tasks' },
@@ -160,7 +162,7 @@ export default function Sidebar({
     })
 
     return groups
-  }, [canManage, isAdmin, leaveUnreadCount, chatUnreadCount])
+  }, [canManage, isAdmin, leaveUnreadCount, chatUnreadCount, attendanceUnreadCount])
 
   const handleNavClick = (id: SidebarView, path: string) => {
     if (onSelectView) {
@@ -320,7 +322,7 @@ export default function Sidebar({
                       {sidebarCollapsed && badgeCount && badgeCount > 0 ? (
                         <span
                           className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[#193c33] ${
-                            badgeType === 'leave' ? 'bg-[#f43f5e]' : 'bg-[#d9ed74]'
+                            badgeType === 'leave' || badgeType === 'attendance' ? 'bg-[#f43f5e]' : 'bg-[#d9ed74]'
                           }`}
                         />
                       ) : null}
@@ -334,7 +336,7 @@ export default function Sidebar({
                         {badgeCount && badgeCount > 0 ? (
                           <UnreadBadge
                             count={badgeCount}
-                            className={badgeType === 'leave' ? 'sidebar-leave-badge ml-auto' : 'sidebar-chat-badge ml-auto'}
+                            className={badgeType === 'leave' || badgeType === 'attendance' ? 'sidebar-leave-badge ml-auto' : 'sidebar-chat-badge ml-auto'}
                           />
                         ) : null}
                       </>
