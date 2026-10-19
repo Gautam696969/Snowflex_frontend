@@ -552,6 +552,7 @@ export default function AttendanceManagementView({
       <RequestAttendanceModal
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
+        currentUser={currentUser}
         onSuccess={() => {
           void refresh()
           void fetchLogs()
