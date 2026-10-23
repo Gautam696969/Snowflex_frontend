@@ -67,7 +67,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Welcome back" description="Sign in to pick up right where you left off.">
+    <AuthLayout title="Login Page" description="Sign in to pick up right where you left off.">
       {deactivatedNotice && (
         <div
           className="deactivated-account-banner"
