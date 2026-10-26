@@ -42,13 +42,16 @@ export default function Login() {
     setHelpMessage('')
     setServerError('')
     setLoading(true)
+    const cleanEmail = email.trim()
+    console.log(`[DEBUG_AUTH] Login initiated for: "${cleanEmail}"`)
     try {
-      const result = await login({ email, password })
+      const result = await login({ email: cleanEmail, password })
       storeToken(result.token, remember)
       toast.success('Welcome back!')
       navigate('/dashboard', { replace: true })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to sign in.'
+      console.warn(`[DEBUG_AUTH] Login failed: "${message}"`)
       setServerError(message)
       toast.error(message)
     } finally {

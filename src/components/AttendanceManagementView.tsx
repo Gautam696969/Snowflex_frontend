@@ -6,7 +6,7 @@ import {
 import UserAvatar from './UserAvatar'
 import RequestAttendanceModal from './RequestAttendanceModal'
 import { useAttendanceRequests } from '../hooks/useAttendanceRequests'
-import { type SafeUser, readToken } from '../lib/auth-api'
+import { type SafeUser, readToken, normalizeRole } from '../lib/auth-api'
 import { apiBase } from '../lib/api-config'
 
 interface AttendanceManagementViewProps {
@@ -66,9 +66,9 @@ export default function AttendanceManagementView({
   onCheckIn,
   onCheckOut,
 }: AttendanceManagementViewProps) {
-  const role = (currentUser?.role || '').trim().toUpperCase().replace(/[\s-]+/g, '_')
+  const role = normalizeRole(currentUser?.role)
   const isApprover = ['ADMIN', 'HR', 'SUPER_ADMIN'].includes(role)
-  const isEmployee = role === 'EMPLOYEE' || role === 'USER'
+  const isEmployee = role === 'EMPLOYEE'
 
   const [activeTab, setActiveTab] = useState<'requests' | 'logs'>('requests')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')

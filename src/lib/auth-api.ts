@@ -64,6 +64,26 @@ async function request<T extends ApiResponse>(path: string, options: RequestInit
   return { ...body, data: normalizeAvatarFields(body.data) } as T
 }
 
+export function normalizeRole(role: string | null | undefined): string {
+  if (!role) return 'EMPLOYEE'
+  const normalized = role.trim().toUpperCase().replace(/[\s-]+/g, '_')
+  if (
+    normalized === 'SUPERADMIN' ||
+    normalized === 'SUPER_ADMIN' ||
+    normalized === 'SUPER_ADMINISTRATOR' ||
+    normalized === 'SUPERADMINISTRATOR'
+  ) {
+    return 'SUPER_ADMIN'
+  }
+  if (normalized === 'ADMINISTRATOR') {
+    return 'ADMIN'
+  }
+  if (normalized === 'USER') {
+    return 'EMPLOYEE'
+  }
+  return normalized
+}
+
 export function register(input: { fullName: string; email: string; password: string }): Promise<ApiResponse> {
   return request('/auth/register', { method: 'POST', body: JSON.stringify(input) })
 }
@@ -77,9 +97,15 @@ export function resetPassword(input: { token: string; password: string }): Promi
 }
 
 export async function login(input: { email: string; password: string }): Promise<{ token: string; user: SafeUser }> {
+  const cleanEmail = (input.email || '').trim().toLowerCase()
+  console.log(`[DEBUG_AUTH] Submitting login for email: "${cleanEmail}"`)
   const response = await request<ApiResponse & { data: { token: string; user: SafeUser } }>('/auth/login', {
-    method: 'POST', body: JSON.stringify(input),
+    method: 'POST', body: JSON.stringify({ email: cleanEmail, password: input.password }),
   })
+  if (response.data?.user) {
+    response.data.user.role = normalizeRole(response.data.user.role)
+    console.log(`[DEBUG_AUTH] Login response received. User: "${response.data.user.email}", Role: "${response.data.user.role}"`)
+  }
   return response.data
 }
 
@@ -87,6 +113,10 @@ export async function getCurrentUser(token: string): Promise<SafeUser> {
   const response = await request<ApiResponse & { data: SafeUser }>('/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   })
+  if (response.data) {
+    response.data.role = normalizeRole(response.data.role)
+    console.log(`[DEBUG_AUTH] getCurrentUser resolved: "${response.data.email}", Role: "${response.data.role}"`)
+  }
   return response.data
 }
 
@@ -129,7 +159,9 @@ export interface DashboardData {
 }
 
 export async function getDashboard(token: string, role: string): Promise<DashboardData> {
-  const endpoint = role === 'ADMIN' || role === 'SUPER_ADMIN' ? 'admin' : role === 'HR' ? 'hr' : role === 'MANAGER' ? 'manager' : 'employee'
+  const norm = normalizeRole(role)
+  const endpoint = norm === 'ADMIN' || norm === 'SUPER_ADMIN' ? 'admin' : norm === 'HR' ? 'hr' : norm === 'MANAGER' ? 'manager' : 'employee'
+  console.log(`[DEBUG_AUTH] getDashboard requesting /dashboard/${endpoint} for role: "${role}" (normalized: "${norm}")`)
   const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/dashboard/${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   })

@@ -13,6 +13,7 @@ import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
   getDepartments, getEmployees, getUsers, logout, readToken,
   getAdminSystemInfo, getEmployeeStats, terminateEmployee, reactivateEmployee,
+  normalizeRole,
   type AdminSystemInfo, type EmployeeStats
 } from '../lib/auth-api'
 import type { DashboardData, SafeUser } from '../lib/auth-api'
@@ -74,7 +75,7 @@ export default function Dashboard() {
   // Route guard: prevent unauthorized users from accessing theme settings
   useEffect(() => {
     if (view === 'themes' && user) {
-      const currentRole = user.role === 'USER' ? 'EMPLOYEE' : user.role
+      const currentRole = normalizeRole(user.role)
       if (currentRole !== 'ADMIN' && currentRole !== 'SUPER_ADMIN') {
         toast.error('You do not have permission to access Theme Settings.')
         setView('overview')
@@ -189,7 +190,8 @@ export default function Dashboard() {
         setRows([])
         // Concurrently fetch recent leaves for overview intelligence feed
         try {
-          const leavesPath = ['ADMIN', 'SUPER_ADMIN'].includes(currentUser.role) ? '/leaves' : '/leaves/me'
+          const normRole = normalizeRole(currentUser.role)
+          const leavesPath = ['ADMIN', 'SUPER_ADMIN'].includes(normRole) ? '/leaves' : '/leaves/me'
           const leavesData = await apiRequest<Row[]>(leavesPath, currentToken)
           setRecentLeaves(leavesData.slice(0, 4))
         } catch {
@@ -206,7 +208,8 @@ export default function Dashboard() {
         setRows(empData)
         setAvailableDepartments(deptData)
         if (statsData) setEmployeeStats(statsData)
-        if (['ADMIN', 'SUPER_ADMIN', 'HR'].includes(currentUser.role)) {
+        const normRole = normalizeRole(currentUser.role)
+        if (['ADMIN', 'SUPER_ADMIN', 'HR'].includes(normRole)) {
           getUsers(currentToken).then(setAvailableUsers).catch(() => {})
         }
       } else if (currentView === 'departments') {
@@ -247,10 +250,16 @@ export default function Dashboard() {
     getCurrentUser(currentToken)
       .then(async (authenticatedUser) => {
         if (!active) return
+        console.log(`[DEBUG_AUTH] Dashboard session established for: "${authenticatedUser.email}", Role: "${authenticatedUser.role}"`)
         setUser(authenticatedUser)
-        await loadData(currentToken, authenticatedUser, view)
+        try {
+          await loadData(currentToken, authenticatedUser, view)
+        } catch (loadErr) {
+          console.error('[DEBUG_AUTH] Error loading dashboard data:', loadErr)
+        }
       })
       .catch((error) => {
+        console.warn('[DEBUG_AUTH] getCurrentUser session validation failed:', error)
         clearToken()
         toast.error(error instanceof Error ? error.message : 'Session expired. Please sign in again.')
         navigate('/login', { replace: true })

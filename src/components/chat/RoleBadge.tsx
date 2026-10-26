@@ -1,4 +1,5 @@
 import { Shield, ShieldCheck, Users, Briefcase, User } from 'lucide-react'
+import { normalizeRole } from '../../lib/auth-api'
 
 interface RoleBadgeProps {
   role: string
@@ -7,8 +8,7 @@ interface RoleBadgeProps {
 }
 
 export default function RoleBadge({ role, className = '', showIcon = true }: RoleBadgeProps) {
-  const normalized = role.trim().toUpperCase().replace(/[\s-]+/g, '_')
-  const canonical = normalized === 'USER' ? 'EMPLOYEE' : normalized
+  const canonical = normalizeRole(role)
 
   let icon = <User size={11} strokeWidth={2} />
   let badgeClass = 'chat-role-employee'

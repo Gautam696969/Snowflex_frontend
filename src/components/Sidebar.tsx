@@ -24,7 +24,7 @@ import {
 import { toast } from 'react-hot-toast'
 import UserAvatar from './UserAvatar'
 import UnreadBadge from './UnreadBadge'
-import { clearToken, logout, readToken, type SafeUser } from '../lib/auth-api'
+import { clearToken, logout, normalizeRole, readToken, type SafeUser } from '../lib/auth-api'
 
 export type SidebarView =
   | 'overview'
@@ -96,7 +96,7 @@ export default function Sidebar({
     }
   }, [mobileSidebarOpen])
 
-  const role = user?.role === 'USER' ? 'EMPLOYEE' : user?.role || 'EMPLOYEE'
+  const role = normalizeRole(user?.role)
   const canManage = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HR'
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
   const roleLabel = role.replace('_', ' ')

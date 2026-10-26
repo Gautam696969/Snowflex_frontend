@@ -13,6 +13,7 @@ import type {
 } from '../lib/holiday-api'
 import { useChat } from '../context/ChatContext'
 import { Skeleton } from './Skeleton'
+import { normalizeRole } from '../lib/auth-api'
 
 interface HolidaysViewProps {
   userRole: string
@@ -66,7 +67,7 @@ export default function HolidaysView({ userRole }: HolidaysViewProps) {
   const currentMonth = new Date().getMonth() + 1 // 1-12
   const todayIso = new Date().toISOString().split('T')[0]
 
-  const normalizedRole = userRole.toUpperCase().replace(/[\s-]+/g, '_')
+  const normalizedRole = normalizeRole(userRole)
   const canManage = normalizedRole === 'SUPER_ADMIN' || normalizedRole === 'ADMIN' || normalizedRole === 'HR'
   const isSuperAdmin = normalizedRole === 'SUPER_ADMIN'
 

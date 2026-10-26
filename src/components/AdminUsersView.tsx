@@ -4,7 +4,7 @@ import {
   Shield, ShieldCheck, Users, Briefcase, User, Search, RefreshCw,
   CheckCircle2, X, ShieldAlert
 } from 'lucide-react'
-import { updateUserRole, type SafeUser } from '../lib/auth-api'
+import { updateUserRole, normalizeRole, type SafeUser } from '../lib/auth-api'
 import UserAvatar from './UserAvatar'
 import { SkeletonKpiGrid, SkeletonTable } from './Skeleton'
 
@@ -34,18 +34,18 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh,
   // Calculations for role metrics
   const counts = useMemo(() => {
     const total = users.length
-    const superAdmins = users.filter((u) => u.role === 'SUPER_ADMIN').length
-    const admins = users.filter((u) => u.role === 'ADMIN').length
-    const hr = users.filter((u) => u.role === 'HR').length
-    const managers = users.filter((u) => u.role === 'MANAGER').length
-    const employees = users.filter((u) => u.role === 'EMPLOYEE' || u.role === 'USER').length
+    const superAdmins = users.filter((u) => normalizeRole(u.role) === 'SUPER_ADMIN').length
+    const admins = users.filter((u) => normalizeRole(u.role) === 'ADMIN').length
+    const hr = users.filter((u) => normalizeRole(u.role) === 'HR').length
+    const managers = users.filter((u) => normalizeRole(u.role) === 'MANAGER').length
+    const employees = users.filter((u) => normalizeRole(u.role) === 'EMPLOYEE').length
     return { total, superAdmins, admins, hr, managers, employees }
   }, [users])
 
   // Filtered users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      const normalizedRole = u.role === 'USER' ? 'EMPLOYEE' : u.role
+      const normalizedRole = normalizeRole(u.role)
       const matchesRole = roleFilter === 'ALL' || normalizedRole === roleFilter
       const q = searchQuery.toLowerCase()
       const matchesSearch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || String(u.id).includes(q)
@@ -54,7 +54,7 @@ export default function AdminUsersView({ users, token, currentUserId, onRefresh,
   }, [users, roleFilter, searchQuery])
 
   function openRoleModal(user: SafeUser) {
-    const current = user.role === 'USER' ? 'EMPLOYEE' : user.role
+    const current = normalizeRole(user.role)
     setEditingUser(user)
     setSelectedRole(current)
   }

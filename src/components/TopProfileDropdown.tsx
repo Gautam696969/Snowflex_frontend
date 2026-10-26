@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { User, Shield, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
-import type { SafeUser } from '../lib/auth-api'
+import { normalizeRole, type SafeUser } from '../lib/auth-api'
 import UserAvatar from './UserAvatar'
 import LogoutButton from './LogoutButton'
 
@@ -17,7 +17,7 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
   const location = useLocation()
 
   const displayName = user?.fullName || 'User'
-  const displayRole = user?.role === 'USER' ? 'EMPLOYEE' : user?.role || 'EMPLOYEE'
+  const displayRole = normalizeRole(user?.role)
   const isProfileActive = location.pathname.startsWith('/profile')
 
   // Close dropdown when clicking outside

@@ -9,7 +9,7 @@ import {
   type AttendanceRequestItem,
   type ApiError,
 } from '../lib/attendance-request-api'
-import { type SafeUser } from '../lib/auth-api'
+import { normalizeRole, type SafeUser } from '../lib/auth-api'
 
 interface UseAttendanceRequestsOptions {
   currentUser?: SafeUser | null
@@ -27,9 +27,9 @@ export function useAttendanceRequests({
   const [submittingIds, setSubmittingIds] = useState<Set<number>>(new Set())
   const [newArrivalIds, setNewArrivalIds] = useState<Set<number>>(new Set())
 
-  const role = (currentUser?.role || '').trim().toUpperCase().replace(/[\s-]+/g, '_')
+  const role = normalizeRole(currentUser?.role)
   const isApprover = ['ADMIN', 'HR', 'SUPER_ADMIN'].includes(role)
-  const isEmployee = role === 'EMPLOYEE' || role === 'USER'
+  const isEmployee = role === 'EMPLOYEE'
 
   // Ref to access current user without re-triggering effects
   const userRef = useRef(currentUser)
@@ -76,7 +76,7 @@ export function useAttendanceRequests({
       if (!newReq) return
 
       // Approvers receive live notification and item at top of pending list
-      if (['ADMIN', 'HR', 'SUPER_ADMIN'].includes((userRef.current?.role || '').trim().toUpperCase().replace(/[\s-]+/g, '_'))) {
+      if (['ADMIN', 'HR', 'SUPER_ADMIN'].includes(normalizeRole(userRef.current?.role))) {
         setRequests((prev) => {
           if (prev.some((r) => r.id === newReq.id)) return prev
           return [newReq, ...prev]
@@ -147,8 +147,8 @@ export function useAttendanceRequests({
 
       // If current user is employee whose request was decided, show live feedback toast
       const user = userRef.current
-      const currentRole = (user?.role || '').trim().toUpperCase().replace(/[\s-]+/g, '_')
-      if (user && (currentRole === 'EMPLOYEE' || currentRole === 'USER')) {
+      const currentRole = normalizeRole(user?.role)
+      if (user && currentRole === 'EMPLOYEE') {
         const isMine = requests.some((r) => r.id === requestId && (r.userId === user.id || r.employeeId === user.id))
         if (isMine) {
           if (status === 'APPROVED') {

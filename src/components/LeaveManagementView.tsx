@@ -16,6 +16,7 @@ import ApplyLeaveModal from './ApplyLeaveModal'
 import LeaveTypesAdminModal from './LeaveTypesAdminModal'
 import UserAvatar from './UserAvatar'
 import { SkeletonTable } from './Skeleton'
+import { normalizeRole } from '../lib/auth-api'
 
 interface LeaveManagementViewProps {
   userRole?: string
@@ -38,7 +39,7 @@ export default function LeaveManagementView({
   userRole = 'EMPLOYEE',
   currentUserId = 0,
 }: LeaveManagementViewProps) {
-  const normalizedRole = userRole.trim().toUpperCase().replace(/[\s-]+/g, '_')
+  const normalizedRole = normalizeRole(userRole)
   const isSuperAdmin = normalizedRole === 'SUPER_ADMIN'
   const isAdminOrHr = normalizedRole === 'ADMIN' || isSuperAdmin || normalizedRole === 'HR'
   const canReview = normalizedRole === 'ADMIN' || isSuperAdmin
