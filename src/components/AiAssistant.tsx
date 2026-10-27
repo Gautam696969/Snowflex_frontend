@@ -19,7 +19,7 @@ const MAX_MESSAGE_LENGTH = 4000
 
 const starterPrompts = [
   'Who is on leave today?',
-  'Summarise my open tasks',
+  'Summarise all assigned tasks',
   'Draft a leave request for next Friday',
   'How many employees are active right now?',
 ]
