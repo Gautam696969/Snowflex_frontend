@@ -1175,7 +1175,7 @@ export default function Dashboard() {
                 <span className="chat-hero-compact-sub text-[13px] font-medium text-[#4b6354] dark:text-[#a5b8ab] whitespace-nowrap overflow-hidden text-ellipsis min-w-0 leading-[1.2]">
                   {view === 'chat'
                     ? 'Live messaging with your team'
-                    : 'Natural language all the queries for people operations'}
+                    : 'Ask any operations questions'}
                 </span>
               </div>
 
