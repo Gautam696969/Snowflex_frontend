@@ -11,9 +11,10 @@ interface ProfileFormProps {
   profile: UserProfile
   onSave: (payload: UpdateProfilePayload) => Promise<UserProfile>
   loading?: boolean
+  hasPendingAvatar?: boolean
 }
 
-export default function ProfileForm({ profile, onSave, loading = false }: ProfileFormProps) {
+export default function ProfileForm({ profile, onSave, loading = false, hasPendingAvatar = false }: ProfileFormProps) {
   const isAdmin = profile.role === 'ADMIN'
 
   // Form state
@@ -48,6 +49,7 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
   // Compute dirty check
   const isDirty = useMemo(() => {
     return (
+      Boolean(hasPendingAvatar) ||
       fullName !== (profile.fullName || '') ||
       phone !== (profile.phone || '') ||
       designation !== (profile.designation || '') ||
@@ -57,7 +59,7 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
       (isAdmin && email !== (profile.email || '')) ||
       (isAdmin && employeeCode !== (profile.employeeCode || ''))
     )
-  }, [fullName, phone, designation, address, dateOfBirth, gender, email, employeeCode, profile, isAdmin])
+  }, [hasPendingAvatar, fullName, phone, designation, address, dateOfBirth, gender, email, employeeCode, profile, isAdmin])
 
   const validate = (): boolean => {
     const nextErrors: Record<string, string> = {}
@@ -374,7 +376,11 @@ export default function ProfileForm({ profile, onSave, loading = false }: Profil
       {isDirty && (
         <div className="profile-dirty-banner mt-[24px] px-[18px] py-[12px] bg-[#f4faeb] dark:bg-[#1a251b] border border-[#cce89a] dark:border-[#344d2d] rounded-[10px] text-[#2e4a1a] dark:text-[#d9ed74] text-[13px] flex items-center gap-[10px] animate-[fadeIn_0.2s_ease]">
           <Sparkles size={16} />
-          <span>You have unsaved edits. Click <strong>Save Changes</strong> to synchronize your record to Snowflake.</span>
+          <span>
+            {hasPendingAvatar
+              ? 'You have unsaved edits (including a new profile picture). Click Save Changes to synchronize your record to Snowflake.'
+              : 'You have unsaved edits. Click Save Changes to synchronize your record to Snowflake.'}
+          </span>
         </div>
       )}
     </form>

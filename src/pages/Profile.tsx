@@ -13,6 +13,7 @@ import NotificationBell from '../components/NotificationBell'
 import Sidebar from '../components/Sidebar'
 import { useNotifications } from '../hooks/useNotifications'
 import { clearToken, getCurrentUser, readToken, type SafeUser } from '../lib/auth-api'
+import { AVATAR_UPDATED_EVENT } from '../lib/avatar'
 import { useProfile } from '../hooks/useProfile'
 import { Skeleton } from '../components/Skeleton'
 
@@ -23,6 +24,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<'info' | 'security'>('info')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const { leaveUnreadCount } = useNotifications()
 
   // Load profile via useProfile hook
@@ -57,17 +59,19 @@ export default function Profile() {
     return () => { active = false }
   }, [navigate])
 
-  const handleSaveProfile = async (payload: Parameters<typeof updateProfileData>[0]) => {
-    const updated = await updateProfileData(payload)
-    // Update local currentUser so sidebar name and avatar immediately reflect changes
-    setCurrentUser((prev) =>
-      prev ? { ...prev, fullName: updated.fullName, email: updated.email } : null
-    )
-    return updated
-  }
+  useEffect(() => {
+    const handleAvatarUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ avatarUrl: string | null }>
+      const newAvatarUrl = customEvent.detail?.avatarUrl ?? null
+      setCurrentUser((prev) => prev ? { ...prev, avatarUrl: newAvatarUrl } : null)
+    }
+    window.addEventListener(AVATAR_UPDATED_EVENT, handleAvatarUpdate)
+    return () => window.removeEventListener(AVATAR_UPDATED_EVENT, handleAvatarUpdate)
+  }, [])
 
   const handleUploadAvatar = async (file: File) => {
     const avatarUrl = await uploadPhoto(file)
+    setPendingAvatarFile(null)
     setCurrentUser((prev) =>
       prev ? { ...prev, avatarUrl } : null
     )
@@ -76,9 +80,28 @@ export default function Profile() {
 
   const handleRemoveAvatar = async () => {
     await removePhoto()
+    setPendingAvatarFile(null)
     setCurrentUser((prev) =>
       prev ? { ...prev, avatarUrl: null } : null
     )
+  }
+
+  const handleSaveProfile = async (payload: Parameters<typeof updateProfileData>[0]) => {
+    let latestAvatarUrl = profile?.avatarUrl ?? currentUser?.avatarUrl ?? null
+    if (pendingAvatarFile) {
+      try {
+        latestAvatarUrl = await handleUploadAvatar(pendingAvatarFile)
+        setPendingAvatarFile(null)
+      } catch (avatarErr) {
+        console.error('Failed to upload pending avatar:', avatarErr)
+      }
+    }
+    const updated = await updateProfileData(payload)
+    // Update local currentUser so sidebar name and avatar immediately reflect changes
+    setCurrentUser((prev) =>
+      prev ? { ...prev, fullName: updated.fullName, email: updated.email, avatarUrl: updated.avatarUrl ?? latestAvatarUrl } : null
+    )
+    return updated
   }
 
   return (
@@ -187,6 +210,7 @@ export default function Profile() {
                   profile={profile}
                   onUploadAvatar={handleUploadAvatar}
                   onRemoveAvatar={handleRemoveAvatar}
+                  onPendingAvatarChange={setPendingAvatarFile}
                 />
               ) : null}
             </div>
@@ -225,6 +249,7 @@ export default function Profile() {
                   profile={profile}
                   onSave={handleSaveProfile}
                   loading={profileLoading}
+                  hasPendingAvatar={Boolean(pendingAvatarFile)}
                 />
               )}
 

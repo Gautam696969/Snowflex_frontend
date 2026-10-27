@@ -1,4 +1,4 @@
-import { useState, useRef, type ChangeEvent } from 'react'
+import { useState, useRef, useEffect, type ChangeEvent } from 'react'
 import { Camera, Trash2, Check, X, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import UserAvatar from './UserAvatar'
@@ -8,6 +8,7 @@ interface AvatarUploaderProps {
   avatarUrl: string | null
   onUpload: (file: File) => Promise<string>
   onRemove: () => Promise<void>
+  onPendingFileChange?: (file: File | null) => void
 }
 
 export default function AvatarUploader({
@@ -15,12 +16,19 @@ export default function AvatarUploader({
   avatarUrl,
   onUpload,
   onRemove,
+  onPendingFileChange,
 }: AvatarUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [savedAvatarUrl, setSavedAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [removing, setRemoving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Clear local saved URL when avatarUrl prop changes from parent
+  useEffect(() => {
+    setSavedAvatarUrl(null)
+  }, [avatarUrl])
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -44,6 +52,7 @@ export default function AvatarUploader({
     setSelectedFile(file)
     const localUrl = URL.createObjectURL(file)
     setPreviewUrl(localUrl)
+    onPendingFileChange?.(file)
   }
 
   const cancelPreview = () => {
@@ -53,13 +62,15 @@ export default function AvatarUploader({
     setPreviewUrl(null)
     setSelectedFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
+    onPendingFileChange?.(null)
   }
 
   const handleSaveAvatar = async () => {
     if (!selectedFile) return
     setUploading(true)
     try {
-      await onUpload(selectedFile)
+      const newUrl = await onUpload(selectedFile)
+      setSavedAvatarUrl(newUrl)
       toast.success('Profile photo updated successfully!')
       cancelPreview()
     } catch (err) {
@@ -75,6 +86,7 @@ export default function AvatarUploader({
     setRemoving(true)
     try {
       await onRemove()
+      setSavedAvatarUrl(null)
       toast.success('Profile photo removed.')
       cancelPreview()
     } catch (err) {
@@ -85,7 +97,7 @@ export default function AvatarUploader({
     }
   }
 
-  const currentDisplayUrl = previewUrl || avatarUrl
+  const currentDisplayUrl = previewUrl || savedAvatarUrl || avatarUrl
 
   return (
     <div className="avatar-uploader-container flex flex-col items-center gap-[12px]">

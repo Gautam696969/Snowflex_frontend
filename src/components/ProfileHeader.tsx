@@ -7,12 +7,14 @@ interface ProfileHeaderProps {
   profile: UserProfile
   onUploadAvatar: (file: File) => Promise<string>
   onRemoveAvatar: () => Promise<void>
+  onPendingAvatarChange?: (file: File | null) => void
 }
 
 export default function ProfileHeader({
   profile,
   onUploadAvatar,
   onRemoveAvatar,
+  onPendingAvatarChange,
 }: ProfileHeaderProps) {
   const role = profile.role || 'EMPLOYEE'
   const RoleIcon =
@@ -41,6 +43,7 @@ export default function ProfileHeader({
             avatarUrl={profile.avatarUrl}
             onUpload={onUploadAvatar}
             onRemove={onRemoveAvatar}
+            onPendingFileChange={onPendingAvatarChange}
           />
         </div>
 
