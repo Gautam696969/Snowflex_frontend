@@ -411,18 +411,48 @@ export async function confirmWidgetLeave(
   return apiRequest<ConfirmLeaveResponse>('/ai-employee/widget/confirm', token, 'POST', { confirmationToken })
 }
 
-export async function transcribeVoiceAudio(token: string, blob: Blob, language?: string, mimeType?: string): Promise<string> {
+export async function transcribeVoiceAudio(
+  token: string,
+  blob: Blob,
+  language?: string,
+  mimeType?: string,
+  durationMs?: number,
+  customFilename?: string,
+): Promise<string> {
   const form = new FormData()
-  const extension = (mimeType || blob.type).includes('mp4') ? 'mp4' : 'webm'
-  form.append('audio', blob, `audio.${extension}`)
+  const rawType = mimeType || blob.type || 'audio/wav'
+  const cleanType = rawType.split(';')[0].trim().toLowerCase()
+  const isWav = cleanType.includes('wav') || blob.type.includes('wav')
+  const extension = isWav
+    ? 'wav'
+    : cleanType.includes('mp4') || cleanType.includes('m4a')
+      ? 'mp4'
+      : cleanType.includes('ogg')
+        ? 'ogg'
+        : cleanType.includes('mpeg') || cleanType.includes('mp3')
+          ? 'mp3'
+          : 'webm'
+
+  const filename = customFilename || (isWav ? 'speech.wav' : `audio.${extension}`)
+
+  form.append('audio', blob, filename)
   if (language) form.append('language', language.split('-')[0])
+
+  // Requirement 1 & 3: Log blob size, type and duration on client; upload as speech.wav
+  console.log(
+    `[transcribeVoiceAudio] Uploading audio - size: ${blob.size} bytes, type: ${blob.type || cleanType}, duration: ${durationMs ?? 'unknown'}ms, filename: ${filename}`,
+  )
+
   const response = await fetch(`${apiBase}/voice/transcribe`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   })
-  const body = (await response.json().catch(() => null)) as ApiResponse & { text?: string; data?: { text?: string } } | null
+  const body = (await response.json().catch(() => null)) as
+    | (ApiResponse & { text?: string; data?: { text?: string } })
+    | null
   if (!response.ok || !body?.success) {
+    console.error('[transcribeVoiceAudio] Server error:', body)
     throw new Error(body?.message || 'Transcription failed.')
   }
   return body.text ?? body.data?.text ?? ''

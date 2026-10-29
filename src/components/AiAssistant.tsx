@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, Check, Mic, MicOff, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, X } from 'lucide-react'
+import { Bot, Check, Mic, MicOff, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, X, AudioWaveform } from 'lucide-react'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import Waveform from './Waveform'
+import VoiceModeOverlay from './VoiceModeOverlay'
 import {
   createAiConversation,
   deleteAiConversation,
@@ -53,6 +54,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
   const [loadingConversations, setLoadingConversations] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
+  const [voiceModeOpen, setVoiceModeOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<AiConversation | null>(null)
   const [historyVisible, setHistoryVisible] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -443,16 +445,28 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                     <SendHorizontal size={18} />
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className={`ai-action-btn is-mic shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center transition-all duration-140 disabled:opacity-40 disabled:cursor-not-allowed ${recording ? 'is-recording text-[#b83d32] bg-[#fff5f3] animate-[mic-pulse_900ms_ease-in-out_infinite]' : 'bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33]'}`}
-                    onClick={voice.handlers.start}
-                    disabled={!supported || sending || voice.state === 'processing'}
-                    title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
-                    aria-label={recording ? 'Stop recording' : 'Voice input'}
-                  >
-                    <Mic size={18} />
-                  </button>
+                  <div className="flex items-center gap-[4px] shrink-0">
+                    <button
+                      type="button"
+                      className={`ai-action-btn is-mic shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center transition-all duration-140 disabled:opacity-40 disabled:cursor-not-allowed ${recording ? 'is-recording text-[#b83d32] bg-[#fff5f3] animate-[mic-pulse_900ms_ease-in-out_infinite]' : 'bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33]'}`}
+                      onClick={voice.handlers.start}
+                      disabled={!supported || sending || voice.state === 'processing'}
+                      title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
+                      aria-label={recording ? 'Stop recording' : 'Voice input'}
+                    >
+                      <Mic size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      className="ai-action-btn is-voice-mode shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
+                      onClick={() => setVoiceModeOpen(true)}
+                      disabled={sending || voice.state === 'processing'}
+                      title="Start voice mode"
+                      aria-label="Start voice mode"
+                    >
+                      <AudioWaveform size={18} />
+                    </button>
+                  </div>
                 )}
                 {draft.length > 3000 && <small className="ai-counter shrink-0 self-end mr-[8px] my-0 ml-0 text-[#9aa49c] dark:text-[#9caaa0] text-[9px] font-['DM_Mono',monospace]">{draft.length}/{MAX_MESSAGE_LENGTH}</small>}
               </>
@@ -475,6 +489,23 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
             </div>
           </div>
         </div>
+      )}
+
+      {voiceModeOpen && (
+        <VoiceModeOverlay
+          token={token}
+          activeConversationId={activeId}
+          onClose={() => setVoiceModeOpen(false)}
+          onMessageExchange={(userMsg, assistantMsg, conversation) => {
+            setConversations((current) => {
+              const remaining = current.filter((c) => c.id !== conversation.id)
+              return [conversation, ...remaining]
+            })
+            setActiveId(conversation.id)
+            setMessages((current) => [...current, userMsg, assistantMsg])
+          }}
+          onError={onError}
+        />
       )}
     </section>
   )

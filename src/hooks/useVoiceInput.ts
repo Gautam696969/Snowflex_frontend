@@ -167,7 +167,7 @@ export function useVoiceInput(
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
         chunksRef.current = []
         console.info('[voice] recorder.onstop', { durationMs: duration, size: blob.size, type: blob.type })
-        if (duration < 500 || blob.size < 1000) {
+        if (duration < 600 || blob.size < 2048) {
           setError('No speech detected. Please try speaking for longer.')
           cleanup()
           setStateSafe('idle')
@@ -186,8 +186,8 @@ export function useVoiceInput(
           setStateSafe('idle')
         }
       }
-      recorder.start()
-      console.info('[voice] MediaRecorder.start() called', { mimeType: recorder.mimeType })
+      recorder.start(250)
+      console.info('[voice] MediaRecorder.start(250) called', { mimeType: recorder.mimeType })
 
       const Ctor = getSpeechRecognitionCtor()
       if (Ctor) {
