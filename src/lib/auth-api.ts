@@ -158,10 +158,15 @@ export interface DashboardData {
   completedTasks?: number
 }
 
-export async function getDashboard(token: string, role: string): Promise<DashboardData> {
+export async function getDashboard(token: string, role: string, employeeId?: number | string | null): Promise<DashboardData> {
   const norm = normalizeRole(role)
-  const endpoint = norm === 'ADMIN' || norm === 'SUPER_ADMIN' ? 'admin' : norm === 'HR' ? 'hr' : norm === 'MANAGER' ? 'manager' : 'employee'
-  console.log(`[DEBUG_AUTH] getDashboard requesting /dashboard/${endpoint} for role: "${role}" (normalized: "${norm}")`)
+  let endpoint: string
+  if (employeeId !== undefined && employeeId !== null && String(employeeId).trim() !== '') {
+    endpoint = `employee/${encodeURIComponent(String(employeeId).trim())}`
+  } else {
+    endpoint = norm === 'ADMIN' || norm === 'SUPER_ADMIN' ? 'admin' : norm === 'HR' ? 'hr' : norm === 'MANAGER' ? 'manager' : 'employee'
+  }
+  console.log(`[DEBUG_AUTH] getDashboard requesting /dashboard/${endpoint} for role: "${role}" (normalized: "${norm}"), employeeId: ${employeeId ?? 'none'}`)
   const response = await request<ApiResponse & { data: Record<string, unknown> }>(`/dashboard/${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
   })

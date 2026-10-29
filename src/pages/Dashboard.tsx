@@ -181,8 +181,9 @@ export default function Dashboard() {
     setError('')
     try {
       if (currentView === 'overview') {
+        const targetEmployeeId = searchParams.get('employeeId') || searchParams.get('id')
         const [dashboardStats, statsData] = await Promise.all([
-          getDashboard(currentToken, currentUser.role),
+          getDashboard(currentToken, currentUser.role, targetEmployeeId),
           getEmployeeStats(currentToken).catch(() => null),
         ])
         setStats(dashboardStats)
@@ -274,7 +275,7 @@ export default function Dashboard() {
       setStatusFilter('ALL')
       setCurrentPage(1)
     }
-  }, [view])
+  }, [view, searchParams])
 
   useEffect(() => {
     if (!token || !user) return
@@ -577,7 +578,9 @@ export default function Dashboard() {
   const activeItem = viewItems.find((item) => item.id === view)
   const isManagementView = view === 'employees' || view === 'departments'
   const showActions = canManage && isManagementView
-  const isEmployee = role === 'EMPLOYEE'
+  const targetEmployeeId = searchParams.get('employeeId') || searchParams.get('id')
+  const isViewingSpecificEmployee = Boolean(targetEmployeeId)
+  const isEmployee = role === 'EMPLOYEE' || isViewingSpecificEmployee
   const isAdminWorkspace = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   // Workforce Pulse Calculations
@@ -601,7 +604,7 @@ export default function Dashboard() {
   const absentPercent = attendanceTotal > 0 ? (attendanceAbsent / attendanceTotal) * 100 : 0
 
   // Metrics configurations
-  const metrics = role === 'EMPLOYEE'
+  const metrics = (role === 'EMPLOYEE' || isViewingSpecificEmployee)
     ? [
       { label: 'Attendance', value: stats.attendanceThisMonth ?? 0, detail: 'Recorded days this month', icon: CalendarDays, iconClass: 'kpi-icon-emerald', trend: 'Monthly Log', trendClass: 'kpi-trend-emerald' },
       { label: 'Open Tasks', value: stats.assignedTasks ?? 0, detail: 'Active deliverables', icon: CheckSquare2, iconClass: 'kpi-icon-amber', trend: 'Assigned', trendClass: 'kpi-trend-amber' },
@@ -1116,8 +1119,24 @@ export default function Dashboard() {
                 ))}
               </dl>
             </div>
-            <div className="modal-footer flex justify-end gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
-              <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={() => setViewingRow(null)}>Close</button>
+            <div className="modal-footer flex items-center justify-between gap-[8px] p-[16px_20px] border-t border-[#edf0eb]">
+              {view === 'employees' && Boolean(viewingRow?.id) && (
+                <button
+                  className="inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[14px] border border-[#cbdbca] rounded-[4px] text-[#193c33] bg-[#f7faf5] text-[12px] font-semibold cursor-pointer hover:bg-[#edf3e7] transition-colors"
+                  type="button"
+                  onClick={() => {
+                    const empId = viewingRow?.id
+                    setViewingRow(null)
+                    navigate(`/dashboard?view=overview&employeeId=${encodeURIComponent(String(empId))}`)
+                  }}
+                >
+                  <LayoutDashboard size={15} />
+                  View Employee Dashboard
+                </button>
+              )}
+              <div className="flex gap-[8px] ml-auto">
+                <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={() => setViewingRow(null)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1527,6 +1546,32 @@ export default function Dashboard() {
               <SkeletonOverview />
             ) : (
               <>
+                {/* Specific Employee Dashboard Banner */}
+                {isViewingSpecificEmployee && (
+                  <div className="mb-[20px] p-[16px_20px] rounded-[10px] bg-[#f0f7f3] border border-[#cbe3d4] flex items-center justify-between gap-[16px] max-[640px]:flex-col max-[640px]:items-start">
+                    <div className="flex items-center gap-[12px]">
+                      <div className="w-[36px] h-[36px] rounded-full bg-[#193c33] text-white flex items-center justify-center font-bold text-[14px] shrink-0">
+                        {targetEmployeeId}
+                      </div>
+                      <div>
+                        <h4 className="m-0 text-[#193c33] font-bold text-[15px]">
+                          Viewing Employee Dashboard (ID: {targetEmployeeId})
+                        </h4>
+                        <p className="m-0 text-[#546a5d] text-[12px]">
+                          Displaying individual attendance, quota balances, and deliverables for this employee.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/dashboard?view=overview')}
+                      className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-white border border-[#cbdbca] rounded-[6px] text-[#193c33] font-semibold text-[12px] hover:bg-[#edf3e7] transition-colors cursor-pointer shrink-0"
+                    >
+                      Return to Organization Overview
+                    </button>
+                  </div>
+                )}
+
                 {/* 4 Premium Metric Cards */}
                 <div className="kpi-metric-grid grid grid-cols-4 max-[1100px]:grid-cols-2 max-[640px]:grid-cols-1 gap-[16px] mb-[24px]">
                   {metrics.map(({ label, value, detail, icon: Icon, iconClass, trend, trendClass }) => (
