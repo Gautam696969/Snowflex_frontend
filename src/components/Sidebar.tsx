@@ -207,20 +207,20 @@ export default function Sidebar({
   return (
     <>
       <aside
-        className={`workbench-sidebar sticky z-[5] top-0 flex h-screen min-w-0 flex-col p-0 text-[#e9eee7] bg-[#193c33] border-r border-white/[0.06] overflow-hidden transition-all duration-180 ease-in-out select-none ${
+        className={`workbench-sidebar sticky z-[5] top-0 flex h-screen min-w-0 flex-col p-0 text-[var(--sidebar-text)] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] overflow-hidden transition-[background-color,color,border-color,width] duration-200 ease-in-out select-none ${
           sidebarCollapsed ? 'w-[76px]' : 'w-[256px]'
         } ${className}`.trim()}
         aria-label="Workspace sidebar"
       >
         {/* Brand Header: Fixed 60px row, vertically centered with 1px border */}
         <div
-          className={`sidebar-brand-row flex items-center justify-between h-[60px] min-h-[60px] px-4 border-b border-white/[0.06] shrink-0 ${
+          className={`sidebar-brand-row flex items-center justify-between h-[60px] min-h-[60px] px-4 border-b border-[var(--sidebar-border)] shrink-0 transition-[border-color] duration-200 ${
             sidebarCollapsed ? '!px-2 !justify-center' : ''
           }`}
         >
           {sidebarCollapsed ? (
             <button
-              className="sidebar-toggle grid w-8 h-8 shrink-0 place-items-center border border-white/10 rounded-[8px] text-white/70 bg-transparent cursor-pointer hover:text-white hover:bg-white/[0.06] hover:border-white/20 transition-all duration-150"
+              className="sidebar-toggle grid w-8 h-8 shrink-0 place-items-center border border-[var(--sidebar-border)] rounded-[8px] text-[var(--sidebar-muted)] bg-transparent cursor-pointer hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:border-[var(--sidebar-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sidebar-active-text)] focus-visible:outline-offset-2 transition-[background-color,color,border-color] duration-200"
               type="button"
               title="Expand sidebar"
               aria-label="Expand sidebar"
@@ -240,17 +240,17 @@ export default function Sidebar({
                   <Snowflake size={18} strokeWidth={2.2} />
                 </span>
                 <span className="sidebar-brand-copy min-w-0 flex flex-col leading-none">
-                  <span className="text-[14.5px] font-extrabold tracking-tight text-white font-sans">
+                  <span className="text-[14.5px] font-extrabold tracking-tight text-[var(--sidebar-text)] font-sans">
                     snowflex
                   </span>
-                  <span className="brand-caption block mt-1 text-white/45 font-mono text-[8px] tracking-[0.08em] uppercase">
+                  <span className="brand-caption block mt-1 text-[var(--sidebar-muted)] font-mono text-[8px] tracking-[0.08em] uppercase">
                     PEOPLE OPERATIONS
                   </span>
                 </span>
               </Link>
 
               <button
-                className="sidebar-toggle grid w-8 h-8 shrink-0 place-items-center border border-white/10 rounded-[8px] text-white/70 bg-transparent cursor-pointer hover:text-white hover:bg-white/[0.06] hover:border-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2 transition-all duration-150"
+                className="sidebar-toggle grid w-8 h-8 shrink-0 place-items-center border border-[var(--sidebar-border)] rounded-[8px] text-[var(--sidebar-muted)] bg-transparent cursor-pointer hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:border-[var(--sidebar-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sidebar-active-text)] focus-visible:outline-offset-2 transition-[background-color,color,border-color] duration-200"
                 type="button"
                 title={mobileSidebarOpen ? 'Close navigation' : 'Collapse sidebar'}
                 aria-label={mobileSidebarOpen ? 'Close navigation' : 'Collapse sidebar'}
@@ -275,7 +275,7 @@ export default function Sidebar({
 
         {/* Scrollable Navigation Area */}
         <nav
-          className={`workbench-nav flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-[1px] py-2 [scrollbar-width:none] hover:[scrollbar-width:thin] hover:[scrollbar-color:rgba(255,255,255,0.15)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full ${
+          className={`workbench-nav flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col gap-[1px] py-2 [scrollbar-width:none] hover:[scrollbar-width:thin] hover:[scrollbar-color:var(--sidebar-border)_transparent] [&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-[var(--sidebar-border)] [&::-webkit-scrollbar-thumb]:rounded-full ${
             sidebarCollapsed ? 'px-2' : 'px-3'
           }`}
           aria-label="Workspace navigation"
@@ -284,7 +284,7 @@ export default function Sidebar({
             <div className="nav-group flex flex-col gap-[1px]" key={groupLabel}>
               {!sidebarCollapsed && (
                 <div
-                  className={`workspace-label px-3 font-mono text-[11px] font-medium tracking-[0.08em] uppercase text-white/45 select-none ${
+                  className={`workspace-label px-3 font-mono text-[11px] font-medium tracking-[0.08em] uppercase text-[var(--sidebar-muted)] select-none transition-[color] duration-200 ${
                     groupIndex === 0 ? 'pt-2.5 pb-1.5' : 'pt-4 pb-1.5'
                   }`}
                 >
@@ -298,12 +298,12 @@ export default function Sidebar({
                 return (
                   <button
                     key={id}
-                    className={`nav-item group relative flex w-full h-[40px] min-h-[40px] items-center rounded-[10px] text-left text-[13px] font-medium cursor-pointer transition-all duration-150 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ed74] focus-visible:outline-offset-2 ${
+                    className={`nav-item group relative flex w-full h-[40px] min-h-[40px] items-center rounded-[10px] text-left text-[13px] font-medium cursor-pointer transition-[background-color,color,border-color] duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--sidebar-active-text)] focus-visible:outline-offset-2 ${
                       sidebarCollapsed ? 'justify-center px-0' : 'px-3 gap-3'
                     } ${
                       isSelected
-                        ? 'selected text-[#d9ed74] bg-[#d9ed74]/[0.12] before:absolute before:left-0 before:top-[8px] before:bottom-[8px] before:w-[3px] before:rounded-r-[3px] before:bg-[#d9ed74] before:content-[\'\']'
-                        : 'text-white/70 hover:text-white hover:bg-white/[0.05]'
+                        ? 'selected text-[var(--sidebar-active-text)] bg-[var(--sidebar-active-bg)] before:absolute before:left-0 before:top-[8px] before:bottom-[8px] before:w-[3px] before:rounded-r-[3px] before:bg-[var(--sidebar-active-text)] before:content-[\'\']'
+                        : 'text-[var(--sidebar-text)]/75 hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]'
                     }`}
                     title={sidebarCollapsed ? label : undefined}
                     aria-label={label}
@@ -314,15 +314,15 @@ export default function Sidebar({
                       <Icon
                         size={18}
                         strokeWidth={1.75}
-                        className={`shrink-0 transition-colors ${
-                          isSelected ? 'text-[#d9ed74]' : 'text-white/60 group-hover:text-white'
+                        className={`shrink-0 transition-colors duration-200 ${
+                          isSelected ? 'text-[var(--sidebar-active-text)]' : 'text-[var(--sidebar-icon)] group-hover:text-[var(--sidebar-text)]'
                         }`}
                       />
                       {/* Compact dot badge in collapsed mode */}
                       {sidebarCollapsed && badgeCount && badgeCount > 0 ? (
                         <span
-                          className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[#193c33] ${
-                            badgeType === 'leave' || badgeType === 'attendance' ? 'bg-[#f43f5e]' : 'bg-[#d9ed74]'
+                          className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ring-2 ring-[var(--sidebar-bg)] ${
+                            badgeType === 'leave' || badgeType === 'attendance' ? 'bg-[#f43f5e]' : 'bg-[#10b981] dark:bg-[#d9ed74]'
                           }`}
                         />
                       ) : null}
@@ -350,18 +350,18 @@ export default function Sidebar({
 
         {/* Bottom Status & Profile Area - Fixed at bottom */}
         <div
-          className={`sidebar-bottom shrink-0 flex flex-col gap-3 p-3 mt-auto border-t border-white/[0.06] ${
+          className={`sidebar-bottom shrink-0 flex flex-col gap-3 p-3 mt-auto border-t border-[var(--sidebar-border)] transition-[border-color] duration-200 ${
             sidebarCollapsed ? '!p-2 !gap-2' : ''
           }`}
         >
           {/* Status Pill */}
           {!sidebarCollapsed ? (
             <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/70 text-[12px] w-fit select-none"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--sidebar-hover)] border border-[var(--sidebar-border)] text-[var(--sidebar-muted)] text-[12px] w-fit select-none transition-[background-color,border-color,color] duration-200"
               title="Snowflake Connected Workspace • Live synchronization active"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0 shadow-[0_0_6px_#10b981]" />
-              <span className="font-medium text-[12px] tracking-tight text-white/80">Snowflake DB v2.4</span>
+              <span className="font-medium text-[12px] tracking-tight text-[var(--sidebar-text)]">Snowflake DB v2.4</span>
             </div>
           ) : (
             <div
@@ -374,8 +374,8 @@ export default function Sidebar({
 
           {/* Profile Card */}
           <div
-            className={`profile-card group flex items-center h-[56px] rounded-[12px] p-3 gap-3 bg-white/[0.04] border border-white/[0.06] text-white text-left cursor-pointer hover:bg-white/[0.07] hover:border-white/10 transition-all duration-150 ${
-              currentView === 'profile' ? 'bg-white/[0.08] border-white/15' : ''
+            className={`profile-card group flex items-center h-[56px] rounded-[12px] p-3 gap-3 bg-[var(--sidebar-hover)] border border-[var(--sidebar-border)] text-[var(--sidebar-text)] text-left cursor-pointer hover:bg-[var(--sidebar-hover)] hover:border-[var(--sidebar-border)] transition-[background-color,color,border-color] duration-200 ${
+              currentView === 'profile' ? 'bg-[var(--sidebar-active-bg)] border-[var(--sidebar-border)]' : ''
             } ${sidebarCollapsed ? '!p-2 !justify-center !h-[48px]' : ''}`}
             onClick={() => handleNavClick('profile', '/profile')}
             title="My Profile & Security"
@@ -384,22 +384,22 @@ export default function Sidebar({
               name={user?.fullName || 'User'}
               avatarUrl={user?.avatarUrl}
               size={36}
-              className="profile-avatar shrink-0 rounded-full ring-1 ring-white/10"
+              className="profile-avatar shrink-0 rounded-full ring-1 ring-[var(--sidebar-border)] transition-[box-shadow] duration-200"
             />
             {!sidebarCollapsed && (
               <>
                 <div className="min-w-0 flex-1 flex flex-col justify-center leading-tight">
-                  <span className="text-[14px] font-semibold text-white truncate">
+                  <span className="text-[14px] font-semibold text-[var(--sidebar-text)] truncate">
                     {user?.fullName || 'User'}
                   </span>
-                  <span className="text-[11px] text-white/50 font-mono uppercase tracking-wider truncate mt-0.5">
+                  <span className="text-[11px] text-[var(--sidebar-muted)] font-mono uppercase tracking-wider truncate mt-0.5">
                     {roleLabel}
                   </span>
                 </div>
 
                 <button
                   type="button"
-                  className="sidebar-logout-icon-btn grid w-7 h-7 place-items-center rounded-[8px] text-white/50 hover:text-[#f87171] hover:bg-white/[0.08] transition-all duration-150 cursor-pointer ml-auto shrink-0"
+                  className="sidebar-logout-icon-btn grid w-7 h-7 place-items-center rounded-[8px] text-[var(--sidebar-muted)] hover:text-[#ef4444] hover:bg-[var(--sidebar-hover)] transition-[background-color,color] duration-200 cursor-pointer ml-auto shrink-0"
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowLogoutConfirm(true)

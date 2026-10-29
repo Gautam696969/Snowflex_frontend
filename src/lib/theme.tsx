@@ -149,8 +149,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
 
     const handleThemeUpdated = (e: Event) => {
-      const customEvent = e as CustomEvent<UserTheme>
+      const customEvent = e as CustomEvent<UserTheme & { updatedBy?: number }>
       const newTheme = customEvent.detail
+
+      // Check if custom palette colors changed (not just dark/light mode)
+      const colorsChanged = Boolean(
+        (newTheme?.bgColor ?? null) !== (customTheme?.bgColor ?? null) ||
+        (newTheme?.primaryColor ?? null) !== (customTheme?.primaryColor ?? null) ||
+        (newTheme?.accentColor ?? null) !== (customTheme?.accentColor ?? null) ||
+        (newTheme?.sidebarColor ?? null) !== (customTheme?.sidebarColor ?? null) ||
+        (newTheme?.cardColor ?? null) !== (customTheme?.cardColor ?? null) ||
+        (newTheme?.textColor ?? null) !== (customTheme?.textColor ?? null)
+      )
+
       setCustomTheme(newTheme)
 
       if (newTheme?.mode === 'light' || newTheme?.mode === 'dark') {
@@ -160,7 +171,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       } else {
         applyThemeCssVariables(newTheme, theme)
       }
-      toast.success('Your workspace theme was updated by an administrator!', { id: 'theme-updated-notif' })
+
+      // Check if the update was performed by the user themselves
+      let isSelfAction = false
+      try {
+        const token = readToken()
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          if (payload?.id && newTheme?.updatedBy && payload.id === newTheme.updatedBy) {
+            isSelfAction = true
+          }
+        }
+      } catch {}
+
+      // Do NOT show notification toaster when switching between dark mode and light mode
+      // Only notify if custom theme colors were updated by an administrator
+      if (colorsChanged && !isSelfAction && newTheme?.updatedBy) {
+        toast.success('Your workspace theme was updated by an administrator!', { id: 'theme-updated-notif' })
+      }
     }
 
     const handleThemeReset = () => {

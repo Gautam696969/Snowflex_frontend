@@ -28,6 +28,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat" element={<Navigate to="/dashboard?view=chat" replace />} />
+          <Route path="/assistant" element={<Navigate to="/dashboard?view=assistant" replace />} />
+          <Route path="/ai-employee" element={<Navigate to="/dashboard?view=assistant" replace />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

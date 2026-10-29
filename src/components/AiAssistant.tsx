@@ -113,7 +113,14 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
     let cancelled = false
     setLoadingMessages(true)
     listAiMessages(token, activeId)
-      .then((result) => { if (!cancelled) setMessages(result) })
+      .then((result) => {
+        if (!cancelled) {
+          setMessages(result)
+          requestAnimationFrame(() => {
+            if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+          })
+        }
+      })
       .catch((error) => {
         if (cancelled) return
         onError(error instanceof Error ? error.message : 'Unable to load this conversation.')
@@ -124,7 +131,11 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
 
   useEffect(() => {
     const node = scrollRef.current
-    if (node) node.scrollTop = node.scrollHeight
+    if (node) {
+      requestAnimationFrame(() => {
+        node.scrollTop = node.scrollHeight
+      })
+    }
   }, [messages, sending])
 
   const startNewConversation = async () => {
@@ -213,8 +224,8 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
   }, [conversations, query])
 
   return (
-    <section className="ai-panel relative md:relative grid w-full h-[calc(100dvh-120px)] sm:h-[min(820px,calc(100dvh-150px))] min-h-[560px] sm:min-h-[620px] overflow-hidden grid-cols-1 min-[901px]:grid-cols-[216px_minmax(0,1fr)] min-[1101px]:grid-cols-[262px_minmax(0,1fr)] border border-[#e2e8df] dark:border-[#354239] rounded-[6px] bg-white dark:bg-[#1b241f] shadow-[0_2px_7px_rgba(31,54,39,0.025)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
-      <aside className={`ai-history flex min-w-0 min-h-0 p-[15px_12px] flex-col gap-[12px] border-r border-[#e9ede7] dark:border-[#354239] bg-[#fafbf8] dark:bg-[#171f1a] max-[900px]:absolute max-[900px]:z-[3] max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:w-[min(280px,82vw)] max-[900px]:shadow-[0_10px_24px_rgba(31,54,39,0.14)] max-[900px]:transition-transform max-[900px]:duration-220 ${historyVisible ? 'is-open max-[900px]:translate-x-0' : 'max-[900px]:-translate-x-[105%]'}`} aria-label="AI conversation history">
+    <section className="ai-panel relative md:relative flex-1 min-h-0 w-full h-full overflow-hidden grid grid-cols-1 min-[901px]:grid-cols-[216px_minmax(0,1fr)] min-[1101px]:grid-cols-[262px_minmax(0,1fr)] border border-[#e2e8df] dark:border-[#354239] rounded-[6px] bg-white dark:bg-[#1b241f] shadow-[0_2px_7px_rgba(31,54,39,0.025)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
+      <aside className={`ai-history flex min-w-0 min-h-0 p-[15px_12px] flex-col gap-[12px] border-r border-[#e9ede7] dark:border-[#354239] bg-[#fafbf8] dark:bg-[#171f1a] max-[900px]:absolute max-[900px]:z-[30] max-[900px]:inset-y-0 max-[900px]:left-0 max-[900px]:w-[min(280px,82vw)] max-[900px]:shadow-[0_10px_24px_rgba(31,54,39,0.14)] max-[900px]:transition-transform max-[900px]:duration-220 ${historyVisible ? 'is-open max-[900px]:translate-x-0' : 'max-[900px]:-translate-x-[105%]'}`} aria-label="AI conversation history">
         <div className="ai-history-head flex items-center justify-between gap-[8px]">
           <span className="section-kicker text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#517154] dark:text-[#7f9f82]">HISTORY</span>
           <button className="secondary-action inline-flex items-center gap-[6px] min-h-[30px] px-[10px] py-0 rounded-[5px] border border-[#dce5d9] dark:border-[#354239] bg-white dark:bg-[#1f2b23] text-[#44594c] dark:text-[#c4d0c6] text-[10px] font-semibold hover:bg-[#f1f6ed] dark:hover:bg-[#27382d] cursor-pointer transition-colors" type="button" onClick={() => void startNewConversation()}>
@@ -265,24 +276,24 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
         )}
       </aside>
 
-      <div className="ai-thread grid min-w-0 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-        <header className="ai-thread-head flex min-w-0 min-h-[54px] sm:min-h-[62px] items-center max-[900px]:items-start max-[900px]:flex-wrap justify-between gap-[14px] p-[11px_13px] sm:p-[12px_18px] border-b border-[#e9ede7] dark:border-[#354239] bg-white dark:bg-[#1a231e]">
-          <div className="ai-identity flex min-w-0 items-center gap-[11px] max-[900px]:flex-[1_1_220px]">
-            <span className="ai-avatar grid shrink-0 place-items-center text-[#193c33] dark:text-[#1a241d] bg-[#d9ed74] w-[32px] h-[32px] rounded-[6px_6px_6px_2px]"><Sparkles size={15} /></span>
-            <div className="grid min-w-0 gap-[2px]">
+      <div className="ai-thread flex flex-col min-w-0 min-h-0 h-full w-full overflow-hidden">
+        <header className="ai-thread-head flex min-w-0 min-h-[48px] sm:min-h-[62px] items-center flex-wrap justify-between gap-[8px] sm:gap-[14px] p-[8px_10px] sm:p-[12px_18px] border-b border-[#e9ede7] dark:border-[#354239] bg-white dark:bg-[#1a231e] shrink-0">
+          <div className="ai-identity flex min-w-0 items-center gap-[9px] sm:gap-[11px] flex-[1_1_180px]">
+            <span className="ai-avatar grid shrink-0 place-items-center text-[#193c33] dark:text-[#1a241d] bg-[#d9ed74] w-[30px] h-[30px] sm:w-[32px] sm:h-[32px] rounded-[6px_6px_6px_2px]"><Sparkles size={15} /></span>
+            <div className="grid min-w-0 gap-[1px] sm:gap-[2px]">
               <strong className="text-[#243a33] dark:text-[#e8efe9] font-bold text-[13px] font-['Manrope',sans-serif]">Snowflex AI Employee</strong>
               <small className="overflow-hidden text-[#8a978e] dark:text-[#9caaa0] text-[10px] text-ellipsis whitespace-nowrap">{activeConversation ? activeConversation.title : 'New conversation'}</small>
             </div>
           </div>
-          <div className="ai-thread-actions flex min-w-0 flex-[0_1_auto] gap-[7px] flex-wrap justify-end max-[900px]:w-full max-[900px]:flex-[1_1_100%] max-[900px]:justify-start">
-            <div className="ai-search relative flex items-center max-[900px]:min-w-0 max-[900px]:flex-[1_1_180px]">
+          <div className="ai-thread-actions flex min-w-0 flex-[1_1_auto] gap-[6px] sm:gap-[7px] flex-wrap items-center justify-end max-[900px]:w-full max-[900px]:flex-[1_1_100%] max-[900px]:justify-start">
+            <div className="ai-search relative flex items-center min-w-0 flex-[1_1_160px] max-[480px]:flex-[1_1_100%] max-[480px]:w-full">
               <Search size={14} className="ai-search-icon absolute left-[8px] text-[#9aa49c] pointer-events-none" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={searchRecording ? 'Listening…' : 'Search conversations…'}
                 aria-label="Search conversations"
-                className="w-[clamp(150px,22vw,280px)] focus:w-[clamp(180px,26vw,340px)] max-[900px]:w-full! min-h-[32px] pl-[30px] pr-[56px] py-0 border border-[#dfe5dc] dark:border-[#435148] rounded-[5px] text-[#293f34] dark:text-[#e8efe9] placeholder-[#a6b0a8] dark:placeholder-[#829187] bg-white dark:bg-[#141b17] text-[11px] outline-none focus:border-[#8aa357] focus:ring-3 focus:ring-[#8aa357]/16 transition-all duration-180"
+                className="w-full sm:w-[clamp(150px,22vw,280px)] sm:focus:w-[clamp(180px,26vw,340px)] min-h-[32px] pl-[30px] pr-[56px] py-0 border border-[#dfe5dc] dark:border-[#435148] rounded-[5px] text-[#293f34] dark:text-[#e8efe9] placeholder-[#a6b0a8] dark:placeholder-[#829187] bg-white dark:bg-[#141b17] text-[11px] outline-none focus:border-[#8aa357] focus:ring-3 focus:ring-[#8aa357]/16 transition-all duration-180"
               />
               {search && <button type="button" className="ai-search-clear absolute right-[30px] w-[20px] h-[20px] border-0 rounded-[4px] bg-transparent text-[#9aa49c] dark:text-[#a4b2a8] cursor-pointer grid place-items-center hover:text-[#b83d32] hover:bg-[#fff1ee] dark:hover:bg-[#3d2420] transition-colors" aria-label="Clear search" onClick={() => setSearch('')}><X size={13} /></button>}
               <button
@@ -296,16 +307,18 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                 <Mic size={13} />
               </button>
             </div>
-            <button className="secondary-action ai-history-toggle hidden max-[900px]:inline-flex items-center gap-[6px] min-h-[32px] px-[11px] py-0 rounded-[5px] border border-[#dce5d9] dark:border-[#354239] bg-white dark:bg-[#1f2b23] text-[#44594c] dark:text-[#c4d0c6] text-[10px] font-semibold hover:bg-[#f1f6ed] dark:hover:bg-[#27382d] cursor-pointer transition-colors" type="button" onClick={() => setHistoryVisible((open) => !open)}>
-              <MessagesSquare size={15} />History
-            </button>
-            <button className="secondary-action inline-flex items-center gap-[6px] min-h-[32px] px-[11px] py-0 rounded-[5px] border border-[#dce5d9] dark:border-[#354239] bg-white dark:bg-[#1f2b23] text-[#44594c] dark:text-[#c4d0c6] text-[10px] font-semibold hover:bg-[#f1f6ed] dark:hover:bg-[#27382d] cursor-pointer transition-colors" type="button" onClick={() => void startNewConversation()}>
-              <MessageSquarePlus size={15} />New chat
-            </button>
+            <div className="ai-thread-actions-btns flex items-center gap-[6px] max-[480px]:ml-auto shrink-0">
+              <button className="secondary-action ai-history-toggle hidden max-[900px]:inline-flex items-center justify-center gap-[6px] min-h-[32px] px-[9px] sm:px-[11px] py-0 rounded-[5px] border border-[#dce5d9] dark:border-[#354239] bg-white dark:bg-[#1f2b23] text-[#44594c] dark:text-[#c4d0c6] text-[10px] font-semibold hover:bg-[#f1f6ed] dark:hover:bg-[#27382d] cursor-pointer transition-colors" type="button" onClick={() => setHistoryVisible((open) => !open)} title="History" aria-label="History">
+                <MessagesSquare size={15} className="shrink-0" /><span className="ai-btn-label max-[480px]:hidden">History</span>
+              </button>
+              <button className="secondary-action inline-flex items-center justify-center gap-[6px] min-h-[32px] px-[9px] sm:px-[11px] py-0 rounded-[5px] border border-[#dce5d9] dark:border-[#354239] bg-white dark:bg-[#1f2b23] text-[#44594c] dark:text-[#c4d0c6] text-[10px] font-semibold hover:bg-[#f1f6ed] dark:hover:bg-[#27382d] cursor-pointer transition-colors" type="button" onClick={() => void startNewConversation()} title="New chat" aria-label="New chat">
+                <MessageSquarePlus size={15} className="shrink-0" /><span className="ai-btn-label max-[480px]:hidden">New chat</span>
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="ai-messages flex min-h-0 overflow-y-auto p-[16px_13px] sm:p-[20px_18px] flex-col gap-[13px] sm:gap-[16px] scroll-smooth" ref={scrollRef} role="log" aria-live="polite" aria-busy={sending}>
+        <div className="ai-messages flex flex-col flex-1 min-h-0 overflow-y-auto p-[14px_12px] sm:p-[20px_18px] gap-[12px] sm:gap-[16px] scroll-smooth" ref={scrollRef} role="log" aria-live="polite" aria-busy={sending}>
           {showEmptyState && (
             <div className="ai-welcome grid max-w-[560px] m-auto justify-items-center gap-[9px] text-center animate-[slide-up_220ms_ease_both]">
               <span className="ai-welcome-mark grid w-[46px] h-[46px] shrink-0 place-items-center rounded-[10px_10px_10px_3px] text-[#193c33] bg-[#d9ed74]"><Bot size={22} /></span>
@@ -320,17 +333,17 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
           )}
 
           {messages.map((message) => (
-            <article key={message.id} className={`ai-bubble flex max-w-[94%] sm:max-w-[88%] gap-[10px] ${message.role === 'user' ? 'user ml-auto flex-row-reverse' : 'assistant'}`}>
+            <article key={message.id} className={`ai-bubble flex max-w-[88%] gap-[8px] sm:gap-[10px] ${message.role === 'user' ? 'user ml-auto flex-row-reverse' : 'assistant'}`}>
               {message.role === 'user'
-                ? <UserAvatar name={userName} avatarUrl={avatarUrl} size={27} className="ai-bubble-avatar rounded-[5px]" />
+                ? <UserAvatar name={userName} avatarUrl={avatarUrl} size={27} className="ai-bubble-avatar rounded-[5px] shrink-0" />
                 : <span className="ai-bubble-avatar grid w-[27px] h-[27px] shrink-0 place-items-center rounded-[5px] text-[#193c33] dark:text-[#1a241d] bg-[#d9ed74]"><Sparkles size={14} /></span>}
               <div className={`ai-bubble-body grid min-w-0 gap-[6px] ${message.role === 'user' ? 'justify-items-end' : ''}`}>
-                <div className={`ai-bubble-content p-[11px_13px] text-[12px] leading-[1.62] [overflow-wrap:anywhere] ${message.role === 'user' ? 'border border-[#193c33] dark:border-[#385446] rounded-[6px_6px_2px_6px] text-[#f2f6f1] dark:text-[#f0f5ef] bg-[#193c33] dark:bg-[#294538]' : 'border border-[#e6ece2] dark:border-[#39463d] rounded-[6px_6px_6px_2px] text-[#374c40] dark:text-[#d4ded5] bg-[#fbfcf9] dark:bg-[#222c26]'}`}>{renderMarkdown(message.content)}</div>
-                <small className="ai-bubble-meta text-[#9aa49c] dark:text-[#9caaa0] text-[9px] font-['DM_Mono',monospace]">
-                  {message.role === 'assistant' ? 'Snowflex AI Employee' : 'You'}
-                  {message.createdAt ? ` · ${formatClock(message.createdAt)}` : ''}
-                  {message.model ? ` · ${message.model}` : ''}
-                  {message.role === 'user' && message.status === 'error' && ' · Failed'}
+                <div className={`ai-bubble-content p-[10px_12px] sm:p-[11px_13px] text-[12px] sm:text-[13px] leading-[1.62] [overflow-wrap:anywhere] break-words ${message.role === 'user' ? 'border border-[#193c33] dark:border-[#385446] rounded-[6px_6px_2px_6px] text-[#f2f6f1] dark:text-[#f0f5ef] bg-[#193c33] dark:bg-[#294538]' : 'border border-[#e6ece2] dark:border-[#39463d] rounded-[6px_6px_6px_2px] text-[#374c40] dark:text-[#d4ded5] bg-[#fbfcf9] dark:bg-[#222c26]'}`}>{renderMarkdown(message.content)}</div>
+                <small className={`ai-bubble-meta text-[#9aa49c] dark:text-[#9caaa0] text-[9px] font-['DM_Mono',monospace] flex flex-wrap items-center gap-x-1.5 gap-y-0.5 leading-normal max-w-full ${message.role === 'user' ? 'justify-end' : ''}`}>
+                  <span>{message.role === 'assistant' ? 'Snowflex AI Employee' : 'You'}</span>
+                  {message.createdAt && <span>· {formatClock(message.createdAt)}</span>}
+                  {message.model && <span className="break-all">· {message.model}</span>}
+                  {message.role === 'user' && message.status === 'error' && <span className="text-[#b83d32]">· Failed</span>}
                 </small>
                 {message.role === 'user' && message.status === 'error' && (
                   <button type="button" className="ai-retry mt-[8px] border-0 bg-transparent text-[#b83d32] font-semibold text-[10px] font-['DM_Mono',monospace] uppercase tracking-[0.04em] cursor-pointer hover:underline" onClick={() => void submit(message.content)}>Retry</button>
@@ -342,7 +355,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
           {loadingMessages && <SkeletonMessageBubbles count={2} />}
 
           {sending && (
-            <article className="ai-bubble assistant flex max-w-[94%] sm:max-w-[88%] gap-[10px]">
+            <article className="ai-bubble assistant flex max-w-[88%] gap-[8px] sm:gap-[10px]">
               <span className="ai-bubble-avatar grid w-[27px] h-[27px] shrink-0 place-items-center rounded-[5px] text-[#193c33] dark:text-[#1a241d] bg-[#d9ed74]"><Sparkles size={14} /></span>
               <div className="ai-bubble-body grid min-w-0 gap-[6px]">
                 <span className="ai-typing inline-flex items-center gap-[4px] p-[13px_15px] border border-[#e6ece2] dark:border-[#39463d] rounded-[6px_6px_6px_2px] bg-[#fbfcf9] dark:bg-[#222c26]"><i className="w-[5px] h-[5px] rounded-full bg-[#8aa357] animate-[typing_1.1s_ease-in-out_infinite]" /><i className="w-[5px] h-[5px] rounded-full bg-[#8aa357] animate-[typing_1.1s_ease-in-out_infinite] [animation-delay:140ms]" /><i className="w-[5px] h-[5px] rounded-full bg-[#8aa357] animate-[typing_1.1s_ease-in-out_infinite] [animation-delay:280ms]" /></span>
@@ -352,7 +365,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
         </div>
 
         <form
-          className="ai-composer min-w-0 p-[12px_14px_13px] border-t border-[#e9ede7] dark:border-[#354239] bg-[#fafbf8] dark:bg-[#1a231e]"
+          className="ai-composer min-w-0 p-[8px_10px_calc(10px+env(safe-area-inset-bottom,0px))] sm:p-[12px_14px_calc(12px+env(safe-area-inset-bottom,0px))] border-t border-[#e9ede7] dark:border-[#354239] bg-[#fafbf8] dark:bg-[#1a231e] relative z-20 shrink-0 mt-auto"
           onSubmit={(event) => { event.preventDefault(); void submit(draft) }}
         >
           {voice.error && (
@@ -385,8 +398,8 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
             </div>
           )}
           <div
-            className={`ai-composer-box flex gap-[8px] p-[8px_8px_8px_14px] border border-[#dfe5dc] dark:border-[#435148] rounded-[14px] bg-white dark:bg-[#141b17] focus-within:border-[#8aa357] dark:focus-within:border-[#a2b76c] focus-within:ring-3 focus-within:ring-[#8aa357]/16 transition-all duration-140 ${
-              voice.state === 'listening' ? 'is-voice items-center min-h-[54px] h-[54px]' : 'items-end min-h-[54px]'
+            className={`ai-composer-box flex flex-row items-end gap-[6px] sm:gap-[8px] p-[6px_6px_6px_10px] sm:p-[8px_8px_8px_14px] border border-[#dfe5dc] dark:border-[#435148] rounded-[14px] bg-white dark:bg-[#141b17] focus-within:border-[#8aa357] dark:focus-within:border-[#a2b76c] focus-within:ring-3 focus-within:ring-[#8aa357]/16 transition-all duration-140 ${
+              voice.state === 'listening' ? 'is-voice items-center min-h-[54px] h-[54px]' : 'min-h-[52px]'
             }`}
           >
             {voice.state === 'listening' ? (
@@ -398,7 +411,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                 />
                 <button
                   type="button"
-                  className="ai-action-btn is-cancel shrink-0 w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#617166] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#28362d] hover:not-disabled:text-[#243a33] dark:hover:not-disabled:text-[#edf2ec] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
+                  className="ai-action-btn is-cancel shrink-0 w-[40px] h-[40px] min-w-[40px] min-h-[40px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#617166] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#28362d] hover:not-disabled:text-[#243a33] dark:hover:not-disabled:text-[#edf2ec] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
                   onClick={voice.handlers.cancel}
                   aria-label="Cancel recording"
                   title="Cancel recording"
@@ -407,7 +420,7 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                 </button>
                 <button
                   type="button"
-                  className="ai-action-btn is-confirm shrink-0 w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] hover:not-disabled:bg-[#243a33] dark:hover:not-disabled:bg-[#e5f79b] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140 shadow-[0_1px_3px_rgba(25,60,51,0.2)] dark:shadow-none"
+                  className="ai-action-btn is-confirm shrink-0 w-[40px] h-[40px] min-w-[40px] min-h-[40px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] hover:not-disabled:bg-[#243a33] dark:hover:not-disabled:bg-[#e5f79b] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140 shadow-[0_1px_3px_rgba(25,60,51,0.2)] dark:shadow-none"
                   onClick={voice.handlers.stop}
                   aria-label="Confirm recording"
                   title="Confirm recording"
@@ -432,43 +445,38 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                   maxLength={MAX_MESSAGE_LENGTH}
                   placeholder={voice.state === 'processing' ? 'Processing…' : supported ? 'Type a message or tap the mic' : 'Ask about attendance, leave, teams or tasks…'}
                   aria-label="Message the Snowflex AI Employee"
-                  className="flex-1 min-h-[36px] max-h-[160px] py-[7px] px-0 border-0 outline-none resize-none bg-transparent text-[#293f34] dark:text-[#edf2ec] placeholder-[#a6b0a8] dark:placeholder-[#829187] text-[13px] leading-[1.55] disabled:cursor-wait disabled:opacity-65"
+                  className="flex-1 min-w-0 min-h-[38px] max-h-[160px] py-[8px] px-0 border-0 outline-none resize-none bg-transparent text-[#293f34] dark:text-[#edf2ec] placeholder-[#a6b0a8] dark:placeholder-[#829187] text-[16px] leading-[1.5] disabled:cursor-wait disabled:opacity-65"
                 />
-                {trimmedDraft.length > 0 ? (
-                  <button
-                    type="submit"
-                    className="ai-action-btn is-send shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#2f4a3f] text-white dark:bg-[#d9ed74] dark:text-[#1a241d] hover:not-disabled:bg-[#243a33] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
-                    disabled={!canSend}
-                    aria-label="Send"
-                    title="Send"
-                  >
-                    <SendHorizontal size={18} />
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-[4px] shrink-0">
-                    <button
-                      type="button"
-                      className={`ai-action-btn is-mic shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center transition-all duration-140 disabled:opacity-40 disabled:cursor-not-allowed ${recording ? 'is-recording text-[#b83d32] bg-[#fff5f3] animate-[mic-pulse_900ms_ease-in-out_infinite]' : 'bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33]'}`}
-                      onClick={voice.handlers.start}
-                      disabled={!supported || sending || voice.state === 'processing'}
-                      title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
-                      aria-label={recording ? 'Stop recording' : 'Voice input'}
-                    >
-                      <Mic size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      className="ai-action-btn is-voice-mode shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
-                      onClick={() => setVoiceModeOpen(true)}
-                      disabled={sending || voice.state === 'processing'}
-                      title="Start voice mode"
-                      aria-label="Start voice mode"
-                    >
-                      <AudioWaveform size={18} />
-                    </button>
-                  </div>
-                )}
-                {draft.length > 3000 && <small className="ai-counter shrink-0 self-end mr-[8px] my-0 ml-0 text-[#9aa49c] dark:text-[#9caaa0] text-[9px] font-['DM_Mono',monospace]">{draft.length}/{MAX_MESSAGE_LENGTH}</small>}
+                <button
+                  type="button"
+                  className={`ai-action-btn is-mic shrink-0 w-[40px] h-[40px] min-w-[40px] min-h-[40px] border-0 rounded-[10px] cursor-pointer grid place-items-center transition-all duration-140 disabled:opacity-40 disabled:cursor-not-allowed ${recording ? 'is-recording text-[#b83d32] bg-[#fff5f3] animate-[mic-pulse_900ms_ease-in-out_infinite]' : 'bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33]'}`}
+                  onClick={voice.handlers.start}
+                  disabled={!supported || sending || voice.state === 'processing'}
+                  title={recording ? 'Stop recording' : supported ? 'Voice input' : 'Voice input unavailable'}
+                  aria-label={recording ? 'Stop recording' : 'Voice input'}
+                >
+                  <Mic size={18} />
+                </button>
+                <button
+                  type="button"
+                  className="ai-action-btn is-voice-mode shrink-0 w-[40px] h-[40px] min-w-[40px] min-h-[40px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#44594c] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#243a33] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
+                  onClick={() => setVoiceModeOpen(true)}
+                  disabled={sending || voice.state === 'processing'}
+                  title="Start voice mode"
+                  aria-label="Start voice mode"
+                >
+                  <AudioWaveform size={18} />
+                </button>
+                <button
+                  type="submit"
+                  className="ai-action-btn is-send shrink-0 w-[40px] h-[40px] min-w-[40px] min-h-[40px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#2f4a3f] text-white dark:bg-[#d9ed74] dark:text-[#1a241d] hover:not-disabled:bg-[#243a33] dark:hover:not-disabled:bg-[#e5f79b] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140 shadow-[0_1px_3px_rgba(25,60,51,0.2)] dark:shadow-none"
+                  disabled={!canSend}
+                  aria-label="Send"
+                  title="Send"
+                >
+                  <SendHorizontal size={18} />
+                </button>
+                {draft.length > 3000 && <small className="ai-counter shrink-0 self-end mr-[4px] my-0 ml-0 text-[#9aa49c] dark:text-[#9caaa0] text-[9px] font-['DM_Mono',monospace]">{draft.length}/{MAX_MESSAGE_LENGTH}</small>}
               </>
             )}
           </div>

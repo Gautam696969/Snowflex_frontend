@@ -1160,26 +1160,26 @@ export default function Dashboard() {
         <div className={`page-content w-[min(100%,1600px)] mx-auto p-[37px_38px_24px] ${view === 'assistant' ? 'ai-page-content' : view === 'chat' ? 'chat-page-content' : ''}`}>
           {view === 'chat' || view === 'assistant' ? (
             /* Compact Header for Chat & AI Employee */
-            <section className="chat-hero-compact flex items-center justify-between gap-[16px] h-[56px] min-h-[56px] max-h-[56px] px-[20px] mb-[10px] rounded-[12px] bg-[linear-gradient(135deg,rgba(25,60,51,0.04)_0%,rgba(217,237,116,0.08)_50%,rgba(25,60,51,0.02)_100%)] bg-white dark:bg-[#17211b] dark:bg-[linear-gradient(135deg,rgba(25,60,51,0.35)_0%,rgba(20,32,26,0.8)_100%)] border border-[#e1e7de] dark:border-[#2b3930] shadow-[0_2px_8px_-2px_rgba(25,60,51,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] box-border shrink-0 flex-none overflow-hidden">
-              <div className="chat-hero-compact-content flex items-center gap-[12px] min-w-0 flex-1">
+            <section className="chat-hero-compact flex items-center justify-between gap-[10px] sm:gap-[16px] min-h-[46px] sm:h-[56px] sm:min-h-[56px] px-[12px] sm:px-[20px] py-[6px] sm:py-0 mb-[10px] rounded-[12px] bg-[linear-gradient(135deg,rgba(25,60,51,0.04)_0%,rgba(217,237,116,0.08)_50%,rgba(25,60,51,0.02)_100%)] bg-white dark:bg-[#17211b] dark:bg-[linear-gradient(135deg,rgba(25,60,51,0.35)_0%,rgba(20,32,26,0.8)_100%)] border border-[#e1e7de] dark:border-[#2b3930] shadow-[0_2px_8px_-2px_rgba(25,60,51,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] box-border shrink-0 flex-none flex-wrap">
+              <div className="chat-hero-compact-content flex items-center flex-wrap gap-[8px] sm:gap-[12px] min-w-0 flex-1">
                 {view === 'chat' ? (
                   <MessageSquare size={18} className="chat-hero-compact-icon text-[#193c33] dark:text-[#d9ed74] shrink-0" />
                 ) : (
                   <Sparkles size={18} className="chat-hero-compact-icon text-[#193c33] dark:text-[#d9ed74] shrink-0" />
                 )}
-                <h1 className="chat-hero-compact-title m-0 p-0 text-[19px] font-bold font-sans text-[#193c33] dark:text-[#eaf2eb] leading-[1.2] whitespace-nowrap tracking-[-0.01em] flex items-center">{view === 'chat' ? 'Chat' : 'AI Employee'}</h1>
-                <span className={`dash-role-badge role-${roleClass} inline-flex items-center gap-[5px] px-[9px] py-[3px] rounded-[20px] text-[11px] font-bold tracking-[0.04em] uppercase`}>
-                  {role === 'ADMIN' ? <Shield size={12} /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} /> : role === 'HR' ? <Users size={12} /> : role === 'MANAGER' ? <Briefcase size={12} /> : <User size={12} />}
-                  {roleLabel}
+                <h1 className="chat-hero-compact-title m-0 p-0 text-[17px] sm:text-[19px] font-bold font-sans text-[#193c33] dark:text-[#eaf2eb] leading-[1.2] whitespace-nowrap tracking-[-0.01em] flex items-center shrink-0">{view === 'chat' ? 'Chat' : 'AI Employee'}</h1>
+                <span className={`dash-role-badge role-${roleClass} inline-flex items-center gap-[5px] px-[8px] sm:px-[9px] py-[3px] rounded-[20px] text-[11px] font-bold tracking-[0.04em] uppercase max-w-[120px] max-[480px]:max-w-[76px] shrink-0`} title={roleLabel}>
+                  {role === 'ADMIN' ? <Shield size={12} className="shrink-0" /> : role === 'SUPER_ADMIN' ? <ShieldCheck size={12} className="shrink-0" /> : role === 'HR' ? <Users size={12} className="shrink-0" /> : role === 'MANAGER' ? <Briefcase size={12} className="shrink-0" /> : <User size={12} className="shrink-0" />}
+                  <span className="truncate overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{roleLabel}</span>
                 </span>
-                <span className="chat-hero-compact-sub text-[13px] font-medium text-[#4b6354] dark:text-[#a5b8ab] whitespace-nowrap overflow-hidden text-ellipsis min-w-0 leading-[1.2]">
+                <span className="chat-hero-compact-sub text-[13px] font-medium text-[#4b6354] dark:text-[#a5b8ab] whitespace-nowrap overflow-hidden text-ellipsis min-w-0 leading-[1.2] max-[640px]:hidden">
                   {view === 'chat'
                     ? 'Live messaging with your team'
                     : 'Ask any operations questions'}
                 </span>
               </div>
 
-              <div className="chat-hero-clock inline-flex items-center gap-[6px] h-[32px] px-[12px] rounded-[7px] bg-[rgba(255,255,255,0.9)] dark:bg-[#1f2b24] border border-[#dfe6db] dark:border-[#35443a] text-[#3b4e42] dark:text-[#c7d6cb] text-[12px]" title="Current Time">
+              <div className="chat-hero-clock inline-flex items-center gap-[6px] h-[30px] sm:h-[32px] px-[10px] sm:px-[12px] rounded-[7px] bg-[rgba(255,255,255,0.9)] dark:bg-[#1f2b24] border border-[#dfe6db] dark:border-[#35443a] text-[#3b4e42] dark:text-[#c7d6cb] text-[12px] max-[480px]:hidden shrink-0" title="Current Time">
                 <Clock3 size={14} className="chat-hero-clock-icon text-[#517154] dark:text-[#8fa892]" />
                 <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
@@ -2360,8 +2360,10 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Floating AI Chat Widget */}
-      {token && <AiChatWidget token={token} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />}
+      {/* Floating AI Chat Widget - Hidden on AI Employee route */}
+      {token && view !== 'assistant' && (
+        <AiChatWidget token={token} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />
+      )}
     </main>
   )
 }
