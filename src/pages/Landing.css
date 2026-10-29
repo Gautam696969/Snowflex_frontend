@@ -34,7 +34,8 @@
   --snow-pill-glow: 0 0 20px rgba(14, 165, 233, 0.2);
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+html.dark {
   --snow-bg: #070c18;
   --snow-bg-subtle: #0d1527;
   --snow-surface: rgba(15, 23, 42, 0.82);
@@ -65,6 +66,45 @@
   --snow-pill-glow: 0 0 25px rgba(56, 189, 248, 0.3);
 }
 
+/* ==========================================================================
+   Smooth Theme Switch: Freeze transitions & pause heavy effects while toggling
+   ========================================================================== */
+html.no-transitions,
+html.no-transitions *,
+html.no-transitions *::before,
+html.no-transitions *::after {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+  animation-play-state: paused !important;
+}
+
+html.no-transitions .snow-navbar,
+html.no-transitions .snow-hero-mockup-wrapper,
+html.no-transitions .snow-mockup-glow,
+html.no-transitions [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Theme Toggle Icons (Driven purely by CSS via html[data-theme] / html.dark) */
+.snow-theme-icon-sun {
+  display: none !important;
+}
+.snow-theme-icon-moon {
+  display: block !important;
+}
+:root[data-theme='dark'] .snow-theme-icon-sun,
+html.dark .snow-theme-icon-sun {
+  display: block !important;
+}
+:root[data-theme='dark'] .snow-theme-icon-moon,
+html.dark .snow-theme-icon-moon {
+  display: none !important;
+}
+
 /* Base Wrapper */
 .snow-landing {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -73,7 +113,7 @@
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   line-height: 1.6;
 }
 
@@ -89,6 +129,9 @@
   pointer-events: none;
   z-index: 0;
   filter: blur(80px);
+  transform: translateZ(0);
+  will-change: transform;
+  contain: strict;
 }
 
 .snow-landing::after {
@@ -102,6 +145,9 @@
   pointer-events: none;
   z-index: 0;
   filter: blur(90px);
+  transform: translateZ(0);
+  will-change: transform;
+  contain: strict;
 }
 
 /* Container */
@@ -125,7 +171,7 @@
   -webkit-backdrop-filter: blur(18px);
   background-color: var(--snow-nav-bg);
   border-bottom: 1px solid var(--snow-border-subtle);
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-navbar.is-scrolled {
@@ -267,7 +313,7 @@
   background: var(--snow-surface);
   color: var(--snow-text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .snow-theme-btn:hover {
@@ -283,7 +329,7 @@
   font-weight: 600;
   padding: 8px 16px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .snow-btn-ghost:hover {
@@ -304,7 +350,7 @@
   padding: 10px 20px;
   border-radius: 9px;
   box-shadow: 0 4px 15px var(--snow-accent-glow);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   border: none;
   cursor: pointer;
 }
@@ -329,7 +375,7 @@
   border-radius: 9px;
   border: 1px solid var(--snow-border);
   box-shadow: var(--snow-card-shadow);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 
@@ -549,6 +595,9 @@
   bottom: -5%;
   background: radial-gradient(ellipse at center, rgba(14, 165, 233, 0.22) 0%, transparent 70%);
   filter: blur(50px);
+  transform: translateZ(0);
+  will-change: transform;
+  contain: strict;
   z-index: 0;
   pointer-events: none;
 }
@@ -640,7 +689,7 @@
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-tab-btn:hover {
@@ -891,7 +940,7 @@
   background: var(--snow-surface);
   border: 1px solid var(--snow-border-subtle);
   border-radius: 14px;
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-stat-card:hover {
@@ -952,7 +1001,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--snow-text-secondary);
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 .snow-client-logo:hover {
@@ -1029,7 +1078,7 @@
   flex-direction: column;
   gap: 16px;
   box-shadow: var(--snow-card-shadow);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1157,7 +1206,7 @@
   flex-direction: column;
   gap: 14px;
   position: relative;
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-step-card:hover {
@@ -1260,7 +1309,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .snow-ai-chip:hover {
@@ -1339,7 +1388,7 @@
   background: transparent;
   color: var(--snow-text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-billing-btn.is-active {
@@ -1382,7 +1431,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--snow-card-shadow);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 }
 
@@ -1514,7 +1563,7 @@
   flex-direction: column;
   gap: 18px;
   box-shadow: var(--snow-card-shadow);
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-testi-card:hover {
@@ -1585,7 +1634,7 @@
   border: 1px solid var(--snow-border-subtle);
   border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-faq-item.is-open {
@@ -1699,7 +1748,7 @@
   padding: 14px 28px;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .snow-btn-cta-white:hover {
@@ -1721,7 +1770,7 @@
   padding: 14px 28px;
   border-radius: 10px;
   backdrop-filter: blur(8px);
-  transition: all 0.25s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
   cursor: pointer;
 }
 
@@ -1848,7 +1897,7 @@
 
 .snow-social-icon {
   color: var(--snow-text-muted);
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .snow-social-icon:hover {
@@ -1923,7 +1972,7 @@
   cursor: pointer;
   padding: 6px;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .snow-modal-close:hover {

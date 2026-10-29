@@ -28,7 +28,8 @@ export default function UserAvatar({ name, avatarUrl, size = 34, className = '' 
           src={imageUrl}
           alt={`${accessibleName}'s profile picture`}
           className="user-avatar-image block w-full h-full rounded-[inherit] object-cover"
-          loading="eager"
+          loading="lazy"
+          decoding="async"
           crossOrigin="anonymous"
           onError={() => setImageFailed(true)}
         />

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { readToken } from './auth-api'
 import { getMyTheme, setMyMode, type UserTheme } from './theme-api'
 import { applyThemeCssVariables, getCachedCustomTheme, CUSTOM_THEME_STORAGE_KEY } from './theme-utils'
@@ -17,6 +17,61 @@ interface ThemeContextValue {
 
 const storageKey = 'snowflex.theme'
 const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+export function toggleThemeMode(): Theme {
+  const currentSaved = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey) : null
+  const currentIsDark = currentSaved
+    ? currentSaved === 'dark'
+    : (typeof document !== 'undefined' &&
+       (document.documentElement.classList.contains('dark') ||
+        document.documentElement.dataset.theme === 'dark'))
+
+  const next: Theme = currentIsDark ? 'light' : 'dark'
+
+  if (typeof document !== 'undefined') {
+    // 1. Temporarily disable all transitions to prevent stutter & lag during switch
+    document.documentElement.classList.add('no-transitions')
+
+    // 2. Synchronously drive the theme via CSS variables + class & dataset on <html>
+    document.documentElement.dataset.theme = next
+    document.documentElement.classList.toggle('dark', next === 'dark')
+    document.documentElement.style.colorScheme = next
+
+    try {
+      localStorage.setItem(storageKey, next)
+    } catch {}
+
+    // 3. Keep cached custom theme in sync
+    try {
+      const cached = getCachedCustomTheme()
+      if (cached) {
+        const updated = { ...cached, mode: next }
+        localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(updated))
+        applyThemeCssVariables(updated, next)
+      } else {
+        applyThemeCssVariables(null, next)
+      }
+    } catch {}
+
+    // 4. Double requestAnimationFrame: remove no-transitions only after style calculation and paint commit
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('no-transitions')
+      })
+    })
+
+    // 5. Notify React context & other listeners
+    window.dispatchEvent(new CustomEvent('snowflex:theme-toggled', { detail: next }))
+  }
+
+  // 6. Background persist to server if user is authenticated
+  const token = readToken()
+  if (token) {
+    setMyMode(token, next).catch(() => {})
+  }
+
+  return next
+}
 
 function getInitialTheme(): Theme {
   // 1. Explicit user manual toggle takes highest precedence
@@ -47,6 +102,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     applyThemeCssVariables(customTheme, theme)
   }, [theme, customTheme])
+
+  // Listen to external theme toggle events
+  useEffect(() => {
+    const handleToggled = (e: Event) => {
+      const next = (e as CustomEvent<Theme>).detail
+      if (next && next !== theme) {
+        setTheme(next)
+      }
+    }
+    window.addEventListener('snowflex:theme-toggled', handleToggled)
+    return () => {
+      window.removeEventListener('snowflex:theme-toggled', handleToggled)
+    }
+  }, [theme])
 
   const refreshCustomTheme = async () => {
     const token = readToken()
@@ -112,35 +181,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   function toggleTheme() {
-    setTheme((current) => {
-      const next: Theme = current === 'light' ? 'dark' : 'light'
-
-      // Synchronously apply DOM changes immediately
-      document.documentElement.dataset.theme = next
-      document.documentElement.classList.toggle('dark', next === 'dark')
-      document.documentElement.style.colorScheme = next
-      localStorage.setItem(storageKey, next)
-
-      // Keep customTheme cached mode in sync
-      if (customTheme) {
-        const updatedCustom = { ...customTheme, mode: next }
-        setCustomTheme(updatedCustom)
-        try {
-          localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(updatedCustom))
-        } catch {}
-        applyThemeCssVariables(updatedCustom, next)
-      } else {
-        applyThemeCssVariables(null, next)
-      }
-
-      // Persist mode choice to server in background if user is authenticated
-      const token = readToken()
-      if (token) {
-        setMyMode(token, next).catch(() => {})
-      }
-
-      return next
-    })
+    const next = toggleThemeMode()
+    setTheme(next)
   }
 
   function applyCustomTheme(newTheme: UserTheme | null) {
@@ -165,17 +207,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         customTheme.textColor)
   )
 
+  const contextValue = useMemo<ThemeContextValue>(() => ({
+    theme,
+    toggleTheme,
+    customTheme,
+    applyCustomTheme,
+    refreshCustomTheme,
+    isCustomThemeActive,
+  }), [theme, customTheme, isCustomThemeActive])
+
   return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        toggleTheme,
-        customTheme,
-        applyCustomTheme,
-        refreshCustomTheme,
-        isCustomThemeActive,
-      }}
-    >
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   )

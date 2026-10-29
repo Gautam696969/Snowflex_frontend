@@ -7,11 +7,10 @@ import {
   ChevronDown, MessageSquare, Bot, Play, Server, Layers,
   Lock, Check, Menu, X, Sun, Moon, MapPin, Zap
 } from 'lucide-react'
-import { useTheme } from '../lib/theme'
+import { toggleThemeMode } from '../lib/theme'
 import './Landing.css'
 
 export default function Landing() {
-  const { theme, toggleTheme } = useTheme()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
@@ -71,11 +70,11 @@ export default function Landing() {
   }
 
   return (
-    <div className="snow-landing font-['DM_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] bg-[var(--snow-bg)] text-[var(--snow-text-primary)] min-h-screen relative overflow-x-hidden transition-[background-color,color] duration-300 ease leading-[1.6]">
+    <div className="snow-landing font-['DM_Sans',-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,sans-serif] bg-[var(--snow-bg)] text-[var(--snow-text-primary)] min-h-screen relative overflow-x-hidden transition-[background-color,color] duration-200 ease leading-[1.6]">
       {/* ====================================================================
           1. STICKY NAVBAR
           ==================================================================== */}
-      <header className={`snow-navbar sticky top-0 z-[100] w-full backdrop-blur-[18px] bg-[var(--snow-nav-bg)] border-b border-[var(--snow-border-subtle)] transition-all duration-[250ms] ease ${isScrolled ? 'is-scrolled border-b-[var(--snow-border)] shadow-[0_8px_24px_-6px_rgba(0,0,0,0.05)]' : ''}`}>
+      <header className={`snow-navbar sticky top-0 z-[100] w-full backdrop-blur-[18px] bg-[var(--snow-nav-bg)] border-b border-[var(--snow-border-subtle)] transition-[background-color,border-color,box-shadow] duration-200 ease ${isScrolled ? 'is-scrolled border-b-[var(--snow-border)] shadow-[0_8px_24px_-6px_rgba(0,0,0,0.05)]' : ''}`}>
         <div className="snow-container w-full max-w-[1240px] mx-auto px-6 relative z-[1] max-md:px-4">
           <div className="snow-nav-inner flex items-center justify-between h-[74px] max-md:h-16">
             {/* Brand Logo */}
@@ -105,27 +104,28 @@ export default function Landing() {
             <div className="snow-nav-actions flex items-center gap-3">
               <button
                 type="button"
-                className="snow-theme-btn inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-[var(--snow-border-subtle)] bg-[var(--snow-surface)] text-[var(--snow-text-secondary)] cursor-pointer transition-all duration-200 ease hover:bg-[var(--snow-surface-solid)] hover:text-[var(--snow-accent)] hover:border-[var(--snow-border)] hover:scale-105 active:scale-95"
-                onClick={toggleTheme}
-                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
+                className="snow-theme-btn inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-[var(--snow-border-subtle)] bg-[var(--snow-surface)] text-[var(--snow-text-secondary)] cursor-pointer transition-[background-color,color,border-color,transform] duration-200 ease hover:bg-[var(--snow-surface-solid)] hover:text-[var(--snow-accent)] hover:border-[var(--snow-border)] hover:scale-105 active:scale-95"
+                onClick={() => toggleThemeMode()}
+                title="Toggle dark / light mode"
                 aria-label="Toggle theme"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <Sun size={18} className="snow-theme-icon-sun" />
+                <Moon size={18} className="snow-theme-icon-moon" />
               </button>
 
               <button
                 type="button"
-                className="snow-btn-ghost inline-flex items-center justify-center px-4 py-2 rounded-[10px] text-[0.92rem] font-semibold text-[var(--snow-text-secondary)] no-underline transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] max-md:hidden"
+                className="snow-btn-ghost inline-flex items-center justify-center px-4 py-2 rounded-[10px] text-[0.92rem] font-semibold text-[var(--snow-text-secondary)] no-underline transition-[background-color,color] duration-200 ease hover:text-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] max-md:hidden"
                 onClick={() => setIsDemoModalOpen(true)}
               >
                 Contact
               </button>
 
-              <Link to="/login" className="snow-btn-ghost inline-flex items-center justify-center px-4 py-2 rounded-[10px] text-[0.92rem] font-semibold text-[var(--snow-text-secondary)] no-underline transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] max-md:hidden">
+              <Link to="/login" className="snow-btn-ghost inline-flex items-center justify-center px-4 py-2 rounded-[10px] text-[0.92rem] font-semibold text-[var(--snow-text-secondary)] no-underline transition-[background-color,color] duration-200 ease hover:text-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] max-md:hidden">
                 Sign In
               </Link>
 
-              <Link to="/register" className="snow-btn-primary snow-nav-cta inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99] max-sm:hidden">
+              <Link to="/register" className="snow-btn-primary snow-nav-cta inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-[background-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99] max-sm:hidden">
                 <span>Get Started</span>
                 <ArrowRight size={16} />
               </Link>
@@ -133,7 +133,7 @@ export default function Landing() {
               {/* Mobile Menu Toggle Button */}
               <button
                 type="button"
-                className="snow-mobile-toggle hidden max-lg:inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-[var(--snow-border-subtle)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] cursor-pointer transition-all duration-200 ease hover:bg-[var(--snow-surface-solid)]"
+                className="snow-mobile-toggle hidden max-lg:inline-flex items-center justify-center w-10 h-10 rounded-[10px] border border-[var(--snow-border-subtle)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] cursor-pointer transition-[background-color,color] duration-200 ease hover:bg-[var(--snow-surface-solid)]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -160,7 +160,7 @@ export default function Landing() {
               <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-[var(--snow-text-secondary)] font-medium py-1.5 hover:text-[var(--snow-accent)]">FAQ</a>
               <button
                 type="button"
-                className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
+                className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-[background-color,color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
                 onClick={() => {
                   setMobileMenuOpen(false)
                   setIsDemoModalOpen(true)
@@ -171,7 +171,7 @@ export default function Landing() {
               </button>
               <Link
                 to="/login"
-                className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
+                className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-[background-color,color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
                 onClick={() => setMobileMenuOpen(false)}
                 style={{ width: '100%' }}
               >
@@ -179,7 +179,7 @@ export default function Landing() {
               </Link>
               <Link
                 to="/register"
-                className="snow-btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]"
+                className="snow-btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[0.94rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-[background-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]"
                 onClick={() => setMobileMenuOpen(false)}
                 style={{ width: '100%' }}
               >
@@ -217,11 +217,11 @@ export default function Landing() {
 
           {/* CTA Buttons */}
           <div className="snow-hero-ctas flex items-center justify-center gap-4 mb-9 flex-wrap">
-            <Link to="/register" className="snow-btn-primary inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[1.05rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]">
+            <Link to="/register" className="snow-btn-primary inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[1.05rem] text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-[background-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]">
               Start 14-Day Free Trial
               <ArrowRight size={18} />
             </Link>
-            <a href="#mockup" className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[1.05rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0">
+            <a href="#mockup" className="snow-btn-secondary inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[1.05rem] text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-[background-color,color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0">
               <Play size={16} fill="currentColor" />
               Explore Interactive Demo
             </a>
@@ -293,7 +293,7 @@ export default function Landing() {
               <div className="snow-mockup-tabs flex items-center gap-1 p-[10px_18px] bg-[rgba(14,165,233,0.02)] border-b border-[var(--snow-border-subtle)] overflow-x-auto">
                 <button
                   type="button"
-                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-all duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'overview' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
+                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'overview' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
                   onClick={() => setActiveMockupTab('overview')}
                 >
                   <BarChart3 size={15} />
@@ -301,7 +301,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-all duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'attendance' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
+                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'attendance' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
                   onClick={() => setActiveMockupTab('attendance')}
                 >
                   <Clock size={15} />
@@ -309,7 +309,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-all duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'leaves' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
+                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'leaves' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
                   onClick={() => setActiveMockupTab('leaves')}
                 >
                   <Calendar size={15} />
@@ -317,7 +317,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-all duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'copilot' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
+                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'copilot' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
                   onClick={() => setActiveMockupTab('copilot')}
                 >
                   <Bot size={15} />
@@ -325,7 +325,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-all duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'payroll' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
+                  className={`snow-tab-btn flex items-center gap-[7px] px-3.5 py-2 rounded-lg text-[0.86rem] font-semibold text-[var(--snow-text-secondary)] bg-transparent border-0 cursor-pointer whitespace-nowrap transition-[background-color,color,box-shadow] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-accent)] ${activeMockupTab === 'payroll' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_4px_12px_var(--snow-accent-glow)]' : ''}`}
                   onClick={() => setActiveMockupTab('payroll')}
                 >
                   <DollarSign size={15} />
@@ -584,7 +584,7 @@ export default function Landing() {
                                 <div style={{ display: 'flex', gap: 8, width: '100%' }}>
                                   <button
                                     type="button"
-                                    className="snow-btn-secondary inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
+                                    className="snow-btn-secondary inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-[var(--snow-text-primary)] bg-[var(--snow-surface)] border border-[var(--snow-border)] shadow-[var(--snow-card-shadow)] no-underline cursor-pointer backdrop-blur-[12px] transition-[background-color,color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:border-[var(--snow-border-strong)] hover:bg-[var(--snow-surface-solid)] hover:shadow-[var(--snow-card-shadow-hover)] hover:text-[var(--snow-accent)] active:translate-y-0"
                                     style={{ padding: '8px 14px', fontSize: '0.84rem', flex: 1 }}
                                     onClick={() => toast('Request sent for additional info.')}
                                   >
@@ -592,7 +592,7 @@ export default function Landing() {
                                   </button>
                                   <button
                                     type="button"
-                                    className="snow-btn-primary inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-all duration-[250ms] ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]"
+                                    className="snow-btn-primary inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-white bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] shadow-[0_4px_16px_rgba(14,165,233,0.35)] border border-[rgba(255,255,255,0.2)] no-underline cursor-pointer transition-[background-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(14,165,233,0.45)] hover:brightness-105 active:translate-y-0 active:scale-[0.99]"
                                     style={{ padding: '8px 16px', fontSize: '0.84rem', flex: 1.5 }}
                                     onClick={() => handleApproveLeave(leave.id)}
                                   >
@@ -633,7 +633,7 @@ export default function Landing() {
                         <button
                           key={idx}
                           type="button"
-                          className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-lg p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-all duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-1"
+                          className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-lg p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-[background-color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-1"
                           onClick={() => handleSelectAiPrompt(item.q, item.a)}
                         >
                           <span>{item.q}</span>
@@ -724,22 +724,22 @@ export default function Landing() {
       <section className="snow-stats-section py-[70px_50px] border-b border-[var(--snow-border-subtle)]" id="stats">
         <div className="snow-container w-full max-w-[1240px] mx-auto px-6 relative z-[1] max-md:px-4">
           <div className="snow-stats-grid grid grid-cols-4 max-[860px]:grid-cols-2 max-sm:grid-cols-1 gap-6 mb-[50px]">
-            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-all duration-[250ms] ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stat-number text-[clamp(2rem,3.5vw,2.8rem)] font-extrabold leading-[1.1] bg-gradient-to-r from-[var(--snow-accent)] to-[#06b6d4] bg-clip-text text-transparent mb-2">140,000+</div>
               <div className="snow-stat-label text-[0.95rem] font-semibold text-[var(--snow-text-primary)] mb-1">Active Team Members</div>
               <div className="snow-stat-desc text-[0.8rem] text-[var(--snow-text-muted)]">Managed across 42 countries daily</div>
             </div>
-            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-all duration-[250ms] ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stat-number text-[clamp(2rem,3.5vw,2.8rem)] font-extrabold leading-[1.1] bg-gradient-to-r from-[var(--snow-accent)] to-[#06b6d4] bg-clip-text text-transparent mb-2">99.4%</div>
               <div className="snow-stat-label text-[0.95rem] font-semibold text-[var(--snow-text-primary)] mb-1">Payroll & Time Precision</div>
               <div className="snow-stat-desc text-[0.8rem] text-[var(--snow-text-muted)]">Zero manual reconciliation headaches</div>
             </div>
-            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-all duration-[250ms] ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stat-number text-[clamp(2rem,3.5vw,2.8rem)] font-extrabold leading-[1.1] bg-gradient-to-r from-[var(--snow-accent)] to-[#06b6d4] bg-clip-text text-transparent mb-2">3.8x</div>
               <div className="snow-stat-label text-[0.95rem] font-semibold text-[var(--snow-text-primary)] mb-1">Faster Approvals</div>
               <div className="snow-stat-desc text-[0.8rem] text-[var(--snow-text-muted)]">Multi-tier manager workflows resolved in hours</div>
             </div>
-            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-all duration-[250ms] ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-stat-card text-center p-[24px_16px] bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[14px] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:border-[var(--snow-accent)] hover:-translate-y-[3px] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stat-number text-[clamp(2rem,3.5vw,2.8rem)] font-extrabold leading-[1.1] bg-gradient-to-r from-[var(--snow-accent)] to-[#06b6d4] bg-clip-text text-transparent mb-2">85%</div>
               <div className="snow-stat-label text-[0.95rem] font-semibold text-[var(--snow-text-primary)] mb-1">Fewer HR Tickets</div>
               <div className="snow-stat-desc text-[0.8rem] text-[var(--snow-text-muted)]">Handled automatically by AI HR Copilot</div>
@@ -750,13 +750,13 @@ export default function Landing() {
           <div className="snow-logos-wrap text-center">
             <div className="snow-logos-title text-[0.85rem] font-bold tracking-[0.08em] uppercase text-[var(--snow-text-muted)] mb-6">Trusted by Modern Enterprise People Teams Worldwide</div>
             <div className="snow-logos-row flex items-center justify-center gap-10 flex-wrap opacity-80">
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Sparkles size={18} /> VORTEX CLOUD</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Server size={18} /> NORDIC DATA LABS</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Layers size={18} /> APEX GLOBAL</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Snowflake size={18} /> FROST TECH</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><ShieldCheck size={18} /> AURA HEALTH</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Award size={18} /> SOLARIA FINANCIAL</div>
-              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-all duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Zap size={18} /> CYBERPULSE</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Sparkles size={18} /> VORTEX CLOUD</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Server size={18} /> NORDIC DATA LABS</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Layers size={18} /> APEX GLOBAL</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Snowflake size={18} /> FROST TECH</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><ShieldCheck size={18} /> AURA HEALTH</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Award size={18} /> SOLARIA FINANCIAL</div>
+              <div className="snow-client-logo flex items-center gap-2 text-[1.1rem] font-bold text-[var(--snow-text-secondary)] transition-[color,opacity] duration-200 ease hover:text-[var(--snow-accent)] hover:opacity-100"><Zap size={18} /> CYBERPULSE</div>
             </div>
           </div>
         </div>
@@ -783,7 +783,7 @@ export default function Landing() {
 
           <div className="snow-bento-grid grid grid-cols-3 max-[960px]:grid-cols-2 max-sm:grid-cols-1 gap-6">
             {/* 1. Employee Profiles */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <Users size={26} />
               </div>
@@ -801,7 +801,7 @@ export default function Landing() {
             </div>
 
             {/* 2. Attendance */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <Clock size={26} />
               </div>
@@ -819,7 +819,7 @@ export default function Landing() {
             </div>
 
             {/* 3. Payroll */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <DollarSign size={26} />
               </div>
@@ -837,7 +837,7 @@ export default function Landing() {
             </div>
 
             {/* 4. Leave Management */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <Calendar size={26} />
               </div>
@@ -855,7 +855,7 @@ export default function Landing() {
             </div>
 
             {/* 5. Performance */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <Award size={26} />
               </div>
@@ -873,7 +873,7 @@ export default function Landing() {
             </div>
 
             {/* 6. Reports & Analytics */}
-            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-all duration-300 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
+            <div className="snow-feature-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-7 flex flex-col gap-4 shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[5px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)] relative overflow-hidden group">
               <div className="snow-feature-icon-box w-[52px] h-[52px] rounded-xl flex items-center justify-center bg-[var(--snow-frost-pill-bg)] text-[var(--snow-accent)] border border-[var(--snow-frost-pill-border)] shadow-[0_4px_12px_var(--snow-accent-glow)]">
                 <BarChart3 size={26} />
               </div>
@@ -911,7 +911,7 @@ export default function Landing() {
           </div>
 
           <div className="snow-steps-grid grid grid-cols-4 max-[960px]:grid-cols-2 max-[580px]:grid-cols-1 gap-6 relative">
-            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-all duration-[250ms] ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-step-num w-11 h-11 rounded-[10px] bg-gradient-to-br from-[#0284c7] to-[#38bdf8] text-white flex items-center justify-center font-extrabold text-[1.15rem] shadow-[0_4px_14px_var(--snow-accent-glow)]">01</div>
               <h3 className="snow-step-title text-[1.15rem] font-bold text-[var(--snow-text-primary)] m-0">Connect & Ingest Data</h3>
               <p className="snow-step-desc text-[0.92rem] text-[var(--snow-text-secondary)] leading-[1.55] m-0">
@@ -920,7 +920,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-all duration-[250ms] ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-step-num w-11 h-11 rounded-[10px] bg-gradient-to-br from-[#0284c7] to-[#38bdf8] text-white flex items-center justify-center font-extrabold text-[1.15rem] shadow-[0_4px_14px_var(--snow-accent-glow)]">02</div>
               <h3 className="snow-step-title text-[1.15rem] font-bold text-[var(--snow-text-primary)] m-0">Set Custom Policies</h3>
               <p className="snow-step-desc text-[0.92rem] text-[var(--snow-text-secondary)] leading-[1.55] m-0">
@@ -929,7 +929,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-all duration-[250ms] ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-step-num w-11 h-11 rounded-[10px] bg-gradient-to-br from-[#0284c7] to-[#38bdf8] text-white flex items-center justify-center font-extrabold text-[1.15rem] shadow-[0_4px_14px_var(--snow-accent-glow)]">03</div>
               <h3 className="snow-step-title text-[1.15rem] font-bold text-[var(--snow-text-primary)] m-0">Empower Your People</h3>
               <p className="snow-step-desc text-[0.92rem] text-[var(--snow-text-secondary)] leading-[1.55] m-0">
@@ -938,7 +938,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-all duration-[250ms] ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-step-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-2xl p-[28px_24px] flex flex-col gap-3.5 relative transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-1 hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-step-num w-11 h-11 rounded-[10px] bg-gradient-to-br from-[#0284c7] to-[#38bdf8] text-white flex items-center justify-center font-extrabold text-[1.15rem] shadow-[0_4px_14px_var(--snow-accent-glow)]">04</div>
               <h3 className="snow-step-title text-[1.15rem] font-bold text-[var(--snow-text-primary)] m-0">Scale with Intelligence</h3>
               <p className="snow-step-desc text-[0.92rem] text-[var(--snow-text-secondary)] leading-[1.55] m-0">
@@ -966,7 +966,7 @@ export default function Landing() {
               <div className="snow-ai-chips flex flex-col gap-[8px]">
                 <button
                   type="button"
-                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-all duration-200 hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
+                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-[background-color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
                   onClick={() => handleSelectAiPrompt(
                     'Summarize pending leave requests across EMEA offices',
                     'Currently 5 pending requests in EMEA: 3 in London (Engineering) and 2 in Dublin (Customer Support). All requests have sufficient accrued balances and no critical team schedule conflicts.'
@@ -977,7 +977,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-all duration-200 hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
+                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-[background-color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
                   onClick={() => handleSelectAiPrompt(
                     'What was our average attendance rate during last week\'s summit?',
                     'Average attendance during the Global Leadership Summit was 99.4%, with 100% check-ins recorded at the Chicago venue and zero unexcused absences.'
@@ -988,7 +988,7 @@ export default function Landing() {
                 </button>
                 <button
                   type="button"
-                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-all duration-200 hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
+                  className="snow-ai-chip bg-[var(--snow-surface-elevated)] border border-[var(--snow-border-subtle)] rounded-[8px] p-[10px_14px] text-[0.88rem] text-[var(--snow-text-primary)] text-left cursor-pointer flex items-center justify-between transition-[background-color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-frost-pill-bg)] hover:translate-x-[4px]"
                   onClick={() => handleSelectAiPrompt(
                     'Draft a promotion announcement for Maria Santos to Principal Architect',
                     'Maria Santos has been promoted to Principal Architect! Over the past 2 years, Maria architected our zero-downtime data pipelines and mentored 6 engineers across teams. Congratulations, Maria!'
@@ -1043,14 +1043,14 @@ export default function Landing() {
             <div className="snow-billing-switch flex items-center bg-[var(--snow-surface)] border border-[var(--snow-border)] rounded-full p-[4px] relative">
               <button
                 type="button"
-                className={`snow-billing-btn p-[8px_18px] rounded-full text-[0.92rem] font-semibold border-none bg-transparent cursor-pointer transition-all duration-200 ${billingCycle === 'monthly' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)]' : 'text-[var(--snow-text-secondary)]'}`}
+                className={`snow-billing-btn p-[8px_18px] rounded-full text-[0.92rem] font-semibold border-none bg-transparent cursor-pointer transition-[background-color,color,box-shadow] duration-200 ease ${billingCycle === 'monthly' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)]' : 'text-[var(--snow-text-secondary)]'}`}
                 onClick={() => setBillingCycle('monthly')}
               >
                 Monthly Billing
               </button>
               <button
                 type="button"
-                className={`snow-billing-btn p-[8px_18px] rounded-full text-[0.92rem] font-semibold border-none bg-transparent cursor-pointer transition-all duration-200 ${billingCycle === 'annual' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)]' : 'text-[var(--snow-text-secondary)]'}`}
+                className={`snow-billing-btn p-[8px_18px] rounded-full text-[0.92rem] font-semibold border-none bg-transparent cursor-pointer transition-[background-color,color,box-shadow] duration-200 ease ${billingCycle === 'annual' ? 'is-active bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)]' : 'text-[var(--snow-text-secondary)]'}`}
                 onClick={() => setBillingCycle('annual')}
               >
                 Annual Billing
@@ -1062,7 +1062,7 @@ export default function Landing() {
           {/* Pricing Cards Grid */}
           <div className="snow-pricing-grid grid grid-cols-3 max-[960px]:grid-cols-1 max-[960px]:max-w-[520px] max-[960px]:mx-auto gap-[28px] items-stretch">
             {/* Tier 1: Starter */}
-            <div className="snow-price-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[var(--snow-card-shadow)] transition-all duration-300 relative hover:-translate-y-[6px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-price-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease relative hover:-translate-y-[6px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-price-tier text-[1.3rem] font-extrabold text-[var(--snow-text-primary)] mb-[6px]">Starter</div>
               <div className="snow-price-tagline text-[0.88rem] text-[var(--snow-text-muted)] mb-[22px] min-h-[40px]">
                 Essential employee management for agile teams and growing startups up to 50 members.
@@ -1072,7 +1072,7 @@ export default function Landing() {
                 <span className="snow-price-val text-[3rem] font-extrabold leading-none text-[var(--snow-text-primary)]">{billingCycle === 'annual' ? '5.60' : '7'}</span>
                 <span className="snow-price-unit text-[0.88rem] text-[var(--snow-text-muted)]">/ employee / month</span>
               </div>
-              <Link to="/register" className="snow-btn-secondary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] border border-[var(--snow-border)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] transition-all duration-200 hover:border-[var(--snow-accent)] hover:bg-[var(--snow-surface-elevated)]">
+              <Link to="/register" className="snow-btn-secondary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] border border-[var(--snow-border)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] transition-[background-color,color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-surface-elevated)]">
                 Start 14-Day Free Trial
               </Link>
               <ul className="snow-price-features-list list-none p-0 m-0 flex flex-col gap-[12px] text-[0.92rem] text-[var(--snow-text-secondary)]">
@@ -1086,7 +1086,7 @@ export default function Landing() {
             </div>
 
             {/* Tier 2: Professional (Most Popular) */}
-            <div className="snow-price-card is-popular bg-[var(--snow-surface-solid)] border-2 border-[var(--snow-accent)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[0_16px_45px_-10px_var(--snow-accent-glow)] transition-all duration-300 relative hover:-translate-y-[6px] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-price-card is-popular bg-[var(--snow-surface-solid)] border-2 border-[var(--snow-accent)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[0_16px_45px_-10px_var(--snow-accent-glow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease relative hover:-translate-y-[6px] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-popular-badge absolute -top-[14px] left-1/2 -translate-x-1/2 bg-gradient-to-br from-[#0284c7] to-[#06b6d4] text-white text-[0.76rem] font-bold tracking-[0.05em] uppercase p-[4px_16px] rounded-full shadow-[0_4px_12px_var(--snow-accent-glow)]">Most Popular</div>
               <div className="snow-price-tier text-[1.3rem] font-extrabold text-[var(--snow-text-primary)] mb-[6px]">Growth & Pro</div>
               <div className="snow-price-tagline text-[0.88rem] text-[var(--snow-text-muted)] mb-[22px] min-h-[40px]">
@@ -1097,7 +1097,7 @@ export default function Landing() {
                 <span className="snow-price-val text-[3rem] font-extrabold leading-none text-[var(--snow-text-primary)]">{billingCycle === 'annual' ? '11.20' : '14'}</span>
                 <span className="snow-price-unit text-[0.88rem] text-[var(--snow-text-muted)]">/ employee / month</span>
               </div>
-              <Link to="/register" className="snow-btn-primary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)] transition-all duration-200 hover:bg-[var(--snow-accent-hover)] hover:-translate-y-[1px]">
+              <Link to="/register" className="snow-btn-primary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)] transition-[background-color,transform,box-shadow] duration-200 ease hover:bg-[var(--snow-accent-hover)] hover:-translate-y-[1px]">
                 Get Started with Pro
                 <ArrowRight size={16} />
               </Link>
@@ -1114,7 +1114,7 @@ export default function Landing() {
             </div>
 
             {/* Tier 3: Enterprise */}
-            <div className="snow-price-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[var(--snow-card-shadow)] transition-all duration-300 relative hover:-translate-y-[6px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-price-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[18px] p-[34px_28px] flex flex-col shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease relative hover:-translate-y-[6px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-price-tier text-[1.3rem] font-extrabold text-[var(--snow-text-primary)] mb-[6px]">Enterprise</div>
               <div className="snow-price-tagline text-[0.88rem] text-[var(--snow-text-muted)] mb-[22px] min-h-[40px]">
                 Dedicated infrastructure, custom integrations, and SLA guarantees for global enterprises.
@@ -1126,7 +1126,7 @@ export default function Landing() {
               </div>
               <button
                 type="button"
-                className="snow-btn-secondary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] border border-[var(--snow-border)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] cursor-pointer transition-all duration-200 hover:border-[var(--snow-accent)] hover:bg-[var(--snow-surface-elevated)]"
+                className="snow-btn-secondary w-full mb-[28px] p-[12px] text-center inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] border border-[var(--snow-border)] bg-[var(--snow-surface)] text-[var(--snow-text-primary)] cursor-pointer transition-[background-color,color,border-color,transform] duration-200 ease hover:border-[var(--snow-accent)] hover:bg-[var(--snow-surface-elevated)]"
                 onClick={() => setIsDemoModalOpen(true)}
               >
                 Schedule Enterprise Demo
@@ -1162,7 +1162,7 @@ export default function Landing() {
           </div>
 
           <div className="snow-testimonials-grid grid grid-cols-3 max-[960px]:grid-cols-1 max-[960px]:max-w-[580px] max-[960px]:mx-auto gap-[28px]">
-            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-all duration-200 hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stars-row flex gap-[4px] text-[#f59e0b]">
                 {'★★★★★'}
               </div>
@@ -1179,7 +1179,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-all duration-200 hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stars-row flex gap-[4px] text-[#f59e0b]">
                 {'★★★★★'}
               </div>
@@ -1196,7 +1196,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-all duration-200 hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
+            <div className="snow-testi-card bg-[var(--snow-surface)] border border-[var(--snow-border-subtle)] rounded-[16px] p-[30px] flex flex-col gap-[18px] shadow-[var(--snow-card-shadow)] transition-[background-color,border-color,transform,box-shadow] duration-200 ease hover:-translate-y-[4px] hover:border-[var(--snow-accent)] hover:shadow-[var(--snow-card-shadow-hover)]">
               <div className="snow-stars-row flex gap-[4px] text-[#f59e0b]">
                 {'★★★★★'}
               </div>
@@ -1261,7 +1261,7 @@ export default function Landing() {
             ].map((faq, index) => {
               const isOpen = openFaq === index
               return (
-                <div key={index} className={`snow-faq-item bg-[var(--snow-surface)] border rounded-[12px] overflow-hidden transition-all duration-200 ${isOpen ? 'is-open border-[var(--snow-accent)] shadow-[var(--snow-card-shadow)]' : 'border-[var(--snow-border-subtle)]'}`}>
+                <div key={index} className={`snow-faq-item bg-[var(--snow-surface)] border rounded-[12px] overflow-hidden transition-[background-color,border-color,box-shadow] duration-200 ease ${isOpen ? 'is-open border-[var(--snow-accent)] shadow-[var(--snow-card-shadow)]' : 'border-[var(--snow-border-subtle)]'}`}>
                   <button
                     type="button"
                     className="snow-faq-trigger w-full flex items-center justify-between p-[20px_24px] bg-transparent border-none text-[1.05rem] font-bold text-[var(--snow-text-primary)] text-left cursor-pointer gap-[16px]"
@@ -1298,13 +1298,13 @@ export default function Landing() {
                 and delighting employees with SnowFlex.
               </p>
               <div className="snow-cta-actions flex items-center justify-center gap-[16px] mb-[24px] flex-wrap">
-                <Link to="/register" className="snow-btn-cta-white inline-flex items-center gap-[8px] no-underline bg-white !text-[#0369a1] text-[1.05rem] font-bold p-[14px_28px] rounded-[10px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-all duration-250 hover:-translate-y-[2px] hover:bg-[#f0f9ff] hover:shadow-[0_12px_30px_rgba(0,0,0,0.25)]">
+                <Link to="/register" className="snow-btn-cta-white inline-flex items-center gap-[8px] no-underline bg-white !text-[#0369a1] text-[1.05rem] font-bold p-[14px_28px] rounded-[10px] shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-[background-color,transform,box-shadow] duration-200 ease hover:-translate-y-[2px] hover:bg-[#f0f9ff] hover:shadow-[0_12px_30px_rgba(0,0,0,0.25)]">
                   Get Started Free
                   <ArrowRight size={18} />
                 </Link>
                 <button
                   type="button"
-                  className="snow-btn-cta-outline inline-flex items-center gap-[8px] no-underline bg-white/[0.12] !text-white border border-white/[0.35] text-[1.05rem] font-semibold p-[14px_28px] rounded-[10px] backdrop-blur-[8px] transition-all duration-250 cursor-pointer hover:bg-white/[0.22] hover:-translate-y-[2px]"
+                  className="snow-btn-cta-outline inline-flex items-center gap-[8px] no-underline bg-white/[0.12] !text-white border border-white/[0.35] text-[1.05rem] font-semibold p-[14px_28px] rounded-[10px] backdrop-blur-[8px] transition-[background-color,transform] duration-200 ease cursor-pointer hover:bg-white/[0.22] hover:-translate-y-[2px]"
                   onClick={() => setIsDemoModalOpen(true)}
                 >
                   Schedule Enterprise Demo
@@ -1395,13 +1395,13 @@ export default function Landing() {
               © 2026 SnowFlex People Operations Inc. All rights reserved.
             </div>
             <div className="snow-social-links flex items-center gap-[16px]">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-all duration-200 hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="GitHub">
+              <a href="https://github.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-[color,transform] duration-200 ease hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="GitHub">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-all duration-200 hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="X Twitter">
+              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-[color,transform] duration-200 ease hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="X Twitter">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-all duration-200 hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="LinkedIn">
+              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="snow-social-icon text-[var(--snow-text-muted)] transition-[color,transform] duration-200 ease hover:text-[var(--snow-accent)] hover:-translate-y-[2px]" aria-label="LinkedIn">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
               </a>
             </div>
@@ -1424,7 +1424,7 @@ export default function Landing() {
               </div>
               <button
                 type="button"
-                className="snow-modal-close bg-transparent border-none text-[var(--snow-text-muted)] cursor-pointer p-[6px] rounded-[8px] transition-all duration-200 hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-text-primary)]"
+                className="snow-modal-close bg-transparent border-none text-[var(--snow-text-muted)] cursor-pointer p-[6px] rounded-[8px] transition-[background-color,color] duration-200 ease hover:bg-[var(--snow-frost-pill-bg)] hover:text-[var(--snow-text-primary)]"
                 onClick={() => setIsDemoModalOpen(false)}
                 aria-label="Close modal"
               >
@@ -1495,7 +1495,7 @@ export default function Landing() {
 
               <button
                 type="submit"
-                className="snow-btn-primary w-full mt-[6px] inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] p-[12px] bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)] transition-all duration-200 hover:bg-[var(--snow-accent-hover)] hover:-translate-y-[1px] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="snow-btn-primary w-full mt-[6px] inline-flex items-center justify-center gap-[8px] font-semibold rounded-[10px] p-[12px] bg-[var(--snow-accent)] text-white shadow-[0_2px_8px_var(--snow-accent-glow)] transition-[background-color,transform,box-shadow] duration-200 ease hover:bg-[var(--snow-accent-hover)] hover:-translate-y-[1px] disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={submittingDemo}
               >
                 {submittingDemo ? 'Submitting Request…' : 'Confirm Enterprise Request'}
