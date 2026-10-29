@@ -132,9 +132,12 @@ export function useVoiceInput(
       const AudioContextCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
       if (AudioContextCtor) {
         const audioCtx = new AudioContextCtor()
+        if (audioCtx.state === 'suspended') {
+          void audioCtx.resume()
+        }
         audioCtxRef.current = audioCtx
         const analyser = audioCtx.createAnalyser()
-        analyser.fftSize = 128
+        analyser.fftSize = 256
         analyserRef.current = analyser
         const source = audioCtx.createMediaStreamSource(stream)
         source.connect(analyser)

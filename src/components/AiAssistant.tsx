@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, Mic, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, X, Square } from 'lucide-react'
+import { Bot, Check, Mic, MicOff, MessageSquarePlus, MessagesSquare, Search, SendHorizontal, Sparkles, Trash2, X } from 'lucide-react'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import Waveform from './Waveform'
 import {
@@ -353,36 +353,64 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
           className="ai-composer min-w-0 p-[12px_14px_13px] border-t border-[#e9ede7] dark:border-[#354239] bg-[#fafbf8] dark:bg-[#1a231e]"
           onSubmit={(event) => { event.preventDefault(); void submit(draft) }}
         >
-          <div className="ai-composer-box flex items-end gap-[8px] p-[8px_8px_8px_14px] border border-[#dfe5dc] dark:border-[#435148] rounded-[14px] bg-white dark:bg-[#141b17] focus-within:border-[#8aa357] dark:focus-within:border-[#a2b76c] focus-within:ring-3 focus-within:ring-[#8aa357]/16 transition-all duration-140">
-            {voice.error && (
-              <small className="ai-voice-error flex flex-[1_0_100%] items-center gap-[8px] flex-wrap text-[#b83d32] text-[10px] p-[6px_14px] border-t border-[#fff1ee] bg-[#fffaf8]" role="alert">
-                {voice.error}
-                <button type="button" className="ai-voice-retry border-0 bg-transparent text-[#b83d32] font-bold text-[10px] font-['DM_Mono',monospace] uppercase tracking-[0.04em] cursor-pointer hover:underline" onClick={() => voice.handlers.start()}>Retry</button>
-              </small>
-            )}
-            {voice.state === 'listening' ? (
-              <>
-                <div className="ai-voice-ui flex flex-col gap-[6px] py-[4px] px-0">
-                  <Waveform analyserRef={voice.analyserRef} active={voice.state === 'listening'} color={theme === 'dark' ? '#d9ed74' : '#2f4a3f'} />
-                  {voice.transcript && <small className="ai-voice-transcript text-[#617166] text-[11px] leading-[1.5] max-w-[70%]">{voice.transcript}</small>}
-                </div>
+          {voice.error && (
+            <div
+              className="ai-voice-error-banner flex items-center justify-between gap-[8px] mb-[8px] px-[12px] py-[7px] border border-[#fbd0cb] dark:border-[#543833] rounded-[8px] bg-[#fff5f3] dark:bg-[#30211e] text-[#b83d32] dark:text-[#ffb1a1] text-[11px] leading-[1.4] animate-[fade-in_0.15s_ease]"
+              role="alert"
+            >
+              <div className="flex items-center gap-[7px] min-w-0">
+                <MicOff size={14} className="shrink-0 text-[#b83d32] dark:text-[#ffb1a1]" />
+                <span className="truncate">{voice.error}</span>
+              </div>
+              <div className="flex items-center gap-[8px] shrink-0">
                 <button
                   type="button"
-                  className="ai-action-btn is-stop shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#2f4a3f] text-white dark:bg-[#d9ed74] dark:text-[#1a241d] hover:not-disabled:bg-[#243a33] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
-                  onClick={voice.handlers.stop}
-                  aria-label="Stop and confirm"
-                  title="Stop and confirm"
+                  className="font-bold text-[10px] font-['DM_Mono',monospace] uppercase tracking-[0.04em] cursor-pointer hover:underline text-[#b83d32] dark:text-[#ffb1a1] bg-transparent border-0 p-0"
+                  onClick={() => voice.handlers.start()}
                 >
-                  <Square size={16} fill="currentColor" />
+                  Retry
                 </button>
                 <button
                   type="button"
-                  className="ai-action-btn is-cancel shrink-0 w-[36px] h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#8a978e] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#2a352e] hover:not-disabled:text-[#44594c] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
-                  onClick={voice.handlers.cancel}
-                  aria-label="Cancel"
-                  title="Cancel"
+                  className="w-[18px] h-[18px] rounded-[3px] grid place-items-center hover:bg-[#ffe3de] dark:hover:bg-[#432d29] cursor-pointer bg-transparent border-0 p-0 text-[#b83d32] dark:text-[#ffb1a1]"
+                  onClick={() => voice.handlers.cancel()}
+                  aria-label="Dismiss error"
+                  title="Dismiss"
                 >
-                  <X size={16} />
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+          <div
+            className={`ai-composer-box flex gap-[8px] p-[8px_8px_8px_14px] border border-[#dfe5dc] dark:border-[#435148] rounded-[14px] bg-white dark:bg-[#141b17] focus-within:border-[#8aa357] dark:focus-within:border-[#a2b76c] focus-within:ring-3 focus-within:ring-[#8aa357]/16 transition-all duration-140 ${
+              voice.state === 'listening' ? 'is-voice items-center min-h-[54px] h-[54px]' : 'items-end min-h-[54px]'
+            }`}
+          >
+            {voice.state === 'listening' ? (
+              <>
+                <Waveform
+                  analyserRef={voice.analyserRef}
+                  active={voice.state === 'listening'}
+                  color={theme === 'dark' ? '#d9ed74' : '#193c33'}
+                />
+                <button
+                  type="button"
+                  className="ai-action-btn is-cancel shrink-0 w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-transparent text-[#617166] dark:text-[#a4b2a8] hover:not-disabled:bg-[#eef3ec] dark:hover:not-disabled:bg-[#28362d] hover:not-disabled:text-[#243a33] dark:hover:not-disabled:text-[#edf2ec] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140"
+                  onClick={voice.handlers.cancel}
+                  aria-label="Cancel recording"
+                  title="Cancel recording"
+                >
+                  <X size={18} />
+                </button>
+                <button
+                  type="button"
+                  className="ai-action-btn is-confirm shrink-0 w-[34px] h-[34px] sm:w-[36px] sm:h-[36px] border-0 rounded-[10px] cursor-pointer grid place-items-center bg-[#193c33] dark:bg-[#d9ed74] text-white dark:text-[#193c33] hover:not-disabled:bg-[#243a33] dark:hover:not-disabled:bg-[#e5f79b] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-140 shadow-[0_1px_3px_rgba(25,60,51,0.2)] dark:shadow-none"
+                  onClick={voice.handlers.stop}
+                  aria-label="Confirm recording"
+                  title="Confirm recording"
+                >
+                  <Check size={18} strokeWidth={2.4} />
                 </button>
               </>
             ) : (
@@ -398,11 +426,11 @@ export default function AiAssistant({ token, onError, userName, avatarUrl }: AiA
                       void submit(draft)
                     }
                   }}
-                  rows={2}
+                  rows={1}
                   maxLength={MAX_MESSAGE_LENGTH}
                   placeholder={voice.state === 'processing' ? 'Processing…' : supported ? 'Type a message or tap the mic' : 'Ask about attendance, leave, teams or tasks…'}
                   aria-label="Message the Snowflex AI Employee"
-                  className="flex-1 min-h-[24px] max-h-[160px] py-[4px] px-0 border-0 outline-none resize-none bg-transparent text-[#293f34] dark:text-[#edf2ec] placeholder-[#a6b0a8] dark:placeholder-[#829187] text-[13px] leading-[1.55] disabled:cursor-wait disabled:opacity-65"
+                  className="flex-1 min-h-[36px] max-h-[160px] py-[7px] px-0 border-0 outline-none resize-none bg-transparent text-[#293f34] dark:text-[#edf2ec] placeholder-[#a6b0a8] dark:placeholder-[#829187] text-[13px] leading-[1.55] disabled:cursor-wait disabled:opacity-65"
                 />
                 {trimmedDraft.length > 0 ? (
                   <button
