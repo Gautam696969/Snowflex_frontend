@@ -46,6 +46,7 @@ export default function Login() {
     console.log(`[DEBUG_AUTH] Login initiated for: "${cleanEmail}"`)
     try {
       const result = await login({ email: cleanEmail, password })
+      sessionStorage.removeItem('snowflex_morning_checkin_dismissed')
       storeToken(result.token, remember)
       toast.success('Welcome back!')
       navigate('/dashboard', { replace: true })

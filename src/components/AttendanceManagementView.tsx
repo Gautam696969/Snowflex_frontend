@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Clock, Calendar, XCircle, Plus,
-  RefreshCw, Search, UserCheck, Check, X
+  RefreshCw, Search, UserCheck, Check, X,
+  Camera, CheckCircle2, Image as ImageIcon
 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import UserAvatar from './UserAvatar'
 import RequestAttendanceModal from './RequestAttendanceModal'
+import CameraCaptureModal from './CameraCaptureModal'
 import { useAttendanceRequests } from '../hooks/useAttendanceRequests'
 import { type SafeUser, readToken, normalizeRole } from '../lib/auth-api'
 import { apiBase } from '../lib/api-config'
@@ -26,6 +29,14 @@ interface AttendanceLogRecord {
   checkOut: string | null
   status: string
   workingHours: number | null
+  checkInPhoto?: string | null
+  checkOutPhoto?: string | null
+}
+
+interface TodayAttendanceStatus {
+  checkedIn: boolean
+  checkedOut: boolean
+  record: AttendanceLogRecord | null
 }
 
 function formatTime(isoString: string | null): string {
@@ -63,8 +74,6 @@ function formatTypeLabel(type: string): string {
 
 export default function AttendanceManagementView({
   currentUser,
-  onCheckIn,
-  onCheckOut,
 }: AttendanceManagementViewProps) {
   const role = normalizeRole(currentUser?.role)
   const isApprover = ['ADMIN', 'HR', 'SUPER_ADMIN'].includes(role)
@@ -74,6 +83,16 @@ export default function AttendanceManagementView({
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [showRequestModal, setShowRequestModal] = useState<boolean>(false)
+
+  // Camera modal state
+  const [cameraModalMode, setCameraModalMode] = useState<'check-in' | 'check-out' | null>(null)
+
+  // Photo lightbox preview
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; title: string; time?: string } | null>(null)
+
+  // Today shift punch status for employee
+  const [todayStatus, setTodayStatus] = useState<TodayAttendanceStatus | null>(null)
+  const [loadingToday, setLoadingToday] = useState<boolean>(false)
 
   // Attendance history logs
   const [logs, setLogs] = useState<AttendanceLogRecord[]>([])
@@ -95,6 +114,26 @@ export default function AttendanceManagementView({
     handleApprove,
     handleReject,
   } = useAttendanceRequests({ currentUser })
+
+  const fetchTodayStatus = useCallback(async () => {
+    if (!isEmployee) return
+    setLoadingToday(true)
+    try {
+      const token = readToken()
+      if (!token) return
+      const res = await fetch(`${apiBase}/attendance/today`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const body = await res.json()
+      if (body.success && body.data) {
+        setTodayStatus(body.data)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch today attendance status:', err)
+    } finally {
+      setLoadingToday(false)
+    }
+  }, [isEmployee])
 
   const fetchLogs = useCallback(async () => {
     setLoadingLogs(true)
@@ -118,7 +157,39 @@ export default function AttendanceManagementView({
 
   useEffect(() => {
     void fetchLogs()
-  }, [fetchLogs])
+    void fetchTodayStatus()
+  }, [fetchLogs, fetchTodayStatus])
+
+  // Camera Check-In / Check-Out confirmation
+  const handleCameraAttendanceSubmit = async (photoBase64: string) => {
+    if (!cameraModalMode) return
+    const token = readToken()
+    if (!token) return
+
+    const endpoint = cameraModalMode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out'
+    const res = await fetch(`${apiBase}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ photo: photoBase64 }),
+    })
+    const body = await res.json()
+    if (!res.ok || !body.success) {
+      const errMsg = body.message || `Failed to ${cameraModalMode}`
+      toast.error(errMsg)
+      throw new Error(errMsg)
+    }
+
+    toast.success(
+      cameraModalMode === 'check-in'
+        ? 'Checked in successfully! Real-time notification sent to Admins.'
+        : 'Checked out successfully! Shift logged and reported to Admins.'
+    )
+    await fetchTodayStatus()
+    await fetchLogs()
+  }
 
   const filteredRequests = useMemo(() => {
     return requests.filter((item) => {
@@ -156,6 +227,150 @@ export default function AttendanceManagementView({
 
   return (
     <div className="attendance-management-view flex flex-col gap-[20px]">
+      {/* Employee Morning Shift & Check-In Action Card (prominent for employees) */}
+      {isEmployee && (
+        <div className="p-[20px_24px] rounded-[16px] bg-[linear-gradient(135deg,#f8fcf7_0%,#edf5e8_100%)] dark:bg-[linear-gradient(135deg,#16231c_0%,#1a2a22_100%)] border border-[#d5e5d3] dark:border-[#2d4234] shadow-[0_4px_16px_-4px_rgba(25,60,51,0.06)] flex items-center justify-between gap-[20px] flex-wrap">
+          <div className="flex flex-col gap-[4px] max-w-[540px]">
+            <div className="flex items-center gap-[8px]">
+              <span className="font-mono text-[10.5px] font-black uppercase tracking-[0.1em] text-[#2c5b3d] dark:text-[#90c49f] px-[8px] py-[2px] rounded-[5px] bg-[#e1eedc] dark:bg-[#203528]">
+                {!todayStatus?.checkedIn
+                  ? 'MORNING SHIFT • AWAITING CHECK-IN'
+                  : !todayStatus?.checkedOut
+                  ? 'SHIFT IN PROGRESS'
+                  : 'SHIFT COMPLETED TODAY'}
+              </span>
+              {todayStatus?.checkedIn && !todayStatus?.checkedOut && (
+                <span className="flex items-center gap-[6px] text-[11px] font-bold text-[#10b981] bg-white/80 dark:bg-black/30 px-[8px] py-[2px] rounded-full border border-[#10b981]/30">
+                  <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+                  <span>Clock Active</span>
+                </span>
+              )}
+            </div>
+
+            <h3 className="m-0 mt-1 text-[19px] font-bold text-[#193c33] dark:text-[#edf5ef] leading-tight">
+              {!todayStatus?.checkedIn
+                ? 'Ready for your shift? Record Check-In with Camera'
+                : !todayStatus?.checkedOut
+                ? `Checked in at ${formatTime(todayStatus.record?.checkIn || null)} (${todayStatus.record?.status || 'PRESENT'})`
+                : `Shift complete: ${formatTime(todayStatus.record?.checkIn || null)} → ${formatTime(todayStatus.record?.checkOut || null)} (${todayStatus.record?.workingHours || 0} hrs)`}
+            </h3>
+
+            <p className="m-0 text-[12.5px] text-[#556b5e] dark:text-[#97a89e] leading-relaxed">
+              {!todayStatus?.checkedIn
+                ? 'Click "Check In with Camera" below to verify attendance with selfie capture. Timestamp and photo are instantly forwarded to Admin & Super Admin.'
+                : !todayStatus?.checkedOut
+                ? 'Your shift is currently active. When you finish work, click "Check Out with Camera" to log your exit timestamp and wrap up your day.'
+                : 'Your daily attendance has been fully logged and synchronized with Admin & Super Admin systems.'}
+            </p>
+
+            {/* Quick action to submit request if employee forgot */}
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                type="button"
+                className="text-[12px] text-[#2f5e42] dark:text-[#a0d2af] font-semibold underline hover:text-[#193c33] cursor-pointer bg-transparent border-0 p-0"
+                onClick={() => setShowRequestModal(true)}
+              >
+                Forgot to punch or need time adjustment? Submit attendance request →
+              </button>
+            </div>
+          </div>
+
+          {/* Action buttons & Verified Photos */}
+          <div className="flex items-center gap-[12px] flex-wrap ml-auto">
+            {todayStatus?.record?.checkInPhoto && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLightboxPhoto({
+                    url: todayStatus.record!.checkInPhoto!,
+                    title: 'Check-In Verification Photo',
+                    time: formatTime(todayStatus.record!.checkIn),
+                  })
+                }
+                className="group relative flex items-center gap-2 p-1.5 pr-3 rounded-[9px] bg-white/90 dark:bg-[#1a251f] border border-[#d5e0d3] dark:border-[#2f4236] shadow-sm hover:border-[#10b981] transition-all cursor-pointer text-left"
+                title="View verified check-in photo"
+              >
+                <img
+                  src={todayStatus.record.checkInPhoto}
+                  alt="Check-in selfie"
+                  className="w-8 h-8 rounded-[6px] object-cover border border-[#c5d3c3]"
+                />
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold text-[#4e6456] dark:text-[#8ea295]">Check-In</span>
+                  <span className="text-[11px] font-extrabold text-[#193c33] dark:text-[#edf5ef]">
+                    {formatTime(todayStatus.record.checkIn)}
+                  </span>
+                </div>
+              </button>
+            )}
+
+            {todayStatus?.record?.checkOutPhoto && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLightboxPhoto({
+                    url: todayStatus.record!.checkOutPhoto!,
+                    title: 'Check-Out Verification Photo',
+                    time: formatTime(todayStatus.record!.checkOut),
+                  })
+                }
+                className="group relative flex items-center gap-2 p-1.5 pr-3 rounded-[9px] bg-white/90 dark:bg-[#1a251f] border border-[#d5e0d3] dark:border-[#2f4236] shadow-sm hover:border-[#10b981] transition-all cursor-pointer text-left"
+                title="View verified check-out photo"
+              >
+                <img
+                  src={todayStatus.record.checkOutPhoto}
+                  alt="Check-out selfie"
+                  className="w-8 h-8 rounded-[6px] object-cover border border-[#c5d3c3]"
+                />
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold text-[#4e6456] dark:text-[#8ea295]">Check-Out</span>
+                  <span className="text-[11px] font-extrabold text-[#193c33] dark:text-[#edf5ef]">
+                    {formatTime(todayStatus.record.checkOut)}
+                  </span>
+                </div>
+              </button>
+            )}
+
+            {/* Shift punch buttons */}
+            {!todayStatus?.checkedIn ? (
+              <button
+                type="button"
+                onClick={() => setCameraModalMode('check-in')}
+                className="inline-flex items-center gap-[8px] px-[20px] py-[11px] rounded-[10px] bg-[#193c33] hover:bg-[#235345] text-white text-[13.5px] font-extrabold shadow-[0_4px_14px_rgba(25,60,51,0.25)] transition-all cursor-pointer hover:scale-[1.02]"
+              >
+                <Camera size={18} />
+                <span>Check In with Camera</span>
+              </button>
+            ) : !todayStatus?.checkedOut ? (
+              <button
+                type="button"
+                onClick={() => setCameraModalMode('check-out')}
+                className="inline-flex items-center gap-[8px] px-[20px] py-[11px] rounded-[10px] bg-[#059669] hover:bg-[#047857] text-white text-[13.5px] font-extrabold shadow-[0_4px_14px_rgba(5,150,105,0.25)] transition-all cursor-pointer hover:scale-[1.02]"
+              >
+                <Camera size={18} />
+                <span>Check Out with Camera</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-[10px] flex-wrap">
+                <div className="inline-flex items-center gap-[8px] px-[16px] py-[10px] rounded-[10px] bg-[#ecfdf5] dark:bg-[#152a20] border border-[#a7f3d0] dark:border-[#1d4d36] text-[#065f46] dark:text-[#6ee7b7] text-[13px] font-bold">
+                  <CheckCircle2 size={18} className="text-[#10b981]" />
+                  <span>Today's Shift Completed</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCameraModalMode('check-out')}
+                  className="inline-flex items-center gap-[6px] px-[14px] py-[10px] rounded-[10px] border border-[#d5e0d3] dark:border-[#2f4236] bg-white dark:bg-[#1f2d25] text-[#2c5339] dark:text-[#a0c5ac] hover:bg-[#f2f6f1] text-[12.5px] font-bold transition-all cursor-pointer shadow-xs"
+                  title="Update check-out time"
+                >
+                  <Camera size={15} />
+                  <span>Update Check-Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top Banner / Actions Bar */}
       <div className="flex items-center justify-between gap-[16px] flex-wrap p-[18px_22px] rounded-[14px] bg-white dark:bg-[#1a241f] border border-[#e2e8df] dark:border-[#28382d] shadow-[0_3px_12px_-2px_rgba(25,60,51,0.03)]">
         <div>
@@ -174,31 +389,33 @@ export default function AttendanceManagementView({
           </h2>
           <p className="m-0 text-[#718478] dark:text-[#8e9f94] text-[12px]">
             {isEmployee
-              ? 'Log daily check-ins, submit punch adjustments, and monitor approval states in real time.'
+              ? 'Log daily camera check-ins, submit punch adjustments, and monitor approval states in real time.'
               : 'Approve and reject attendance petitions live. Real-time multi-reviewer race condition safety.'}
           </p>
         </div>
 
         <div className="flex items-center gap-[10px] flex-wrap">
-          {/* Daily punch buttons for employees */}
+          {/* Daily punch button triggers for employees */}
           {isEmployee && (
             <>
-              {onCheckIn && (
+              {!todayStatus?.checkedIn && (
                 <button
                   type="button"
-                  className="px-[14px] py-[8px] rounded-[7px] text-[12px] font-bold border border-[#dce3d8] bg-white text-[#224434] hover:bg-[#f0f5e9] transition-colors cursor-pointer"
-                  onClick={onCheckIn}
+                  className="inline-flex items-center gap-1.5 px-[14px] py-[8px] rounded-[7px] text-[12px] font-bold border border-[#dce3d8] bg-white text-[#224434] hover:bg-[#f0f5e9] transition-colors cursor-pointer"
+                  onClick={() => setCameraModalMode('check-in')}
                 >
-                  Check In
+                  <Camera size={15} />
+                  <span>Check In</span>
                 </button>
               )}
-              {onCheckOut && (
+              {todayStatus?.checkedIn && !todayStatus?.checkedOut && (
                 <button
                   type="button"
-                  className="px-[14px] py-[8px] rounded-[7px] text-[12px] font-bold border-0 bg-[#28483b] text-white hover:bg-[#193c33] transition-colors cursor-pointer"
-                  onClick={onCheckOut}
+                  className="inline-flex items-center gap-1.5 px-[14px] py-[8px] rounded-[7px] text-[12px] font-bold border-0 bg-[#28483b] text-white hover:bg-[#193c33] transition-colors cursor-pointer"
+                  onClick={() => setCameraModalMode('check-out')}
                 >
-                  Check Out
+                  <Camera size={15} />
+                  <span>Check Out</span>
                 </button>
               )}
               <button
@@ -218,10 +435,11 @@ export default function AttendanceManagementView({
             onClick={() => {
               void refresh()
               void fetchLogs()
+              void fetchTodayStatus()
             }}
             title="Refresh records"
           >
-            <RefreshCw size={15} className={loadingRequests || loadingLogs ? 'animate-spin' : ''} />
+            <RefreshCw size={15} className={loadingRequests || loadingLogs || loadingToday ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
@@ -483,7 +701,7 @@ export default function AttendanceManagementView({
           </div>
         ) : (
           <div className="overflow-x-auto rounded-[12px] border border-[#e2e8df] dark:border-[#27382d] bg-white dark:bg-[#18231d]">
-            <table className="w-full text-left text-[12.5px] border-collapse">
+            <table className="w-full text-left text-[12.5px] border-collapse min-w-[640px]">
               <thead>
                 <tr className="border-b border-[#e7ede4] dark:border-[#26372c] bg-[#f8faf7] dark:bg-[#141d18] text-[#55695d] dark:text-[#8e9f94] uppercase tracking-wider text-[11px] font-extrabold">
                   {!isEmployee && <th className="p-[12px_16px]">Employee</th>}
@@ -492,6 +710,7 @@ export default function AttendanceManagementView({
                   <th className="p-[12px_16px]">Check-Out</th>
                   <th className="p-[12px_16px]">Working Hours</th>
                   <th className="p-[12px_16px]">Status</th>
+                  <th className="p-[12px_16px]">Verification</th>
                 </tr>
               </thead>
               <tbody>
@@ -540,12 +759,113 @@ export default function AttendanceManagementView({
                         {row.status}
                       </span>
                     </td>
+                    <td className="p-[12px_16px]">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {row.checkInPhoto ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLightboxPhoto({
+                                url: row.checkInPhoto!,
+                                title: `${row.fullName || 'Employee'} — Check-In Photo`,
+                                time: formatTime(row.checkIn),
+                              })
+                            }
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] bg-[#edf4ea] text-[#193c33] border border-[#d2e2cf] text-[10.5px] font-bold hover:bg-[#d9ed74] transition-colors cursor-pointer"
+                            title="Click to view check-in selfie"
+                          >
+                            <Camera size={12} />
+                            <span>In</span>
+                          </button>
+                        ) : null}
+
+                        {row.checkOutPhoto ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setLightboxPhoto({
+                                url: row.checkOutPhoto!,
+                                title: `${row.fullName || 'Employee'} — Check-Out Photo`,
+                                time: formatTime(row.checkOut),
+                              })
+                            }
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] bg-[#e6edf4] text-[#1e3a5f] border border-[#ccdbe8] text-[10.5px] font-bold hover:bg-[#bfdbfe] transition-colors cursor-pointer"
+                            title="Click to view check-out selfie"
+                          >
+                            <Camera size={12} />
+                            <span>Out</span>
+                          </button>
+                        ) : null}
+
+                        {!row.checkInPhoto && !row.checkOutPhoto && (
+                          <span className="text-[#a0b0a5] text-[11px]">—</span>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )
+      )}
+
+      {/* Camera Capture Modal for Check-In and Check-Out */}
+      {cameraModalMode && (
+        <CameraCaptureModal
+          isOpen={Boolean(cameraModalMode)}
+          mode={cameraModalMode}
+          employeeName={currentUser?.fullName}
+          onRequestAdjustment={() => {
+            setCameraModalMode(null)
+            setShowRequestModal(true)
+          }}
+          onClose={() => setCameraModalMode(null)}
+          onConfirm={handleCameraAttendanceSubmit}
+        />
+      )}
+
+      {/* Photo Lightbox Preview Modal */}
+      {lightboxPhoto && (
+        <div
+          className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[10001] animate-fade-in"
+          onClick={() => setLightboxPhoto(null)}
+        >
+          <div
+            className="relative max-w-[500px] w-full bg-white dark:bg-[#18231d] rounded-[16px] overflow-hidden shadow-2xl border border-white/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-3.5 px-4 bg-[#f6faf4] dark:bg-[#131d17] border-b border-[#e5ece3] dark:border-[#27362c]">
+              <div className="flex items-center gap-2">
+                <ImageIcon size={17} className="text-[#193c33] dark:text-[#d9ed74]" />
+                <span className="text-[13.5px] font-bold text-[#193c33] dark:text-[#edf5ef]">
+                  {lightboxPhoto.title}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightboxPhoto(null)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[#63776a] hover:text-[#193c33] hover:bg-[#e4ede1] cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-3 bg-black flex items-center justify-center">
+              <img
+                src={lightboxPhoto.url}
+                alt={lightboxPhoto.title}
+                className="max-h-[65vh] w-auto object-contain rounded-[8px]"
+              />
+            </div>
+
+            {lightboxPhoto.time && (
+              <div className="p-3 px-4 bg-[#f6faf4] dark:bg-[#131d17] text-center text-[12px] font-semibold text-[#526658] dark:text-[#9fb2a4]">
+                Recorded at {lightboxPhoto.time}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Request Modal Dialog */}
@@ -556,6 +876,7 @@ export default function AttendanceManagementView({
         onSuccess={() => {
           void refresh()
           void fetchLogs()
+          void fetchTodayStatus()
         }}
       />
 

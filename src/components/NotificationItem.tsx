@@ -53,6 +53,27 @@ function getNotificationVisuals(type: string) {
       bgClass: 'notif-bg-approved',
     }
   }
+  if (upper === 'ATTENDANCE_CHECK_IN') {
+    return {
+      icon: Clock,
+      badgeClass: 'notif-badge-approved',
+      bgClass: 'notif-bg-approved',
+    }
+  }
+  if (upper === 'ATTENDANCE_CHECK_OUT') {
+    return {
+      icon: Clock,
+      badgeClass: 'notif-badge-requested',
+      bgClass: 'notif-bg-requested',
+    }
+  }
+  if (upper === 'ATTENDANCE_REQUESTED') {
+    return {
+      icon: Clock,
+      badgeClass: 'notif-badge-requested',
+      bgClass: 'notif-bg-requested',
+    }
+  }
   return {
     icon: Bell,
     badgeClass: 'notif-badge-default',

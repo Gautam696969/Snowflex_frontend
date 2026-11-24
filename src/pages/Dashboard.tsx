@@ -7,7 +7,8 @@ import {
   Plus, RefreshCw, Sparkles, Users, X,
   Edit, Trash2, Eye, Search, X as XIcon, UserCheck, UserX, RotateCcw, AlertTriangle,
   Briefcase, Shield, User, LayoutGrid, List, CheckCircle2, ArrowUpDown,
-  Server, ShieldCheck, UserCircle2, MessageSquare, Palette, ShieldAlert
+  Server, ShieldCheck, UserCircle2, MessageSquare, Palette, ShieldAlert,
+  Camera
 } from 'lucide-react'
 import {
   apiRequest, clearToken, getCurrentUser, getDashboard,
@@ -40,6 +41,9 @@ import ThemeCustomizationView from '../components/ThemeCustomizationView'
 import AttendanceRequestsWidget from '../components/AttendanceRequestsWidget'
 import AttendanceManagementView from '../components/AttendanceManagementView'
 import { useAttendanceRequests } from '../hooks/useAttendanceRequests'
+import CameraCaptureModal from '../components/CameraCaptureModal'
+import RequestAttendanceModal from '../components/RequestAttendanceModal'
+import { apiBase } from '../lib/api-config'
 
 type View = 'overview' | 'assistant' | 'chat' | 'employees' | 'departments' | 'attendance' | 'leaves' | 'holidays' | 'tasks' | 'users' | 'system' | 'themes' | 'profile'
 type Row = Record<string, unknown>
@@ -52,6 +56,12 @@ const formatDate = (value: unknown) => {
 }
 
 const formatDateTime = (value: unknown) => {
+  if (!value) return '—'
+  const date = new Date(String(value))
+  return isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const formatTime = (value: unknown) => {
   if (!value) return '—'
   const date = new Date(String(value))
   return isNaN(date.getTime()) ? String(value) : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -124,6 +134,73 @@ export default function Dashboard() {
   const { markByTypeAsRead, clear: clearNotifications } = useNotifications()
   const { totalUnreadCount: chatUnreadCount } = useChat()
   const attendanceReq = useAttendanceRequests({ currentUser: user })
+
+  // Employee today's attendance & camera check-in/out state
+  const [todayAttendance, setTodayAttendance] = useState<{ checkedIn: boolean; checkedOut: boolean; record: Record<string, unknown> | null } | null>(null)
+  const [cameraModalMode, setCameraModalMode] = useState<'check-in' | 'check-out' | null>(null)
+  const [cameraModalInitialStep, setCameraModalInitialStep] = useState<'prompt' | 'camera'>('prompt')
+  const [showAttendanceRequestModal, setShowAttendanceRequestModal] = useState<boolean>(false)
+
+  const fetchTodayAttendance = async (
+    currentToken: string,
+    currentUser?: SafeUser | null,
+    allowAutoPrompt: boolean = false
+  ) => {
+    try {
+      const res = await apiRequest<{ checkedIn: boolean; checkedOut: boolean; record: Record<string, unknown> | null }>('/attendance/today', currentToken)
+      setTodayAttendance(res)
+      const activeUser = currentUser || user
+      if (
+        allowAutoPrompt &&
+        activeUser &&
+        normalizeRole(activeUser.role) === 'EMPLOYEE' &&
+        !res.checkedIn
+      ) {
+        const isDismissed = sessionStorage.getItem('snowflex_morning_checkin_dismissed')
+        if (!isDismissed) {
+          setCameraModalInitialStep('prompt')
+          setCameraModalMode('check-in')
+        }
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  const handleCloseCameraModal = () => {
+    if (cameraModalMode === 'check-in') {
+      sessionStorage.setItem('snowflex_morning_checkin_dismissed', 'true')
+    }
+    setCameraModalMode(null)
+  }
+
+  const handleCameraAttendanceSubmit = async (photoBase64: string) => {
+    if (!cameraModalMode || !token) return
+    const endpoint = cameraModalMode === 'check-in' ? '/attendance/check-in' : '/attendance/check-out'
+    const res = await fetch(`${apiBase}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ photo: photoBase64 }),
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      const msg = data.message || `Failed to ${cameraModalMode}`
+      toast.error(msg)
+      throw new Error(msg)
+    }
+    toast.success(
+      cameraModalMode === 'check-in'
+        ? 'Checked in successfully! Real-time notification sent to Admins.'
+        : 'Checked out successfully! Shift logged and reported to Admins.'
+    )
+    await fetchTodayAttendance(token, user, false)
+    if (user) {
+      await loadData(token, user, view)
+    }
+  }
 
   // Mark leave, holiday, and attendance notifications as read when opening their respective views
   useEffect(() => {
@@ -253,6 +330,7 @@ export default function Dashboard() {
         if (!active) return
         console.log(`[DEBUG_AUTH] Dashboard session established for: "${authenticatedUser.email}", Role: "${authenticatedUser.role}"`)
         setUser(authenticatedUser)
+        void fetchTodayAttendance(currentToken, authenticatedUser, true)
         try {
           await loadData(currentToken, authenticatedUser, view)
         } catch (loadErr) {
@@ -271,6 +349,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (token && user) {
       void loadData(token, user, view)
+      void fetchTodayAttendance(token, user, false)
       setSearchQuery('')
       setStatusFilter('ALL')
       setCurrentPage(1)
@@ -1243,13 +1322,45 @@ export default function Dashboard() {
               </div>
 
               <div className="dash-hero-actions relative z-[1] flex flex-wrap items-center gap-[10px]">
-                {view === 'attendance' && role === 'EMPLOYEE' && (
+                {role === 'EMPLOYEE' && (view === 'overview' || view === 'attendance') && (
                   <>
-                    <button className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#dce5d8] rounded-[4px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors" type="button" onClick={() => void perform('/attendance/check-in', 'POST')}>
-                      Check In
-                    </button>
-                    <button className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[12px] border border-[#193c33] rounded-[4px] text-white bg-[#193c33] text-[11px] font-semibold cursor-pointer hover:bg-[#265648] transition-colors" type="button" onClick={() => void perform('/attendance/check-out', 'POST')}>
-                      Check Out
+                    {!todayAttendance?.checkedIn ? (
+                      <button
+                        className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[14px] border border-[#193c33] rounded-[6px] text-white bg-[#193c33] text-[11px] font-bold cursor-pointer hover:bg-[#265648] transition-all shadow-sm"
+                        type="button"
+                        onClick={() => {
+                          setCameraModalInitialStep('prompt')
+                          setCameraModalMode('check-in')
+                        }}
+                      >
+                        <Camera size={15} />
+                        <span>Check In</span>
+                      </button>
+                    ) : !todayAttendance?.checkedOut ? (
+                      <button
+                        className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[14px] border border-[#059669] rounded-[6px] text-white bg-[#059669] text-[11px] font-bold cursor-pointer hover:bg-[#047857] transition-all shadow-sm"
+                        type="button"
+                        onClick={() => {
+                          setCameraModalInitialStep('camera')
+                          setCameraModalMode('check-out')
+                        }}
+                      >
+                        <Camera size={15} />
+                        <span>Check Out</span>
+                      </button>
+                    ) : (
+                      <div className="inline-flex min-h-[36px] items-center justify-center gap-[6px] px-[12px] rounded-[6px] bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] text-[11px] font-bold">
+                        <CheckCircle2 size={15} className="text-[#10b981]" />
+                        <span>Shift Complete</span>
+                      </div>
+                    )}
+                    <button
+                      className="secondary-action inline-flex min-h-[36px] items-center justify-center gap-[6px] px-[12px] border border-[#dce5d8] rounded-[6px] text-[#28483b] bg-white text-[11px] font-semibold cursor-pointer hover:bg-[#f0f5e9] transition-colors"
+                      type="button"
+                      onClick={() => setShowAttendanceRequestModal(true)}
+                      title="Forgot to punch or need attendance adjustment?"
+                    >
+                      <span>Forgot Punch?</span>
                     </button>
                   </>
                 )}
@@ -1611,16 +1722,110 @@ export default function Dashboard() {
                     </div>
 
                     {isEmployee ? (
-                      <div className="pulse-rate-box flex items-center justify-between gap-[20px] p-[18px_20px] bg-[linear-gradient(135deg,#f7faf5_0%,#edf3e7_100%)] border border-[#dce8d6] rounded-[12px] mb-[20px]">
-                        <div className="pulse-rate-primary flex items-baseline gap-[8px]">
-                          <strong className="font-sans text-[36px] font-extrabold text-[#193c33]">{stats.attendanceThisMonth ?? 0}</strong>
-                          <span className="text-[18px] text-[#7b8e83] font-semibold">days recorded this month</span>
+                      <>
+                        {/* Employee Morning Shift & Live Camera Verification Card */}
+                        <div className="mb-[20px] p-[18px_20px] rounded-[14px] bg-[linear-gradient(135deg,#f8fcf7_0%,#edf5e8_100%)] border border-[#d5e4d2] flex items-center justify-between gap-[16px] flex-wrap shadow-sm">
+                          <div className="flex flex-col gap-[3px] max-w-[420px]">
+                            <div className="flex items-center gap-[7px]">
+                              <span className="font-mono text-[10px] font-black uppercase tracking-[0.08em] px-[7px] py-[2px] rounded-[4px] bg-[#dfebdc] text-[#245236]">
+                                {!todayAttendance?.checkedIn
+                                  ? 'MORNING SHIFT • AWAITING CHECK-IN'
+                                  : !todayAttendance?.checkedOut
+                                  ? 'SHIFT IN PROGRESS'
+                                  : 'SHIFT COMPLETED TODAY'}
+                              </span>
+                              {todayAttendance?.checkedIn && !todayAttendance?.checkedOut && (
+                                <span className="flex items-center gap-[5px] text-[10.5px] font-bold text-[#10b981] bg-white/90 px-[7px] py-[1px] rounded-full border border-[#10b981]/30">
+                                  <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+                                  <span>Active</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <strong className="text-[16px] font-bold text-[#193c33] mt-1 leading-tight">
+                              {!todayAttendance?.checkedIn
+                                ? 'Good morning! Check in with Camera'
+                                : !todayAttendance?.checkedOut
+                                ? `Checked in at ${formatTime(todayAttendance.record?.checkIn as string)}`
+                                : `Shift complete: ${formatTime(todayAttendance.record?.checkIn as string)} → ${formatTime(todayAttendance.record?.checkOut as string)} (${todayAttendance.record?.workingHours || 0} hrs)`}
+                            </strong>
+
+                            <p className="m-0 text-[11.5px] text-[#556b5e] leading-relaxed">
+                              {!todayAttendance?.checkedIn
+                                ? 'Verify your identity and record morning attendance with your camera. Sent automatically to Super Admin and Admin.'
+                                : !todayAttendance?.checkedOut
+                                ? 'Work session active. Click Check Out with Camera when wrapping up today.'
+                                : 'Attendance recorded and verified with timestamp and camera photos.'}
+                            </p>
+
+                            <button
+                              type="button"
+                              className="text-left text-[11px] text-[#28573a] font-semibold underline hover:text-[#193c33] cursor-pointer bg-transparent border-0 p-0 mt-1"
+                              onClick={() => setShowAttendanceRequestModal(true)}
+                            >
+                              Forgot to check in or out? Request adjustment →
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-[10px] ml-auto">
+                            {!todayAttendance?.checkedIn ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCameraModalInitialStep('prompt')
+                                  setCameraModalMode('check-in')
+                                }}
+                                className="inline-flex items-center gap-[7px] px-[18px] py-[10px] rounded-[9px] bg-[#193c33] hover:bg-[#255648] text-white text-[13px] font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02]"
+                              >
+                                <Camera size={16} />
+                                <span>Check In with Camera</span>
+                              </button>
+                            ) : !todayAttendance?.checkedOut ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCameraModalInitialStep('camera')
+                                  setCameraModalMode('check-out')
+                                }}
+                                className="inline-flex items-center gap-[7px] px-[18px] py-[10px] rounded-[9px] bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02]"
+                              >
+                                <Camera size={16} />
+                                <span>Check Out with Camera</span>
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-[8px] flex-wrap">
+                                <div className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] bg-white border border-[#a7f3d0] text-[#065f46] text-[12px] font-bold shadow-sm">
+                                  <CheckCircle2 size={16} className="text-[#10b981]" />
+                                  <span>Shift Finished</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCameraModalInitialStep('camera')
+                                    setCameraModalMode('check-out')
+                                  }}
+                                  className="inline-flex items-center gap-[5px] px-[12px] py-[8px] rounded-[8px] bg-white border border-[#d5e0d3] text-[#245236] text-[12px] font-bold hover:bg-[#f0f5e9] transition-colors cursor-pointer shadow-xs"
+                                  title="Update exit time if working overtime"
+                                >
+                                  <Camera size={14} />
+                                  <span>Update Check-Out</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="pulse-rate-badge inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-[8px] bg-white border border-[#d7e4d2] text-[#1f4f39] font-bold text-[13px] shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
-                          <CalendarDays size={16} />
-                          <span>{stats.leaveBalance ?? 0} days remaining</span>
+
+                        <div className="pulse-rate-box flex items-center justify-between gap-[20px] p-[18px_20px] bg-[linear-gradient(135deg,#f7faf5_0%,#edf3e7_100%)] border border-[#dce8d6] rounded-[12px] mb-[20px]">
+                          <div className="pulse-rate-primary flex items-baseline gap-[8px]">
+                            <strong className="font-sans text-[36px] font-extrabold text-[#193c33]">{stats.attendanceThisMonth ?? 0}</strong>
+                            <span className="text-[18px] text-[#7b8e83] font-semibold">days recorded this month</span>
+                          </div>
+                          <div className="pulse-rate-badge inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-[8px] bg-white border border-[#d7e4d2] text-[#1f4f39] font-bold text-[13px] shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                            <CalendarDays size={16} />
+                            <span>{stats.leaveBalance ?? 0} days remaining</span>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <>
                         <div className="pulse-rate-box flex items-center justify-between gap-[20px] p-[18px_20px] bg-[linear-gradient(135deg,#f7faf5_0%,#edf3e7_100%)] border border-[#dce8d6] rounded-[12px] mb-[20px]">
@@ -2409,6 +2614,37 @@ export default function Dashboard() {
       {token && view !== 'assistant' && (
         <AiChatWidget token={token} userName={user?.fullName || 'User'} avatarUrl={user?.avatarUrl} />
       )}
+
+      {/* Employee Camera Capture Modal for Check-In / Check-Out */}
+      {cameraModalMode && (
+        <CameraCaptureModal
+          isOpen={Boolean(cameraModalMode)}
+          mode={cameraModalMode}
+          initialStep={cameraModalInitialStep}
+          employeeName={user?.fullName}
+          onRequestAdjustment={() => {
+            setCameraModalMode(null)
+            setShowAttendanceRequestModal(true)
+          }}
+          onClose={handleCloseCameraModal}
+          onConfirm={handleCameraAttendanceSubmit}
+        />
+      )}
+
+      {/* Employee Attendance Regularization / Forgot Punch Request Modal */}
+      <RequestAttendanceModal
+        isOpen={showAttendanceRequestModal}
+        onClose={() => setShowAttendanceRequestModal(false)}
+        currentUser={user}
+        onSuccess={() => {
+          if (token) {
+            void fetchTodayAttendance(token, user, false)
+          }
+          if (token && user) {
+            void loadData(token, user, view)
+          }
+        }}
+      />
     </main>
   )
 }
