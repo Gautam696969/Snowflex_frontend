@@ -187,6 +187,7 @@ export default function AttendanceManagementView({
         ? 'Checked in successfully! Real-time notification sent to Admins.'
         : 'Checked out successfully! Shift logged and reported to Admins.'
     )
+    setCameraModalMode(null)
     await fetchTodayStatus()
     await fetchLogs()
   }
@@ -815,6 +816,7 @@ export default function AttendanceManagementView({
         <CameraCaptureModal
           isOpen={Boolean(cameraModalMode)}
           mode={cameraModalMode}
+          initialStep="camera"
           employeeName={currentUser?.fullName}
           onRequestAdjustment={() => {
             setCameraModalMode(null)

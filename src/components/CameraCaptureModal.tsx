@@ -6,11 +6,12 @@ import {
   Check,
   AlertCircle,
   SwitchCamera,
-  Upload,
   Sun,
   Clock,
   ShieldCheck,
   ChevronLeft,
+  Smartphone,
+  Sparkles,
 } from 'lucide-react'
 
 export interface CameraCaptureModalProps {
@@ -32,9 +33,11 @@ export default function CameraCaptureModal({
   onClose,
   onConfirm,
 }: CameraCaptureModalProps) {
-  // Step state: 'prompt' (for morning check-in greeting), 'camera' (live viewfinder), 'preview' (review snapshot)
+  // Step state: 'prompt' (for morning greeting), 'camera' (live viewfinder), 'preview' (snapshot review)
   const [step, setStep] = useState<'prompt' | 'camera' | 'preview'>('prompt')
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [isFlashing, setIsFlashing] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -46,7 +49,7 @@ export default function CameraCaptureModal({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Live ticking clock for morning prompt
+  // Live ticking clock for morning prompt & snapshot timestamping
   useEffect(() => {
     if (!isOpen) return
     const timer = setInterval(() => {
@@ -54,6 +57,19 @@ export default function CameraCaptureModal({
     }, 1000)
     return () => clearInterval(timer)
   }, [isOpen])
+
+  // Stop active camera tracks helper
+  const stopTracks = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        try {
+          track.stop()
+        } catch {}
+      })
+      setStream(null)
+    }
+    setIsStreaming(false)
+  }, [stream])
 
   // Reset or configure step on open/mode change
   useEffect(() => {
@@ -66,14 +82,14 @@ export default function CameraCaptureModal({
       setCapturedImage(null)
       setCameraError(null)
       setIsSubmitting(false)
+      setIsStreaming(false)
     } else {
       stopTracks()
     }
-  }, [isOpen, mode, initialStep])
+  }, [isOpen, mode, initialStep, stopTracks])
 
   // Check available camera devices
-  useEffect(() => {
-    if (!isOpen) return
+  const checkCameraDevices = useCallback(() => {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
       navigator.mediaDevices
         .enumerateDevices()
@@ -83,65 +99,115 @@ export default function CameraCaptureModal({
         })
         .catch(() => {})
     }
-  }, [isOpen])
+  }, [])
 
-  // Stop camera tracks helper
-  const stopTracks = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+  useEffect(() => {
+    if (isOpen) {
+      checkCameraDevices()
     }
-  }, [stream])
+  }, [isOpen, checkCameraDevices])
 
-  // Start camera stream
+  // Start camera stream with multi-tiered fallback
   const startCamera = useCallback(async () => {
     setCameraError(null)
+    setIsStreaming(false)
     stopTracks()
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('Camera API is not supported on this device/browser. You can upload a selfie below.')
+      setCameraError('Camera API is not supported on this device/browser. You can use your phone camera or upload a selfie below.')
       return
     }
 
+    // Tier 1: Preferred resolution & facing mode
+    const tier1Constraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { ideal: facingMode },
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
+      },
+      audio: false,
+    }
+
+    let mediaStream: MediaStream | null = null
+
     try {
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode,
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        },
-        audio: false,
-      }
-      let mediaStream: MediaStream
+      mediaStream = await navigator.mediaDevices.getUserMedia(tier1Constraints)
+    } catch (err1) {
+      console.warn('Tier 1 camera constraints failed, attempting fallback...', err1)
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      } catch (constraintErr) {
-        // Fallback without strict facingMode if overconstrained
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      }
-      setStream(mediaStream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        videoRef.current.play().catch(() => {})
-      }
-    } catch (err: unknown) {
-      console.warn('getUserMedia failed:', err)
-      const errorObj = err as { name?: string; message?: string }
-      if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
-        setCameraError(
-          'Camera permission denied. To re-enable: tap the lock or site settings icon in your browser URL bar (or app info), set Camera to "Allow", and retry.'
-        )
-      } else if (errorObj?.name === 'NotFoundError' || errorObj?.name === 'DevicesNotFoundError') {
-        setCameraError('No camera found on this device. You can take a selfie using the file upload button below.')
-      } else if (errorObj?.name === 'NotReadableError' || errorObj?.name === 'TrackStartError') {
-        setCameraError(
-          'Camera is busy in another app or temporarily blocked. Please close other camera apps and retry.'
-        )
-      } else {
-        setCameraError('Unable to access camera. Please allow camera permissions or upload a selfie below.')
+        // Tier 2: Simple facingMode
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+          audio: false,
+        })
+      } catch (err2) {
+        console.warn('Tier 2 camera constraints failed, attempting basic video...', err2)
+        try {
+          // Tier 3: Basic generic video
+          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        } catch (err3) {
+          console.error('All camera attempts failed:', err3)
+          const errorObj = err3 as { name?: string; message?: string }
+          if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
+            setCameraError(
+              'Camera permission denied. To re-enable: tap the lock or site settings icon in your browser URL bar, set Camera to "Allow", and retry.'
+            )
+          } else if (errorObj?.name === 'NotFoundError' || errorObj?.name === 'DevicesNotFoundError') {
+            setCameraError('No camera found on this device. You can take a selfie using the phone camera button below.')
+          } else if (errorObj?.name === 'NotReadableError' || errorObj?.name === 'TrackStartError') {
+            setCameraError('Camera is currently busy in another app or browser tab. Please close other camera apps and retry.')
+          } else {
+            setCameraError('Unable to access camera. Please allow camera permissions or tap "Use Phone Camera" below.')
+          }
+          return
+        }
       }
     }
-  }, [facingMode, stopTracks])
+
+    if (mediaStream) {
+      setStream(mediaStream)
+      checkCameraDevices()
+    }
+  }, [facingMode, stopTracks, checkCameraDevices])
+
+  // Attach stream to video whenever stream or step changes
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !stream || step !== 'camera') return
+
+    video.srcObject = stream
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    video.muted = true
+    video.defaultMuted = true
+
+    let isMounted = true
+
+    const playVideo = () => {
+      if (!isMounted) return
+      video
+        .play()
+        .then(() => {
+          if (isMounted) setIsStreaming(true)
+        })
+        .catch((err) => {
+          console.warn('Playback interrupted or blocked:', err)
+        })
+    }
+
+    video.addEventListener('loadedmetadata', playVideo)
+    video.addEventListener('canplay', playVideo)
+
+    if (video.readyState >= 1) {
+      playVideo()
+    }
+
+    return () => {
+      isMounted = false
+      video.removeEventListener('loadedmetadata', playVideo)
+      video.removeEventListener('canplay', playVideo)
+    }
+  }, [stream, step])
 
   // Trigger camera startup when entering 'camera' step
   useEffect(() => {
@@ -155,56 +221,121 @@ export default function CameraCaptureModal({
     }
   }, [isOpen, step, startCamera, stopTracks])
 
-  // Capture snapshot from video stream
+  // Capture snapshot from live video stream
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return
     const video = videoRef.current
     const canvas = canvasRef.current
 
-    const width = video.videoWidth || 640
-    const height = video.videoHeight || 480
+    const originalWidth = video.videoWidth || 640
+    const originalHeight = video.videoHeight || 480
 
-    canvas.width = width
-    canvas.height = height
+    if (originalWidth === 0 || originalHeight === 0) {
+      console.warn('Video not ready for capture yet')
+      return
+    }
+
+    // Trigger visual shutter flash
+    setIsFlashing(true)
+    setTimeout(() => setIsFlashing(false), 160)
+
+    // Normalize resolution: target max dimension 1280px for crisp, lightweight payload
+    const maxDim = 1280
+    let targetWidth = originalWidth
+    let targetHeight = originalHeight
+
+    if (targetWidth > maxDim || targetHeight > maxDim) {
+      if (targetWidth > targetHeight) {
+        targetHeight = Math.round((targetHeight * maxDim) / targetWidth)
+        targetWidth = maxDim
+      } else {
+        targetWidth = Math.round((targetWidth * maxDim) / targetHeight)
+        targetHeight = maxDim
+      }
+    }
+
+    canvas.width = targetWidth
+    canvas.height = targetHeight
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // If using front camera, mirror image to look natural
+    ctx.save()
+    // Mirror only front camera
     if (facingMode === 'user') {
-      ctx.translate(width, 0)
+      ctx.translate(targetWidth, 0)
       ctx.scale(-1, 1)
     }
-    ctx.drawImage(video, 0, 0, width, height)
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight)
+    ctx.restore()
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
     setCapturedImage(dataUrl)
     stopTracks()
     setStep('preview')
   }
 
-  // Fallback file input change
+  // Native phone camera & file input handler with automatic client-side compression
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
     const reader = new FileReader()
     reader.onload = (event) => {
-      const result = event.target?.result as string
-      if (result) {
-        setCapturedImage(result)
+      const rawDataUrl = event.target?.result as string
+      if (!rawDataUrl) return
+
+      // Compress and resize high-res mobile photos to prevent huge base64 payload
+      const img = new Image()
+      img.onload = () => {
+        let w = img.width
+        let h = img.height
+        const maxDim = 1280
+
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w)
+            w = maxDim
+          } else {
+            w = Math.round((w * maxDim) / h)
+            h = maxDim
+          }
+        }
+
+        const offCanvas = document.createElement('canvas')
+        offCanvas.width = w
+        offCanvas.height = h
+        const offCtx = offCanvas.getContext('2d')
+        if (offCtx) {
+          offCtx.drawImage(img, 0, 0, w, h)
+          const optimized = offCanvas.toDataURL('image/jpeg', 0.85)
+          setCapturedImage(optimized)
+        } else {
+          setCapturedImage(rawDataUrl)
+        }
         stopTracks()
         setStep('preview')
       }
+      img.onerror = () => {
+        setCapturedImage(rawDataUrl)
+        stopTracks()
+        setStep('preview')
+      }
+      img.src = rawDataUrl
     }
     reader.readAsDataURL(file)
+    // Clear input so same file can be picked again if retried
+    e.target.value = ''
   }
 
   const handleRetake = () => {
     setCapturedImage(null)
+    setIsStreaming(false)
     setStep('camera')
   }
 
   const handleSwitchCamera = () => {
+    setIsStreaming(false)
     setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
   }
 
@@ -227,20 +358,25 @@ export default function CameraCaptureModal({
   const actionTitle = isCheckIn ? 'Morning Shift Check-In' : 'Shift Check-Out'
   const actionKicker = isCheckIn ? 'CAMERA ATTENDANCE VERIFICATION' : 'SHIFT WRAP-UP & VERIFICATION'
   const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  const dateString = currentTime.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+  const dateString = currentTime.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="camera-modal-title"
     >
-      <div className="relative w-full max-w-[480px] bg-white dark:bg-[#18221c] border border-[#dce5dc] dark:border-[#2d3a31] rounded-[18px] shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
+      <div className="relative w-full max-w-[480px] bg-white dark:bg-[#18221c] border border-[#dce5dc] dark:border-[#2d3a31] rounded-[20px] shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         {/* Hidden Canvas for capture rendering */}
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Hidden file input fallback */}
+        {/* Hidden native camera file input fallback */}
         <input
           ref={fileInputRef}
           type="file"
@@ -298,7 +434,7 @@ export default function CameraCaptureModal({
                 Ready to begin today's shift?
               </h3>
               <p className="text-[13px] text-[#55695b] dark:text-[#9fb2a4] m-0 max-w-[380px] leading-relaxed mb-4">
-                Please verify your morning attendance with a quick camera selfie.
+                Please verify your morning attendance with a quick selfie.
               </p>
 
               {/* Automatic admin notification banner */}
@@ -307,7 +443,7 @@ export default function CameraCaptureModal({
                 <div className="flex flex-col text-[11.5px] text-[#2c5339] dark:text-[#a0c5ac] leading-tight">
                   <strong className="font-bold">Automatic Real-Time Notification</strong>
                   <span className="text-[11px] text-[#4d725a] dark:text-[#80a48c] mt-0.5">
-                    Your check-in time and selfie photo will be delivered automatically to Super Admin and Admin.
+                    Your check-in timestamp and selfie photo will be forwarded automatically to Super Admin and Admin.
                   </span>
                 </div>
               </div>
@@ -386,48 +522,66 @@ export default function CameraCaptureModal({
             </div>
 
             {/* Viewfinder Area */}
-            <div className="relative p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
-              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[14px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
-                {/* Video Stream Element */}
+            <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
+              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
+                {/* Visual Shutter Flash Effect */}
+                {isFlashing && (
+                  <div className="absolute inset-0 bg-white z-30 transition-opacity duration-150 pointer-events-none" />
+                )}
+
+                {/* Live Video Element */}
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                    isStreaming ? 'opacity-100' : 'opacity-0'
+                  } ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
                 />
 
-                {/* Viewfinder Face Guide Overlay */}
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                  <div className="w-[180px] h-[220px] rounded-[50%] border-2 border-dashed border-[#edf5ef]/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] flex items-center justify-center">
-                    <div className="w-[172px] h-[212px] rounded-[50%] border border-white/20" />
+                {/* Loading state before video begins streaming */}
+                {!isStreaming && !cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1410] text-gray-300 gap-3 z-10">
+                    <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                    <span className="text-[12px] font-medium tracking-wide">Starting camera viewfinder…</span>
                   </div>
-                  <div className="absolute bottom-2.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-medium tracking-wide flex items-center gap-1.5 shadow">
-                    <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
-                    <span>Align face inside frame • {timeString}</span>
-                  </div>
-                </div>
+                )}
 
-                {/* Camera Switch button (if multiple cameras available) */}
-                {hasMultipleCameras && (
+                {/* Viewfinder Face Guide Overlay (visible when active) */}
+                {isStreaming && (
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                    <div className="w-[180px] h-[220px] rounded-[50%] border-2 border-dashed border-[#edf5ef]/75 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)] flex items-center justify-center">
+                      <div className="w-[172px] h-[212px] rounded-[50%] border border-white/25" />
+                    </div>
+                    <div className="absolute bottom-2.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-medium tracking-wide flex items-center gap-1.5 shadow">
+                      <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+                      <span>Center your face • {timeString}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Camera Flip / Switch Button */}
+                {(hasMultipleCameras || isStreaming) && (
                   <button
                     type="button"
                     onClick={handleSwitchCamera}
-                    className="absolute top-2.5 right-2.5 z-10 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors border border-white/15 cursor-pointer"
-                    title="Switch camera"
+                    className="absolute top-2.5 right-2.5 z-20 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors border border-white/15 cursor-pointer shadow-md"
+                    title="Switch between front and back camera"
+                    aria-label="Switch camera"
                   >
                     <SwitchCamera size={18} />
                   </button>
                 )}
 
-                {/* Camera Error / Permission Fallback */}
+                {/* Camera Error / Permission Fallback View */}
                 {cameraError && (
-                  <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center p-5 text-center text-white gap-3 z-20">
-                    <AlertCircle size={32} className="text-[#f59e0b]" />
+                  <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-5 text-center text-white gap-3 z-20">
+                    <AlertCircle size={34} className="text-[#f59e0b]" />
                     <p className="text-[12.5px] leading-relaxed max-w-[320px] text-gray-200 m-0">
                       {cameraError}
                     </p>
-                    <div className="flex items-center gap-2 flex-wrap justify-center mt-1">
+                    <div className="flex items-center gap-2 flex-wrap justify-center mt-2">
                       <button
                         type="button"
                         onClick={() => void startCamera()}
@@ -439,10 +593,10 @@ export default function CameraCaptureModal({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] bg-[#10b981] hover:bg-[#059669] text-white text-[12px] font-semibold transition-colors cursor-pointer shadow-md"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-[#10b981] hover:bg-[#059669] text-white text-[12px] font-bold transition-colors cursor-pointer shadow-md"
                       >
-                        <Upload size={14} />
-                        <span>Upload or Take Photo</span>
+                        <Smartphone size={15} />
+                        <span>Use Phone Camera</span>
                       </button>
                     </div>
                   </div>
@@ -450,25 +604,44 @@ export default function CameraCaptureModal({
               </div>
             </div>
 
-            {/* Camera Actions Footer */}
-            <div className="px-5 py-3.5 bg-white dark:bg-[#18221c] border-t border-[#e5ebe4] dark:border-[#26342a] flex items-center justify-between gap-3">
+            {/* Camera Actions & Shutter Area */}
+            <div className="px-5 py-4 bg-white dark:bg-[#18221c] border-t border-[#e5ebe4] dark:border-[#26342a] flex items-center justify-between gap-3">
+              {/* Phone Camera / File Fallback */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-[#55695b] hover:text-[#193c33] dark:text-[#9fb2a4] dark:hover:text-white transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#55695b] hover:text-[#193c33] dark:text-[#9fb2a4] dark:hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-[#f0f5ee] dark:hover:bg-[#202e24]"
+                title="Open native phone camera app"
               >
-                <Upload size={14} />
-                <span>Upload Selfie</span>
+                <Smartphone size={16} />
+                <span>Phone Camera</span>
               </button>
 
+              {/* Shutter Button (Centered, Large & Tactile) */}
+              <div className="flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={handleCapture}
+                  disabled={!isStreaming || Boolean(cameraError)}
+                  className="group relative w-15 h-15 rounded-full border-4 border-[#193c33] dark:border-[#d9ed74] p-1 flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-md"
+                  aria-label="Capture attendance selfie"
+                >
+                  <span className="w-full h-full rounded-full bg-[#193c33] dark:bg-[#d9ed74] group-hover:bg-[#255246] dark:group-hover:bg-[#e4f58c] flex items-center justify-center text-white dark:text-[#141d18] transition-colors">
+                    <Camera size={22} strokeWidth={2.4} />
+                  </span>
+                </button>
+              </div>
+
+              {/* Switch Camera Button (right aligned) */}
               <button
                 type="button"
-                onClick={handleCapture}
-                disabled={Boolean(cameraError)}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[9px] bg-[#193c33] hover:bg-[#245246] text-white text-[13px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+                onClick={handleSwitchCamera}
+                disabled={!isStreaming}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#55695b] hover:text-[#193c33] dark:text-[#9fb2a4] dark:hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-[#f0f5ee] dark:hover:bg-[#202e24] disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Switch front/back camera"
               >
-                <Camera size={17} />
-                <span>Capture Photo</span>
+                <SwitchCamera size={16} />
+                <span>Flip</span>
               </button>
             </div>
           </div>
@@ -480,8 +653,9 @@ export default function CameraCaptureModal({
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e5ebe4] dark:border-[#26342a] bg-[#f8faf7] dark:bg-[#151d18]">
               <div className="flex flex-col">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
-                  SNAPSHOT VERIFIED
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981] flex items-center gap-1">
+                  <Sparkles size={12} />
+                  SNAPSHOT CAPTURED
                 </span>
                 <h2 id="camera-modal-title" className="text-[17px] font-bold text-[#1a2f26] dark:text-[#edf5ef] m-0 leading-tight">
                   Confirm {actionTitle}
@@ -498,17 +672,17 @@ export default function CameraCaptureModal({
             </div>
 
             {/* Image Preview Body */}
-            <div className="relative p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
-              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[14px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31]">
+            <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
+              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
                 <img
                   src={capturedImage}
-                  alt="Captured attendance verification"
+                  alt="Captured attendance verification snapshot"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-3 left-3 px-2.5 py-1 rounded-[6px] bg-[#10b981] text-white font-mono text-[10.5px] font-bold tracking-wider uppercase shadow">
                   VERIFIED SNAPSHOT
                 </div>
-                <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-[6px] bg-black/70 backdrop-blur-md text-white font-mono text-[10.5px] font-semibold border border-white/10 shadow">
+                <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-[6px] bg-black/75 backdrop-blur-md text-white font-mono text-[11px] font-semibold border border-white/10 shadow">
                   {timeString}
                 </div>
               </div>
@@ -520,7 +694,7 @@ export default function CameraCaptureModal({
                 type="button"
                 onClick={handleRetake}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-[8px] border border-[#d6ded5] dark:border-[#35463a] text-[#425447] dark:text-[#cbd8ce] hover:bg-[#f2f6f1] dark:hover:bg-[#202d24] text-[12.5px] font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-[10px] border border-[#d6ded5] dark:border-[#35463a] text-[#425447] dark:text-[#cbd8ce] hover:bg-[#f2f6f1] dark:hover:bg-[#202d24] text-[12.5px] font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw size={14} />
                 <span>Retake</span>
@@ -530,7 +704,7 @@ export default function CameraCaptureModal({
                 type="button"
                 onClick={handleConfirmSubmit}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[9px] bg-[#10b981] hover:bg-[#059669] text-white text-[13px] font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait ml-auto"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-[10px] bg-[#10b981] hover:bg-[#059669] text-white text-[13px] font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait ml-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -539,7 +713,7 @@ export default function CameraCaptureModal({
                   </>
                 ) : (
                   <>
-                    <Check size={17} strokeWidth={2.5} />
+                    <Check size={18} strokeWidth={2.5} />
                     <span>Confirm & {isCheckIn ? 'Check In' : 'Check Out'}</span>
                   </>
                 )}
