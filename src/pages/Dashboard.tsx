@@ -22,6 +22,7 @@ import { AVATAR_UPDATED_EVENT } from '../lib/avatar'
 import AiAssistant from '../components/AiAssistant'
 import AiChatWidget from '../components/AiChatWidget'
 import ThemeToggle from '../components/ThemeToggle'
+import FullscreenToggle from '../components/FullscreenToggle'
 import AdminUsersView from '../components/AdminUsersView'
 import AdminSystemView from '../components/AdminSystemView'
 import TopProfileDropdown from '../components/TopProfileDropdown'
@@ -1242,6 +1243,7 @@ export default function Dashboard() {
             </span>
             <NotificationBell />
             <ThemeToggle className="topbar-theme-toggle" />
+            <FullscreenToggle className="topbar-fullscreen-toggle" />
             <button
               className="icon-button grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef] transition-colors"
               type="button"

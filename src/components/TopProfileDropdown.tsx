@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { User, Shield, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
+import { User, Shield, ChevronDown, LayoutDashboard, Sparkles, Maximize, Minimize } from 'lucide-react'
 import { normalizeRole, type SafeUser } from '../lib/auth-api'
 import UserAvatar from './UserAvatar'
 import LogoutButton from './LogoutButton'
@@ -49,6 +49,31 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
+
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
+  const toggleFullscreen = async () => {
+    setIsOpen(false)
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen?.()
+      } else {
+        await document.exitFullscreen?.()
+      }
+    } catch (err) {
+      console.warn('Fullscreen error:', err)
+    }
+  }
 
   const handleNavigate = (path: string) => {
     setIsOpen(false)
@@ -145,6 +170,25 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
                 <span>Account Preferences</span>
               </button>
             )}
+
+            <button
+              type="button"
+              className="topbar-menu-item flex items-center gap-[10px] w-full p-[8px_10px] rounded-[8px] border-0 bg-transparent text-[12px] font-medium text-[#2e473b] cursor-pointer text-left transition-all duration-120 select-none hover:bg-[#f1f6ee] hover:text-[#193c33] [&:hover_svg]:text-[#10b981] dark:text-[#a4b2a8] dark:hover:bg-[#25322a] dark:hover:text-[#edf2ec]"
+              role="menuitem"
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize size={16} className="topbar-menu-icon text-[#10b981] shrink-0" />
+                  <span>Exit Full Screen</span>
+                </>
+              ) : (
+                <>
+                  <Maximize size={16} className="topbar-menu-icon text-[#6c7f73] shrink-0 dark:text-[#7f9185]" />
+                  <span>Full Screen Mode</span>
+                </>
+              )}
+            </button>
           </div>
 
           <div className="topbar-menu-divider h-[1px] bg-[#e9efe7] my-[6px] dark:bg-[#27352d]" />
