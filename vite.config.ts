@@ -62,7 +62,7 @@ export default defineConfig({
       workbox: {
         importScripts: ['/push-worker.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        navigateFallback: '/offline.html',
+        navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\/.*/, /^\/uploads\/.*/],
         runtimeCaching: [
           // 1. Network-first for read APIs: fresh data always, fallback to cached only when disconnected

@@ -145,6 +145,41 @@
           if (meta) meta.setAttribute('content', isDark ? '#141a17' : '#f7f8f4');
         } catch(e) {}
       })();
+
+      // Auto-recovery: If user is online, unregister buggy SW and redirect to app immediately
+      function recoverApp() {
+        if (navigator.onLine) {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              return Promise.all(regs.map(function(r) { return r.unregister(); }));
+            }).then(function() {
+              if ('caches' in window) {
+                return caches.keys().then(function(keys) {
+                  return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+                });
+              }
+            }).finally(function() {
+              window.location.replace('/?recovery=' + Date.now());
+            });
+          } else {
+            window.location.replace('/?recovery=' + Date.now());
+          }
+        }
+      }
+
+      // Check immediately on page load
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        recoverApp();
+      } else {
+        window.addEventListener('DOMContentLoaded', recoverApp);
+      }
+      window.addEventListener('online', recoverApp);
+
+      function retryConnection() {
+        var btnText = document.getElementById('retry-btn-text');
+        if (btnText) btnText.textContent = 'Connecting...';
+        recoverApp();
+      }
     </script>
   </head>
   <body>
@@ -164,13 +199,13 @@
       <p>
         Snowflex requires an active network connection to securely authenticate your credentials, verify camera attendance, and sync shift records.
       </p>
-      <button class="btn" onclick="window.location.reload()">
+      <button class="btn" onclick="retryConnection()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"></polyline>
           <polyline points="1 20 1 14 7 14"></polyline>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
         </svg>
-        <span>Retry Connection</span>
+        <span id="retry-btn-text">Retry Connection</span>
       </button>
       <div class="tip">
         Please check your Wi-Fi or mobile data settings. Once back online, tap Retry to resume your shift session.

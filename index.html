@@ -151,6 +151,13 @@
               if (ct.textColor && hexRegex.test(ct.textColor)) s.setProperty('--custom-text', ct.textColor)
             }
           }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) {
+                regs[i].update();
+              }
+            });
+          }
         } catch (e) {}
       })()
     </script>
