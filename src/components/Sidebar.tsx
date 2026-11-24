@@ -256,7 +256,7 @@ export default function Sidebar({
                 aria-label={mobileSidebarOpen ? 'Close navigation' : 'Collapse sidebar'}
                 aria-expanded={mobileSidebarOpen || !sidebarCollapsed}
                 onClick={() => {
-                  if (window.matchMedia('(max-width: 680px)').matches) {
+                  if (window.matchMedia('(max-width: 1023px)').matches) {
                     setMobileSidebarOpen(false)
                   } else {
                     setSidebarCollapsed((c) => !c)

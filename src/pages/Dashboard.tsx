@@ -850,7 +850,7 @@ export default function Dashboard() {
   const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
 
   return (
-    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out ${sidebarCollapsed ? 'is-sidebar-collapsed grid-cols-[76px_minmax(0,1fr)]' : 'grid-cols-[256px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
+    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out grid-cols-1 ${sidebarCollapsed ? 'is-sidebar-collapsed lg:grid-cols-[76px_minmax(0,1fr)]' : 'lg:grid-cols-[256px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={view}
@@ -1146,7 +1146,7 @@ export default function Dashboard() {
       <section className="workbench-main min-w-0 flex-1">
         <header className="workbench-topbar sticky z-[2] top-0 flex h-[62px] items-center justify-between px-[38px] border-b border-[#e4e9e1] bg-[rgba(255,255,255,0.93)] backdrop-blur-[10px]">
           <div className="topbar-location flex items-center gap-[12px] min-w-0">
-            <button className="mobile-sidebar-open-button hidden max-[680px]:grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef]" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
+            <button className="mobile-sidebar-open-button hidden max-[1023px]:grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef]" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
               <Menu size={19} />
             </button>
             <span className="breadcrumb text-[#87948b] text-[11px]">Workspace</span>
@@ -1596,7 +1596,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Overview Workspace Main Grid */}
-                <div className="overview-dashboard-grid grid grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)] max-[1024px]:grid-cols-1 gap-[20px] mb-[24px]">
+                <div className="overview-dashboard-grid grid grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)] max-[1023px]:grid-cols-1 gap-[20px] mb-[24px]">
                   {/* Workforce Pulse Widget */}
                   <article className="overview-card bg-white border border-[#e2e8df] rounded-[14px] p-[24px] shadow-[0_4px_16px_-2px_rgba(25,60,51,0.03)] flex flex-col">
                     <div className="overview-card-header flex items-start justify-between gap-[16px] mb-[20px]">
