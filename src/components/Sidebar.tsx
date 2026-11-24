@@ -24,6 +24,7 @@ import {
 import { toast } from 'react-hot-toast'
 import UserAvatar from './UserAvatar'
 import UnreadBadge from './UnreadBadge'
+import PwaInstallBanner from './PwaInstallBanner'
 import { clearToken, logout, normalizeRole, readToken, type SafeUser } from '../lib/auth-api'
 
 export type SidebarView =
@@ -354,6 +355,9 @@ export default function Sidebar({
             sidebarCollapsed ? '!p-2 !gap-2' : ''
           }`}
         >
+          {/* PWA Mobile Install Banner / Button */}
+          {!sidebarCollapsed && <PwaInstallBanner variant="banner" className="!p-2.5" />}
+
           {/* Status Pill */}
           {!sidebarCollapsed ? (
             <div

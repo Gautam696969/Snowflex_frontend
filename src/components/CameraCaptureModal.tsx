@@ -112,15 +112,34 @@ export default function CameraCaptureModal({
         },
         audio: false,
       }
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      let mediaStream: MediaStream
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      } catch (constraintErr) {
+        // Fallback without strict facingMode if overconstrained
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      }
       setStream(mediaStream)
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
         videoRef.current.play().catch(() => {})
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('getUserMedia failed:', err)
-      setCameraError('Unable to access camera. Please allow camera permissions or upload a selfie below.')
+      const errorObj = err as { name?: string; message?: string }
+      if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
+        setCameraError(
+          'Camera permission denied. To re-enable: tap the lock or site settings icon in your browser URL bar (or app info), set Camera to "Allow", and retry.'
+        )
+      } else if (errorObj?.name === 'NotFoundError' || errorObj?.name === 'DevicesNotFoundError') {
+        setCameraError('No camera found on this device. You can take a selfie using the file upload button below.')
+      } else if (errorObj?.name === 'NotReadableError' || errorObj?.name === 'TrackStartError') {
+        setCameraError(
+          'Camera is busy in another app or temporarily blocked. Please close other camera apps and retry.'
+        )
+      } else {
+        setCameraError('Unable to access camera. Please allow camera permissions or upload a selfie below.')
+      }
     }
   }, [facingMode, stopTracks])
 
@@ -408,14 +427,24 @@ export default function CameraCaptureModal({
                     <p className="text-[12.5px] leading-relaxed max-w-[320px] text-gray-200 m-0">
                       {cameraError}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-[8px] bg-[#193c33] text-white text-[12px] font-semibold border border-white/20 hover:bg-[#255246] transition-colors cursor-pointer"
-                    >
-                      <Upload size={15} />
-                      <span>Upload or Take Photo</span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap justify-center mt-1">
+                      <button
+                        type="button"
+                        onClick={() => void startCamera()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] bg-white/15 hover:bg-white/25 text-white text-[12px] font-semibold border border-white/20 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw size={14} />
+                        <span>Retry Camera</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] bg-[#10b981] hover:bg-[#059669] text-white text-[12px] font-semibold transition-colors cursor-pointer shadow-md"
+                      >
+                        <Upload size={14} />
+                        <span>Upload or Take Photo</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

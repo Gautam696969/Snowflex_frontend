@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.snowflex.attendance",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:01:C3:52:CE:4E:EE:AE:12:37:4A:29:9B:11:7B:38:F2:69:E8:18:50:71:79:81:42:4A:8F:3A:06:FE"
+      ]
+    }
+  }
+]
+

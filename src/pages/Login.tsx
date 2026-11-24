@@ -6,6 +6,7 @@ import Input from '../components/Input'
 import LoadingButton from '../components/LoadingButton'
 import PasswordInput from '../components/PasswordInput'
 import AuthLayout from '../layouts/AuthLayout'
+import PwaInstallBanner from '../components/PwaInstallBanner'
 import { getLoginErrors } from '../lib/validation'
 import { login, storeToken } from '../lib/auth-api'
 
@@ -94,7 +95,8 @@ export default function Login() {
           <span>{deactivatedNotice}</span>
         </div>
       )}
-      <form className="auth-form flex flex-col gap-[18px] mt-[30px]" onSubmit={handleSubmit} noValidate>
+      <PwaInstallBanner className="mb-2" />
+      <form className="auth-form flex flex-col gap-[18px] mt-[24px]" onSubmit={handleSubmit} noValidate>
         <Input
           id="email"
           label="Email address"
