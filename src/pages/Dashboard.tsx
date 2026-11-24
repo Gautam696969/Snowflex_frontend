@@ -930,7 +930,7 @@ export default function Dashboard() {
   const greetingTime = currentHour < 12 ? 'morning' : currentHour < 18 ? 'afternoon' : 'evening'
 
   return (
-    <main className={`workbench grid min-h-screen text-[#243a33] bg-[#f4f6f1] transition-[grid-template-columns] duration-180 ease-in-out grid-cols-1 ${sidebarCollapsed ? 'is-sidebar-collapsed lg:grid-cols-[76px_minmax(0,1fr)]' : 'lg:grid-cols-[256px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
+    <main className={`workbench grid min-h-screen text-[#243a33] dark:text-[#edf2ec] bg-[#f4f6f1] dark:bg-[#141a17] transition-[grid-template-columns] duration-180 ease-in-out grid-cols-1 ${sidebarCollapsed ? 'is-sidebar-collapsed lg:grid-cols-[76px_minmax(0,1fr)]' : 'lg:grid-cols-[256px_minmax(0,1fr)]'}${mobileSidebarOpen ? ' is-mobile-sidebar-open' : ''}${view === 'assistant' ? ' is-ai-page' : ''}${view === 'chat' ? ' is-chat-page' : ''}`}>
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={view}

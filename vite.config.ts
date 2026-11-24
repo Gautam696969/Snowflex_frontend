@@ -19,6 +19,8 @@ export default defineConfig({
         'pwa-maskable-192x192.png',
         'pwa-maskable-512x512.png',
         'offline.html',
+        'manifest-dark.webmanifest',
+        'manifest-light.webmanifest',
       ],
       manifest: {
         name: 'Snowflex People Operations',

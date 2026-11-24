@@ -18,6 +18,36 @@ interface ThemeContextValue {
 const storageKey = 'snowflex.theme'
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
+export function updateThemeColorMeta(mode: Theme, customBg?: string | null): void {
+  if (typeof document === 'undefined') return
+  const isDark = mode === 'dark'
+  const isLanding = typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname === '')
+  const hexRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+
+  const bg = isDark
+    ? (customBg && hexRegex.test(customBg) ? customBg : '#141a17')
+    : (customBg && hexRegex.test(customBg) ? customBg : '#f7f8f4')
+  const themeColor = isDark ? bg : (isLanding ? '#0284c7' : '#193c33')
+
+  document.documentElement.style.backgroundColor = bg
+  if (document.body) {
+    document.body.style.backgroundColor = bg
+  }
+
+  const metas = document.querySelectorAll('meta[name="theme-color"]')
+  metas.forEach(meta => meta.setAttribute('content', themeColor))
+
+  const msTile = document.querySelector('meta[name="msapplication-TileColor"]')
+  if (msTile) msTile.setAttribute('content', bg)
+  const msNav = document.querySelector('meta[name="msapplication-navbutton-color"]')
+  if (msNav) msNav.setAttribute('content', bg)
+
+  const manifestLink = document.getElementById('app-manifest') || document.querySelector('link[rel="manifest"]')
+  if (manifestLink) {
+    manifestLink.setAttribute('href', isDark ? '/manifest-dark.webmanifest' : '/manifest-light.webmanifest')
+  }
+}
+
 export function toggleThemeMode(): Theme {
   const currentSaved = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey) : null
   const currentIsDark = currentSaved
@@ -41,17 +71,21 @@ export function toggleThemeMode(): Theme {
       localStorage.setItem(storageKey, next)
     } catch {}
 
-    // 3. Keep cached custom theme in sync
+    // 3. Keep cached custom theme in sync & update meta theme-color + opening background
     try {
       const cached = getCachedCustomTheme()
       if (cached) {
         const updated = { ...cached, mode: next }
         localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(updated))
         applyThemeCssVariables(updated, next)
+        updateThemeColorMeta(next, updated.bgColor)
       } else {
         applyThemeCssVariables(null, next)
+        updateThemeColorMeta(next, null)
       }
-    } catch {}
+    } catch {
+      updateThemeColorMeta(next, null)
+    }
 
     // 4. Double requestAnimationFrame: remove no-transitions only after style calculation and paint commit
     requestAnimationFrame(() => {
@@ -101,6 +135,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(storageKey, theme)
 
     applyThemeCssVariables(customTheme, theme)
+    updateThemeColorMeta(theme, customTheme?.bgColor)
   }, [theme, customTheme])
 
   // Listen to external theme toggle events

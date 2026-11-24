@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Instant Theme Initializer (prevents flash of wrong theme before first paint) -->
+    <!-- Instant Theme & Critical Background Initializer (prevents flash of white/wrong theme before first paint) -->
     <style>
+      /* Prevent transition flashes */
       html.no-transitions,
       html.no-transitions *,
       html.no-transitions *::before,
@@ -13,6 +14,59 @@
         -moz-transition: none !important;
         -o-transition: none !important;
         transition: none !important;
+      }
+
+      /* Instant opening background: Mode-aware before external stylesheets load */
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        width: 100%;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      /* System mode fallback before JS evaluates localStorage */
+      @media (prefers-color-scheme: dark) {
+        :root, html, body {
+          background-color: #141a17 !important;
+          color: #edf2ec !important;
+          color-scheme: dark;
+        }
+      }
+      @media (prefers-color-scheme: light) {
+        :root, html, body {
+          background-color: #f7f8f4 !important;
+          color: #20251f !important;
+          color-scheme: light;
+        }
+      }
+
+      /* User chosen dark mode: applied immediately by inline script */
+      html.dark,
+      html[data-theme='dark'],
+      html.dark body,
+      html[data-theme='dark'] body,
+      :root[data-theme='dark'],
+      :root[data-theme='dark'] body {
+        background-color: #141a17 !important;
+        color: #edf2ec !important;
+        color-scheme: dark !important;
+      }
+
+      /* User chosen light mode: applied immediately by inline script */
+      html:not(.dark):not([data-theme='dark']),
+      html:not(.dark):not([data-theme='dark']) body,
+      :root:not([data-theme='dark']):not(.dark),
+      :root:not([data-theme='dark']):not(.dark) body {
+        background-color: #f7f8f4 !important;
+        color: #20251f !important;
+        color-scheme: light !important;
+      }
+
+      #root {
+        min-height: 100vh;
+        width: 100%;
+        background-color: inherit;
       }
     </style>
     <script>
@@ -28,60 +82,80 @@
           if (fav) {
             fav.href = isLanding ? '/favicon-blue.svg' : '/favicon-green.svg'
           }
-          var metaTheme = document.querySelector('meta[name="theme-color"]')
-          if (metaTheme) {
-            metaTheme.content = isLanding ? '#0284c7' : '#193c33'
-          }
+
           var savedTheme = localStorage.getItem('snowflex.theme')
-          var theme = savedTheme === 'light' || savedTheme === 'dark'
-            ? savedTheme
-            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          var customThemeRaw = localStorage.getItem('snowflex.custom_theme')
+          var ct = null
+          if (customThemeRaw) {
+            try { ct = JSON.parse(customThemeRaw) } catch (e) {}
+          }
+
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          var isDark = false
+
+          if (savedTheme === 'dark') {
+            isDark = true
+          } else if (savedTheme === 'light') {
+            isDark = false
+          } else if (ct && (ct.mode === 'dark' || ct.mode === 'light')) {
+            isDark = ct.mode === 'dark'
+          } else {
+            isDark = prefersDark
+          }
+
+          var theme = isDark ? 'dark' : 'light'
+          var hexRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+
+          // Determine exact launch background color
+          var launchBg = isDark ? '#141a17' : '#f7f8f4'
+          if (ct && ct.bgColor && hexRegex.test(ct.bgColor)) {
+            launchBg = ct.bgColor
+          }
+
+          // Apply to root element synchronously before first render
           document.documentElement.dataset.theme = theme
-          if (theme === 'dark') {
+          if (isDark) {
             document.documentElement.classList.add('dark')
           } else {
             document.documentElement.classList.remove('dark')
           }
           document.documentElement.style.colorScheme = theme
+          document.documentElement.style.backgroundColor = launchBg
 
-          var customThemeRaw = localStorage.getItem('snowflex.custom_theme')
-          if (customThemeRaw) {
-            try {
-              var ct = JSON.parse(customThemeRaw)
-              var hexRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
-              if (ct) {
-                // Only use ct.mode if user hasn't made an explicit manual toggle in snowflex.theme
-                if (!savedTheme && (ct.mode === 'light' || ct.mode === 'dark')) {
-                  theme = ct.mode
-                  document.documentElement.dataset.theme = theme
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark')
-                  } else {
-                    document.documentElement.classList.remove('dark')
-                  }
-                  document.documentElement.style.colorScheme = theme
-                }
-                var s = document.documentElement.style
-                s.setProperty('--has-custom-theme', '1')
-                if (ct.sidebarColor && hexRegex.test(ct.sidebarColor)) s.setProperty('--custom-sidebar', ct.sidebarColor)
-                if (ct.accentColor && hexRegex.test(ct.accentColor)) s.setProperty('--custom-accent', ct.accentColor)
+          // Dynamic theme-color for Android status bar and PWA header
+          var activeThemeColor = isDark ? launchBg : (isLanding ? '#0284c7' : '#193c33')
+          var metaThemes = document.querySelectorAll('meta[name="theme-color"]')
+          for (var i = 0; i < metaThemes.length; i++) {
+            metaThemes[i].setAttribute('content', activeThemeColor)
+          }
 
-                if (theme === 'dark') {
-                  if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-dark-bg', ct.bgColor)
-                  if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-dark-card', ct.cardColor)
-                } else {
-                  if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-bg', ct.bgColor)
-                  if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-card', ct.cardColor)
-                  if (ct.textColor && hexRegex.test(ct.textColor)) s.setProperty('--custom-text', ct.textColor)
-                }
-              }
-            } catch (e) {}
+          // Dynamically sync manifest link
+          var manifestLink = document.getElementById('app-manifest') || document.querySelector('link[rel="manifest"]')
+          if (manifestLink) {
+            manifestLink.setAttribute('href', isDark ? '/manifest-dark.webmanifest' : '/manifest-light.webmanifest')
+          }
+
+          // Apply custom theme variables if present
+          if (ct) {
+            var s = document.documentElement.style
+            s.setProperty('--has-custom-theme', '1')
+            if (ct.sidebarColor && hexRegex.test(ct.sidebarColor)) s.setProperty('--custom-sidebar', ct.sidebarColor)
+            if (ct.accentColor && hexRegex.test(ct.accentColor)) s.setProperty('--custom-accent', ct.accentColor)
+
+            if (isDark) {
+              if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-dark-bg', ct.bgColor)
+              if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-dark-card', ct.cardColor)
+            } else {
+              if (ct.bgColor && hexRegex.test(ct.bgColor)) s.setProperty('--custom-bg', ct.bgColor)
+              if (ct.cardColor && hexRegex.test(ct.cardColor)) s.setProperty('--custom-card', ct.cardColor)
+              if (ct.textColor && hexRegex.test(ct.textColor)) s.setProperty('--custom-text', ct.textColor)
+            }
           }
         } catch (e) {}
       })()
     </script>
     <link id="app-favicon" rel="icon" type="image/svg+xml" href="/favicon-blue.svg" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link id="app-manifest" rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -89,10 +163,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Snowflex" />
     <meta name="application-name" content="Snowflex" />
-    <meta name="msapplication-TileColor" content="#193c33" />
+    <meta name="msapplication-TileColor" content="#141a17" />
+    <meta name="msapplication-navbutton-color" content="#141a17" />
     <meta name="description" content="SnowFlex is the enterprise Employee Management System powered by Snowflake Data Cloud. Streamline employee profiles, smart attendance, leave approvals, automated payroll, and AI HR Copilot." />
     <meta name="keywords" content="employee management system, HRIS, Snowflake HR, attendance tracking, leave management, payroll software, people operations, HR AI copilot" />
-    <meta name="theme-color" content="#193c33" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8f4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141a17" />
+    <meta name="theme-color" id="app-theme-color" content="#141a17" />
     <meta property="og:title" content="SnowFlex — Enterprise Employee Management System" />
     <meta property="og:description" content="Unify employee profiles, attendance, multi-tiered leave approvals, payroll, and real-time AI assistance on a singular Snowflake data platform." />
     <meta property="og:type" content="website" />
