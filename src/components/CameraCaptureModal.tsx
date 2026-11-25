@@ -33,10 +33,14 @@ export default function CameraCaptureModal({
   onClose,
   onConfirm,
 }: CameraCaptureModalProps) {
-  // Step state: 'prompt' (for morning greeting), 'camera' (live viewfinder), 'preview' (snapshot review)
-  const [step, setStep] = useState<'prompt' | 'camera' | 'preview'>('prompt')
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  // Step state initialized from props to avoid race conditions on mount
+  const [step, setStep] = useState<'prompt' | 'camera' | 'preview'>(() => {
+    if (mode === 'check-out') return 'camera'
+    return initialStep || 'prompt'
+  })
   const [isStreaming, setIsStreaming] = useState(false)
+  const [isStartingCamera, setIsStartingCamera] = useState(false)
+  const [cameraTimeout, setCameraTimeout] = useState(false)
   const [isFlashing, setIsFlashing] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
@@ -49,6 +53,7 @@ export default function CameraCaptureModal({
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   // Live ticking clock for morning prompt & snapshot timestamping
   useEffect(() => {
@@ -59,35 +64,24 @@ export default function CameraCaptureModal({
     return () => clearInterval(timer)
   }, [isOpen])
 
-  // Stop active camera tracks helper
+  // Stop active camera tracks helper - completely stable with zero state dependencies
   const stopTracks = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => {
-        try {
-          track.stop()
-        } catch {}
-      })
-      setStream(null)
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop()
+          } catch {}
+        })
+      } catch {}
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
     }
     setIsStreaming(false)
-  }, [stream])
-
-  // Reset or configure step on open/mode change
-  useEffect(() => {
-    if (isOpen) {
-      if (mode === 'check-out') {
-        setStep('camera')
-      } else {
-        setStep(initialStep || 'prompt')
-      }
-      setCapturedImage(null)
-      setCameraError(null)
-      setIsSubmitting(false)
-      setIsStreaming(false)
-    } else {
-      stopTracks()
-    }
-  }, [isOpen, mode, initialStep, stopTracks])
+    setIsStartingCamera(false)
+  }, [])
 
   // Check available camera devices
   const checkCameraDevices = useCallback(() => {
@@ -108,31 +102,52 @@ export default function CameraCaptureModal({
     }
   }, [isOpen, checkCameraDevices])
 
-  // Start camera stream with multi-tiered fallback
+  // Reset or configure step on open/mode change
+  useEffect(() => {
+    if (isOpen) {
+      const targetStep = mode === 'check-out' ? 'camera' : (initialStep || 'prompt')
+      setStep(targetStep)
+      setCapturedImage(null)
+      setCameraError(null)
+      setSubmitError(null)
+      setCameraTimeout(false)
+      setIsSubmitting(false)
+      setIsStreaming(false)
+    } else {
+      stopTracks()
+    }
+  }, [isOpen, mode, initialStep, stopTracks])
+
+  // Start camera stream with multi-tiered fallback and mobile-friendly constraints
   const startCamera = useCallback(async () => {
     setCameraError(null)
+    setCameraTimeout(false)
     setIsStreaming(false)
+    setIsStartingCamera(true)
+
+    // Clean up any existing stream before starting a new one
     stopTracks()
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('Camera API is not supported on this device/browser. You can use your phone camera or upload a selfie below.')
+      setCameraError(
+        'Camera API is not supported on this device/browser. You can use your phone camera or upload a selfie below.'
+      )
+      setIsStartingCamera(false)
       return
-    }
-
-    // Tier 1: Preferred resolution & facing mode
-    const tier1Constraints: MediaStreamConstraints = {
-      video: {
-        facingMode: { ideal: facingMode },
-        width: { ideal: 1280, max: 1920 },
-        height: { ideal: 720, max: 1080 },
-      },
-      audio: false,
     }
 
     let mediaStream: MediaStream | null = null
 
+    // Tier 1: Ideal dimensions without rigid max constraints (avoids portrait OverconstrainedError on Android)
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia(tier1Constraints)
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      })
     } catch (err1) {
       console.warn('Tier 1 camera constraints failed, attempting fallback...', err1)
       try {
@@ -148,6 +163,7 @@ export default function CameraCaptureModal({
           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
         } catch (err3) {
           console.error('All camera attempts failed:', err3)
+          setIsStartingCamera(false)
           const errorObj = err3 as { name?: string; message?: string }
           if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
             setCameraError(
@@ -165,52 +181,58 @@ export default function CameraCaptureModal({
       }
     }
 
-    if (mediaStream) {
-      setStream(mediaStream)
-      checkCameraDevices()
+    if (!mediaStream) {
+      setIsStartingCamera(false)
+      return
+    }
+
+    streamRef.current = mediaStream
+    checkCameraDevices()
+
+    // Attach stream directly to video element and trigger playback
+    const video = videoRef.current
+    if (video) {
+      video.srcObject = mediaStream
+      video.setAttribute('playsinline', 'true')
+      video.setAttribute('webkit-playsinline', 'true')
+      video.muted = true
+      video.defaultMuted = true
+
+      const markReady = () => {
+        setIsStreaming(true)
+        setIsStartingCamera(false)
+      }
+
+      video.onloadedmetadata = () => {
+        video.play().then(markReady).catch((err) => {
+          console.warn('Playback onloadedmetadata error:', err)
+          markReady()
+        })
+      }
+      video.oncanplay = markReady
+      video.onplaying = markReady
+
+      try {
+        await video.play()
+        markReady()
+      } catch (playErr) {
+        console.warn('Initial video.play() catch:', playErr)
+        // If readyState is ready, still mark as streaming so canvas can capture
+        if (video.readyState >= 1) {
+          markReady()
+        }
+      }
+
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        markReady()
+      }
+    } else {
+      setIsStreaming(true)
+      setIsStartingCamera(false)
     }
   }, [facingMode, stopTracks, checkCameraDevices])
 
-  // Attach stream to video whenever stream or step changes
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video || !stream || step !== 'camera') return
-
-    video.srcObject = stream
-    video.setAttribute('playsinline', 'true')
-    video.setAttribute('webkit-playsinline', 'true')
-    video.muted = true
-    video.defaultMuted = true
-
-    let isMounted = true
-
-    const playVideo = () => {
-      if (!isMounted) return
-      video
-        .play()
-        .then(() => {
-          if (isMounted) setIsStreaming(true)
-        })
-        .catch((err) => {
-          console.warn('Playback interrupted or blocked:', err)
-        })
-    }
-
-    video.addEventListener('loadedmetadata', playVideo)
-    video.addEventListener('canplay', playVideo)
-
-    if (video.readyState >= 1) {
-      playVideo()
-    }
-
-    return () => {
-      isMounted = false
-      video.removeEventListener('loadedmetadata', playVideo)
-      video.removeEventListener('canplay', playVideo)
-    }
-  }, [stream, step])
-
-  // Trigger camera startup when entering 'camera' step
+  // Trigger camera startup when entering 'camera' step or when facingMode changes
   useEffect(() => {
     if (isOpen && step === 'camera') {
       void startCamera()
@@ -218,9 +240,33 @@ export default function CameraCaptureModal({
       stopTracks()
     }
     return () => {
-      stopTracks()
+      if (step !== 'camera') {
+        stopTracks()
+      }
     }
-  }, [isOpen, step, startCamera, stopTracks])
+  }, [isOpen, step, facingMode, startCamera, stopTracks])
+
+  // Watchdog timer: If camera takes longer than 4.5s to start, offer user-gesture tap or fallback
+  useEffect(() => {
+    if (isStartingCamera && !isStreaming && !cameraError) {
+      const timer = setTimeout(() => {
+        const video = videoRef.current
+        if (video && streamRef.current && streamRef.current.active) {
+          video.play().then(() => {
+            setIsStreaming(true)
+            setIsStartingCamera(false)
+          }).catch(() => {})
+          if (video.videoWidth > 0 || video.readyState >= 1) {
+            setIsStreaming(true)
+            setIsStartingCamera(false)
+            return
+          }
+        }
+        setCameraTimeout(true)
+      }, 4500)
+      return () => clearTimeout(timer)
+    }
+  }, [isStartingCamera, isStreaming, cameraError])
 
   // Capture snapshot from live video stream
   const handleCapture = () => {
@@ -228,12 +274,15 @@ export default function CameraCaptureModal({
     const video = videoRef.current
     const canvas = canvasRef.current
 
-    const originalWidth = video.videoWidth || 640
-    const originalHeight = video.videoHeight || 480
+    let originalWidth = video.videoWidth || 0
+    let originalHeight = video.videoHeight || 0
 
+    // Fallback if videoWidth is not yet reported by browser
     if (originalWidth === 0 || originalHeight === 0) {
-      console.warn('Video not ready for capture yet')
-      return
+      const track = streamRef.current?.getVideoTracks()[0]
+      const settings = track?.getSettings()
+      originalWidth = settings?.width || 640
+      originalHeight = settings?.height || 480
     }
 
     // Trigger visual shutter flash
@@ -547,11 +596,59 @@ export default function CameraCaptureModal({
                   } ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
                 />
 
-                {/* Loading state before video begins streaming */}
+                {/* Loading state or watchdog timeout before video begins streaming */}
                 {!isStreaming && !cameraError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1410] text-gray-300 gap-3 z-10">
-                    <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-                    <span className="text-[12px] font-medium tracking-wide">Starting camera viewfinder…</span>
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1410] text-gray-300 gap-3 z-10 p-5 text-center cursor-pointer"
+                    onClick={() => {
+                      if (videoRef.current) {
+                        videoRef.current.play().then(() => setIsStreaming(true)).catch(() => {})
+                      }
+                    }}
+                  >
+                    {!cameraTimeout ? (
+                      <>
+                        <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                        <span className="text-[12px] font-medium tracking-wide">Starting camera viewfinder…</span>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3 animate-fade-in max-w-[300px]">
+                        <AlertCircle size={32} className="text-amber-400" />
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[13px] font-bold text-white">Camera viewfinder waiting</span>
+                          <span className="text-[11.5px] text-gray-300 leading-snug">
+                            Tap below to activate camera preview, or use your phone camera app.
+                          </span>
+                        </div>
+                        <div className="flex flex-col w-full gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (videoRef.current) {
+                                videoRef.current.play().then(() => setIsStreaming(true)).catch(() => {})
+                              }
+                              void startCamera()
+                            }}
+                            className="w-full py-2 px-3 rounded-[8px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[12px] transition-colors cursor-pointer shadow flex items-center justify-center gap-2"
+                          >
+                            <RefreshCw size={14} />
+                            <span>Tap to Activate Camera</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              fileInputRef.current?.click()
+                            }}
+                            className="w-full py-2 px-3 rounded-[8px] bg-white/15 hover:bg-white/25 text-white font-semibold text-[12px] transition-colors cursor-pointer border border-white/20 flex items-center justify-center gap-2"
+                          >
+                            <Smartphone size={14} />
+                            <span>Use Phone Camera</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -629,7 +726,7 @@ export default function CameraCaptureModal({
                 <button
                   type="button"
                   onClick={handleCapture}
-                  disabled={!isStreaming || Boolean(cameraError)}
+                  disabled={(!isStreaming && !streamRef.current?.active) || Boolean(cameraError)}
                   className="group relative w-15 h-15 rounded-full border-4 border-[#193c33] dark:border-[#d9ed74] p-1 flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-md"
                   aria-label="Capture attendance selfie"
                 >
@@ -643,7 +740,7 @@ export default function CameraCaptureModal({
               <button
                 type="button"
                 onClick={handleSwitchCamera}
-                disabled={!isStreaming}
+                disabled={isStartingCamera}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold text-[#55695b] hover:text-[#193c33] dark:text-[#9fb2a4] dark:hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-[#f0f5ee] dark:hover:bg-[#202e24] disabled:opacity-40 disabled:cursor-not-allowed"
                 title="Switch front/back camera"
               >
