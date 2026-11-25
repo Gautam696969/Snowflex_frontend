@@ -13,6 +13,18 @@ interface LiveChatViewProps {
   currentUser: SafeUser
 }
 
+function formatPreviewBody(body: string): string {
+  if (body.startsWith('[MEETING_CARD]')) {
+    try {
+      const parsed = JSON.parse(body.slice('[MEETING_CARD]'.length)) as { title?: string }
+      return `🎥 ${parsed.title || 'Team Meeting'}`
+    } catch {
+      return '🎥 Team Meeting'
+    }
+  }
+  return body.split('\n')[0]
+}
+
 function formatConversationTime(isoDate?: string): string {
   if (!isoDate) return ''
   const date = new Date(isoDate)
@@ -192,7 +204,7 @@ export default function LiveChatView({ currentUser }: LiveChatViewProps) {
                       {conv.lastMessage ? (
                         <span className="chat-preview-text truncate">
                           {conv.lastMessage.senderId === currentUser.id ? 'You: ' : ''}
-                          {conv.lastMessage.body}
+                          {formatPreviewBody(conv.lastMessage.body)}
                         </span>
                       ) : (
                         <span className="chat-preview-empty italic text-[#9aa89d]">New conversation started</span>
