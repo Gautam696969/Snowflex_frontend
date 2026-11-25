@@ -22,12 +22,10 @@ import {
   WifiOff,
   X,
 } from 'lucide-react'
-import { Track, type Participant, type TrackPublication } from 'livekit-client'
 import { toast } from 'react-hot-toast'
 import {
-  getAllRoomParticipants,
-  parseLiveKitUserId,
   useMeeting,
+  type UnifiedParticipantTile,
 } from '../../context/MeetingContext'
 import { useChat } from '../../context/ChatContext'
 import { fetchMessages, type ChatMessageItem } from '../../lib/chat-api'
@@ -44,16 +42,14 @@ function formatTimer(secs: number): string {
 }
 
 function ParticipantVideoTile({
-  participant,
-  isLocal,
+  tile,
   isSpeaking,
   isPinned,
   isHandRaised,
   onTogglePin,
   compact = false,
 }: {
-  participant: Participant
-  isLocal: boolean
+  tile: UnifiedParticipantTile
   isSpeaking: boolean
   isPinned: boolean
   isHandRaised: boolean
@@ -63,31 +59,19 @@ function ParticipantVideoTile({
   const videoRef = useRef<HTMLVideoElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
-  const camPub = participant.getTrackPublication(Track.Source.Camera)
-  const micPub = participant.getTrackPublication(Track.Source.Microphone)
-  const hasVideo = Boolean(camPub?.track && !camPub.isMuted)
-  const isMicMuted = !micPub || micPub.isMuted
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = tile.videoStream
+    }
+  }, [tile.videoStream])
 
   useEffect(() => {
-    const el = videoRef.current
-    const track = camPub?.track
-    if (!el || !track) return
-    track.attach(el)
-    return () => {
-      track.detach(el)
+    if (!tile.isLocal && audioRef.current) {
+      audioRef.current.srcObject = tile.audioStream
     }
-  }, [camPub?.track, camPub?.isMuted])
+  }, [tile.isLocal, tile.audioStream])
 
-  useEffect(() => {
-    if (isLocal) return
-    const el = audioRef.current
-    const track = micPub?.track
-    if (!el || !track) return
-    track.attach(el)
-    return () => {
-      track.detach(el)
-    }
-  }, [isLocal, micPub?.track, micPub?.isMuted])
+  const hasVideo = Boolean(tile.videoStream && !tile.isCamOff)
 
   return (
     <div
@@ -95,19 +79,19 @@ function ParticipantVideoTile({
         isSpeaking ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'border-[#223529]'
       } ${compact ? 'w-[160px] sm:w-[200px] aspect-video shrink-0' : 'w-full h-full min-h-[180px]'}`}
     >
-      {!isLocal && <audio ref={audioRef} autoPlay />}
+      {!tile.isLocal && <audio ref={audioRef} autoPlay />}
 
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        muted={isLocal}
-        className={`w-full h-full object-cover ${isLocal ? '-scale-x-100' : ''} ${hasVideo ? 'block' : 'hidden'}`}
+        muted={tile.isLocal}
+        className={`w-full h-full object-cover ${tile.isLocal ? '-scale-x-100' : ''} ${hasVideo ? 'block' : 'hidden'}`}
       />
 
       {!hasVideo && (
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-          <UserAvatar name={participant.name || 'Participant'} size={compact ? 42 : 68} />
+          <UserAvatar name={tile.name || 'Participant'} size={compact ? 42 : 68} />
         </div>
       )}
 
@@ -133,14 +117,14 @@ function ParticipantVideoTile({
       {/* Bottom name + mic pill */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
         <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold truncate max-w-[80%]">
-          {participant.name || 'Employee'} {isLocal ? '(You)' : ''}
+          {tile.name || 'Employee'} {tile.isLocal ? '(You)' : ''}
         </span>
         <span
           className={`w-6 h-6 rounded-full grid place-items-center ${
-            isMicMuted ? 'bg-red-500/85 text-white' : 'bg-black/65 text-emerald-400'
+            tile.isMicMuted ? 'bg-red-500/85 text-white' : 'bg-black/65 text-emerald-400'
           }`}
         >
-          {isMicMuted ? <MicOff size={12} /> : <Mic size={12} />}
+          {tile.isMicMuted ? <MicOff size={12} /> : <Mic size={12} />}
         </span>
       </div>
     </div>
@@ -148,25 +132,21 @@ function ParticipantVideoTile({
 }
 
 function ScreenShareStage({
-  publication,
+  stream,
   presenterName,
   isLocal,
 }: {
-  publication: TrackPublication
+  stream: MediaStream
   presenterName: string
   isLocal: boolean
 }) {
   const screenRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const el = screenRef.current
-    const track = publication.track
-    if (!el || !track) return
-    track.attach(el)
-    return () => {
-      track.detach(el)
+    if (screenRef.current) {
+      screenRef.current.srcObject = stream
     }
-  }, [publication.track])
+  }, [stream])
 
   return (
     <div className="relative flex-1 min-h-0 rounded-2xl overflow-hidden bg-black border border-[#2a4233] flex items-center justify-center">
@@ -184,7 +164,8 @@ export default function MeetingRoomOverlay() {
     stage,
     activeMeeting,
     myRole,
-    room,
+    myUserId,
+    participantTiles,
     activeSpeakerIds,
     pinnedIdentity,
     setPinnedIdentity,
@@ -325,22 +306,17 @@ export default function MeetingRoomOverlay() {
     }
   }, [stage, sidePanel, activeMeeting?.chatId, socket])
 
-  const allParticipants = useMemo(() => getAllRoomParticipants(room), [room])
-
-  // Find active ScreenShare publication across local + remote participants
   const activeScreenShare = useMemo(() => {
-    for (const p of allParticipants) {
-      const pub = p.getTrackPublication(Track.Source.ScreenShare)
-      if (pub?.track && !pub.isMuted) {
+    for (const tile of participantTiles) {
+      if (tile.isScreenSharing && tile.screenStream) {
         return {
-          publication: pub,
-          participant: p,
-          isLocal: p.identity === room?.localParticipant.identity,
+          stream: tile.screenStream,
+          tile,
         }
       }
     }
     return null
-  }, [allParticipants, room])
+  }, [participantTiles])
 
   // 1. Real-time Meeting Started / Reminder Popup (when idle on any page)
   if (stage === 'idle' && incomingInvite) {
@@ -534,18 +510,16 @@ export default function MeetingRoomOverlay() {
   }
 
   // 3. Active Meeting Room (Grid + Screen Share + Side Panels + Host Controls)
-  const localIdentity = room?.localParticipant.identity || ''
-  const myUserId = parseLiveKitUserId(localIdentity)
   const isMyHandRaised = myUserId ? raisedHands.has(myUserId) : false
   const isHost = myRole === 'HOST'
   const canShareScreen = isHost || allowScreenShare
 
-  const pinnedParticipant = pinnedIdentity
-    ? allParticipants.find((p) => p.identity === pinnedIdentity) || null
+  const pinnedTile = pinnedIdentity
+    ? participantTiles.find((t) => t.identity === pinnedIdentity) || null
     : null
 
   const copyJoinLink = () => {
-    const fullUrl = `${window.location.origin}/dashboard?view=chat&meeting=${activeMeeting.meetingCode}`
+    const fullUrl = `${window.location.origin}/meeting/${activeMeeting.meetingCode}`
     void navigator.clipboard.writeText(fullUrl).then(() => {
       toast.success('Meeting join link copied!')
     })
@@ -591,7 +565,7 @@ export default function MeetingRoomOverlay() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>{formatTimer(durationSeconds)}</span>
               <span className="text-gray-500">•</span>
-              <span className="text-gray-300">{allParticipants.length} in call</span>
+              <span className="text-gray-300">{participantTiles.length} in call</span>
             </div>
           </div>
         </div>
@@ -621,7 +595,7 @@ export default function MeetingRoomOverlay() {
             }`}
           >
             <Users size={15} />
-            <span className="hidden sm:inline">People ({allParticipants.length})</span>
+            <span className="hidden sm:inline">People ({participantTiles.length})</span>
           </button>
 
           {activeMeeting.chatId && (
@@ -662,95 +636,77 @@ export default function MeetingRoomOverlay() {
           {activeScreenShare ? (
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
               <ScreenShareStage
-                publication={activeScreenShare.publication}
-                presenterName={
-                  presenterInfo?.fullName || activeScreenShare.participant.name || 'Participant'
-                }
-                isLocal={activeScreenShare.isLocal}
+                stream={activeScreenShare.stream}
+                presenterName={presenterInfo?.fullName || activeScreenShare.tile.name || 'Participant'}
+                isLocal={activeScreenShare.tile.isLocal}
               />
               <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto shrink-0 pb-1 lg:pb-0">
-                {allParticipants.map((p) => {
-                  const uid = parseLiveKitUserId(p.identity)
-                  return (
-                    <ParticipantVideoTile
-                      key={p.identity}
-                      participant={p}
-                      isLocal={p.identity === localIdentity}
-                      isSpeaking={activeSpeakerIds.has(p.identity)}
-                      isPinned={pinnedIdentity === p.identity}
-                      isHandRaised={Boolean(uid && raisedHands.has(uid))}
-                      onTogglePin={() =>
-                        setPinnedIdentity(pinnedIdentity === p.identity ? null : p.identity)
-                      }
-                      compact
-                    />
-                  )
-                })}
+                {participantTiles.map((tile) => (
+                  <ParticipantVideoTile
+                    key={tile.identity}
+                    tile={tile}
+                    isSpeaking={activeSpeakerIds.has(tile.identity)}
+                    isPinned={pinnedIdentity === tile.identity}
+                    isHandRaised={Boolean(tile.userId && raisedHands.has(tile.userId))}
+                    onTogglePin={() =>
+                      setPinnedIdentity(pinnedIdentity === tile.identity ? null : tile.identity)
+                    }
+                    compact
+                  />
+                ))}
               </div>
             </div>
-          ) : pinnedParticipant ? (
+          ) : pinnedTile ? (
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
               <div className="flex-1 min-h-0">
                 <ParticipantVideoTile
-                  participant={pinnedParticipant}
-                  isLocal={pinnedParticipant.identity === localIdentity}
-                  isSpeaking={activeSpeakerIds.has(pinnedParticipant.identity)}
+                  tile={pinnedTile}
+                  isSpeaking={activeSpeakerIds.has(pinnedTile.identity)}
                   isPinned
-                  isHandRaised={Boolean(
-                    parseLiveKitUserId(pinnedParticipant.identity) &&
-                      raisedHands.has(parseLiveKitUserId(pinnedParticipant.identity)!)
-                  )}
+                  isHandRaised={Boolean(pinnedTile.userId && raisedHands.has(pinnedTile.userId))}
                   onTogglePin={() => setPinnedIdentity(null)}
                 />
               </div>
-              {allParticipants.length > 1 && (
+              {participantTiles.length > 1 && (
                 <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto shrink-0">
-                  {allParticipants
-                    .filter((p) => p.identity !== pinnedParticipant.identity)
-                    .map((p) => {
-                      const uid = parseLiveKitUserId(p.identity)
-                      return (
-                        <ParticipantVideoTile
-                          key={p.identity}
-                          participant={p}
-                          isLocal={p.identity === localIdentity}
-                          isSpeaking={activeSpeakerIds.has(p.identity)}
-                          isPinned={false}
-                          isHandRaised={Boolean(uid && raisedHands.has(uid))}
-                          onTogglePin={() => setPinnedIdentity(p.identity)}
-                          compact
-                        />
-                      )
-                    })}
+                  {participantTiles
+                    .filter((t) => t.identity !== pinnedTile.identity)
+                    .map((tile) => (
+                      <ParticipantVideoTile
+                        key={tile.identity}
+                        tile={tile}
+                        isSpeaking={activeSpeakerIds.has(tile.identity)}
+                        isPinned={false}
+                        isHandRaised={Boolean(tile.userId && raisedHands.has(tile.userId))}
+                        onTogglePin={() => setPinnedIdentity(tile.identity)}
+                        compact
+                      />
+                    ))}
                 </div>
               )}
             </div>
           ) : (
             <div
               className={`flex-1 min-h-0 grid gap-3 ${
-                allParticipants.length <= 1
+                participantTiles.length <= 1
                   ? 'grid-cols-1'
-                  : allParticipants.length === 2
+                  : participantTiles.length === 2
                     ? 'grid-cols-1 sm:grid-cols-2'
-                    : allParticipants.length <= 4
+                    : participantTiles.length <= 4
                       ? 'grid-cols-1 sm:grid-cols-2'
                       : 'grid-cols-2 lg:grid-cols-3'
               }`}
             >
-              {allParticipants.map((p) => {
-                const uid = parseLiveKitUserId(p.identity)
-                return (
-                  <ParticipantVideoTile
-                    key={p.identity}
-                    participant={p}
-                    isLocal={p.identity === localIdentity}
-                    isSpeaking={activeSpeakerIds.has(p.identity)}
-                    isPinned={false}
-                    isHandRaised={Boolean(uid && raisedHands.has(uid))}
-                    onTogglePin={() => setPinnedIdentity(p.identity)}
-                  />
-                )
-              })}
+              {participantTiles.map((tile) => (
+                <ParticipantVideoTile
+                  key={tile.identity}
+                  tile={tile}
+                  isSpeaking={activeSpeakerIds.has(tile.identity)}
+                  isPinned={false}
+                  isHandRaised={Boolean(tile.userId && raisedHands.has(tile.userId))}
+                  onTogglePin={() => setPinnedIdentity(tile.identity)}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -760,7 +716,7 @@ export default function MeetingRoomOverlay() {
           <aside className="absolute inset-y-0 right-0 sm:static w-full sm:w-[320px] bg-[#111b15] border-l border-[#223529] z-30 flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#223529]">
               <strong className="text-sm font-bold">
-                {sidePanel === 'participants' ? `Participants (${allParticipants.length})` : 'In-Meeting Chat'}
+                {sidePanel === 'participants' ? `Participants (${participantTiles.length})` : 'In-Meeting Chat'}
               </strong>
               <button
                 type="button"
@@ -785,25 +741,18 @@ export default function MeetingRoomOverlay() {
                   </div>
                 )}
 
-                {allParticipants.map((p) => {
-                  const uid = parseLiveKitUserId(p.identity)
-                  const isSelf = p.identity === localIdentity
-                  const micOff = !p.getTrackPublication(Track.Source.Microphone) ||
-                    p.getTrackPublication(Track.Source.Microphone)?.isMuted
-                  const camOff = !p.getTrackPublication(Track.Source.Camera) ||
-                    p.getTrackPublication(Track.Source.Camera)?.isMuted
-                  const hand = Boolean(uid && raisedHands.has(uid))
-
+                {participantTiles.map((tile) => {
+                  const hand = Boolean(tile.userId && raisedHands.has(tile.userId))
                   return (
                     <div
-                      key={p.identity}
+                      key={tile.identity}
                       className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#16231b] border border-[#223529]"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <UserAvatar name={p.name || 'Employee'} size={30} />
+                        <UserAvatar name={tile.name || 'Employee'} size={30} />
                         <div className="min-w-0">
                           <div className="text-xs font-bold truncate">
-                            {p.name || 'Employee'} {isSelf ? '(You)' : ''}
+                            {tile.name || 'Employee'} {tile.isLocal ? '(You)' : ''}
                           </div>
                           {hand && (
                             <span className="text-[10px] text-amber-300 font-semibold">✋ Hand raised</span>
@@ -812,18 +761,18 @@ export default function MeetingRoomOverlay() {
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={micOff ? 'text-red-400' : 'text-emerald-400'}>
-                          {micOff ? <MicOff size={14} /> : <Mic size={14} />}
+                        <span className={tile.isMicMuted ? 'text-red-400' : 'text-emerald-400'}>
+                          {tile.isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
                         </span>
-                        <span className={camOff ? 'text-red-400' : 'text-emerald-400'}>
-                          {camOff ? <VideoOff size={14} /> : <Video size={14} />}
+                        <span className={tile.isCamOff ? 'text-red-400' : 'text-emerald-400'}>
+                          {tile.isCamOff ? <VideoOff size={14} /> : <Video size={14} />}
                         </span>
 
-                        {isHost && !isSelf && uid && (
+                        {isHost && !tile.isLocal && tile.userId && (
                           <>
                             <button
                               type="button"
-                              onClick={() => hostMuteParticipant(uid)}
+                              onClick={() => hostMuteParticipant(tile.userId!)}
                               className="w-6 h-6 rounded bg-white/10 hover:bg-white/20 text-amber-300 border-0 grid place-items-center cursor-pointer"
                               title="Mute participant"
                             >
@@ -831,7 +780,7 @@ export default function MeetingRoomOverlay() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => hostRemoveParticipant(uid)}
+                              onClick={() => hostRemoveParticipant(tile.userId!)}
                               className="w-6 h-6 rounded bg-red-500/20 hover:bg-red-500/40 text-red-300 border-0 grid place-items-center cursor-pointer"
                               title="Remove participant"
                             >
@@ -990,4 +939,3 @@ export default function MeetingRoomOverlay() {
     </div>
   )
 }
-

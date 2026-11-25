@@ -1,4 +1,5 @@
-import { Check, CheckCheck, Clock, Video, Users, Calendar } from 'lucide-react'
+import { Check, CheckCheck, Clock, Video, Users, Calendar, Copy, ExternalLink } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import type { ChatMessageItem } from '../../lib/chat-api'
 import { useMeeting } from '../../context/MeetingContext'
 
@@ -68,6 +69,30 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
               <span className="inline-flex items-center gap-1">
                 <Users size={12} /> {card.participantCount} invited
               </span>
+            </div>
+
+            {/* Direct Clickable / Copyable Meeting URL (Google Chat style) */}
+            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#111914] border border-[#dce5d9] dark:border-[#27382d] text-[11px]">
+              <button
+                type="button"
+                onClick={() => void openPreJoin(card.meetingCode)}
+                className="flex-1 text-left truncate text-[#0f766e] dark:text-[#34d399] font-mono underline bg-transparent border-0 p-0 cursor-pointer inline-flex items-center gap-1"
+                title="Open meeting"
+              >
+                <ExternalLink size={11} className="shrink-0" />
+                <span className="truncate">{`${window.location.origin}/meeting/${card.meetingCode}`}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/meeting/${card.meetingCode}`
+                  void navigator.clipboard?.writeText(url).then(() => toast.success('Meeting URL copied!'))
+                }}
+                className="w-6 h-6 rounded hover:bg-[#edf4ea] dark:hover:bg-[#223228] text-[#4d6355] dark:text-[#9eb2a5] border-0 bg-transparent grid place-items-center cursor-pointer shrink-0"
+                title="Copy meeting URL"
+              >
+                <Copy size={12} />
+              </button>
             </div>
 
             <button

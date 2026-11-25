@@ -12,8 +12,6 @@ import {
   Room,
   RoomEvent,
   Track,
-  type LocalParticipant,
-  type RemoteParticipant,
   type Participant,
 } from 'livekit-client'
 import { toast } from 'react-hot-toast'
@@ -26,6 +24,7 @@ import {
   type MeetingParticipantRole,
   type MeetingRecord,
 } from '../lib/meeting-api'
+import { readToken, getCurrentUser } from '../lib/auth-api'
 
 export type MeetingUiStage = 'idle' | 'prejoin' | 'connecting' | 'in-meeting' | 'reconnecting'
 
@@ -36,6 +35,19 @@ export interface FloatingReaction {
   emoji: string
 }
 
+export interface UnifiedParticipantTile {
+  identity: string
+  userId: number | null
+  name: string
+  isLocal: boolean
+  videoStream: MediaStream | null
+  audioStream: MediaStream | null
+  screenStream: MediaStream | null
+  isMicMuted: boolean
+  isCamOff: boolean
+  isScreenSharing: boolean
+}
+
 interface PreJoinOptions {
   micEnabled: boolean
   camEnabled: boolean
@@ -43,12 +55,23 @@ interface PreJoinOptions {
   videoDeviceId?: string
 }
 
+interface MeshPeerState {
+  userId: number
+  name: string
+  pc: RTCPeerConnection
+  remoteStream: MediaStream
+  pendingIce: RTCIceCandidateInit[]
+  micMuted: boolean
+  camOff: boolean
+  screenSharing: boolean
+}
+
 interface MeetingContextValue {
   stage: MeetingUiStage
   activeMeeting: MeetingRecord | null
   myRole: MeetingParticipantRole
-  room: Room | null
-  participantsVersion: number
+  myUserId: number | null
+  participantTiles: UnifiedParticipantTile[]
   activeSpeakerIds: Set<string>
   pinnedIdentity: string | null
   setPinnedIdentity: (identity: string | null) => void
@@ -84,9 +107,17 @@ export function parseLiveKitUserId(identity: string): number | null {
   return match ? Number(match[1]) : null
 }
 
+function buildStreamFromTrack(track: Track | undefined | null): MediaStream | null {
+  const mst = track?.mediaStreamTrack
+  if (!mst) return null
+  return new MediaStream([mst])
+}
+
 export function MeetingProvider({ children }: { children: ReactNode }) {
   const { socket } = useChat()
 
+  const [myUserId, setMyUserId] = useState<number | null>(null)
+  const [myName, setMyName] = useState<string>('You')
   const [stage, setStage] = useState<MeetingUiStage>('idle')
   const [activeMeeting, setActiveMeeting] = useState<MeetingRecord | null>(null)
   const [myRole, setMyRole] = useState<MeetingParticipantRole>('PARTICIPANT')
@@ -104,6 +135,14 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   const [durationSeconds, setDurationSeconds] = useState(0)
   const [incomingInvite, setIncomingInvite] = useState<MeetingRecord | null>(null)
 
+  // Mesh fallback refs & state
+  const transportModeRef = useRef<'livekit' | 'mesh' | null>(null)
+  const meshPeersRef = useRef<Map<number, MeshPeerState>>(new Map())
+  const meshIceServersRef = useRef<RTCIceServer[]>([{ urls: 'stun:stun.l.google.com:19302' }])
+  const meshLocalStreamRef = useRef<MediaStream | null>(null)
+  const meshScreenStreamRef = useRef<MediaStream | null>(null)
+  const [meshVersion, setMeshVersion] = useState(0)
+
   const roomRef = useRef<Room | null>(null)
   const activeMeetingRef = useRef<MeetingRecord | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -112,8 +151,23 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   activeMeetingRef.current = activeMeeting
   stageRef.current = stage
 
+  useEffect(() => {
+    const token = readToken()
+    if (!token) return
+    getCurrentUser(token)
+      .then((u) => {
+        setMyUserId(u.id)
+        setMyName(u.fullName || u.email)
+      })
+      .catch(() => {})
+  }, [])
+
   const bumpParticipants = useCallback(() => {
     setParticipantsVersion((v) => v + 1)
+  }, [])
+
+  const bumpMesh = useCallback(() => {
+    setMeshVersion((v) => v + 1)
   }, [])
 
   const cleanupRoom = useCallback(async () => {
@@ -132,10 +186,29 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         })
         await currentRoom.disconnect()
       } catch {
-        // ignore disconnect errors
+        // ignore
       }
       roomRef.current = null
     }
+
+    // Cleanup mesh fallback resources
+    meshPeersRef.current.forEach((peer) => {
+      peer.pc.onicecandidate = null
+      peer.pc.ontrack = null
+      peer.pc.oniceconnectionstatechange = null
+      peer.pc.close()
+    })
+    meshPeersRef.current.clear()
+
+    if (meshScreenStreamRef.current) {
+      meshScreenStreamRef.current.getTracks().forEach((t) => t.stop())
+      meshScreenStreamRef.current = null
+    }
+    if (meshLocalStreamRef.current) {
+      meshLocalStreamRef.current.getTracks().forEach((t) => t.stop())
+      meshLocalStreamRef.current = null
+    }
+    transportModeRef.current = null
 
     if (socket && code) {
       socket.emit('meeting:leave-room', { meetingCode: code })
@@ -153,7 +226,75 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     setIsScreenSharing(false)
     setDurationSeconds(0)
     setStage('idle')
-  }, [socket])
+    bumpMesh()
+  }, [socket, bumpMesh])
+
+  const createMeshPeer = useCallback(
+    (peerUserId: number, peerName: string, meetingCode: string): MeshPeerState => {
+      const existing = meshPeersRef.current.get(peerUserId)
+      if (existing) {
+        existing.pc.close()
+      }
+
+      const pc = new RTCPeerConnection({ iceServers: meshIceServersRef.current })
+      const remoteStream = new MediaStream()
+
+      const local = meshLocalStreamRef.current
+      if (local) {
+        local.getTracks().forEach((track) => {
+          pc.addTrack(track, local)
+        })
+      }
+
+      const peerState: MeshPeerState = {
+        userId: peerUserId,
+        name: peerName,
+        pc,
+        remoteStream,
+        pendingIce: [],
+        micMuted: false,
+        camOff: false,
+        screenSharing: false,
+      }
+
+      pc.ontrack = (event) => {
+        event.streams[0]?.getTracks().forEach((t) => {
+          if (!remoteStream.getTracks().some((rt) => rt.id === t.id)) {
+            remoteStream.addTrack(t)
+          }
+        })
+        if (event.streams.length === 0 && event.track) {
+          if (!remoteStream.getTracks().some((rt) => rt.id === event.track.id)) {
+            remoteStream.addTrack(event.track)
+          }
+        }
+        bumpMesh()
+      }
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket) {
+          socket.emit('meeting:rtc-ice', {
+            meetingCode,
+            targetUserId: peerUserId,
+            candidate: event.candidate.toJSON(),
+          })
+        }
+      }
+
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === 'disconnected') {
+          setStage('reconnecting')
+        } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+          setStage('in-meeting')
+        }
+      }
+
+      meshPeersRef.current.set(peerUserId, peerState)
+      bumpMesh()
+      return peerState
+    },
+    [socket, bumpMesh]
+  )
 
   const openPreJoin = useCallback(async (meetingCode: string) => {
     if (stageRef.current === 'in-meeting' || stageRef.current === 'connecting') {
@@ -192,102 +333,145 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         setMyRole(joinRes.role)
         setAllowScreenShare(joinRes.meeting.allowScreenShare)
 
-        if (!joinRes.livekitUrl || !joinRes.token) {
-          toast.error('LiveKit SFU is not configured on the server (LIVEKIT_URL / API keys missing).')
-          await leaveMeetingApi(target.meetingCode).catch(() => {})
-          setStage('prejoin')
-          return
-        }
+        // MODE A: LiveKit SFU (when LIVEKIT_URL + token are configured)
+        if (joinRes.livekitUrl && joinRes.token) {
+          transportModeRef.current = 'livekit'
 
-        const lkRoom = new Room({
-          adaptiveStream: true,
-          dynacast: true,
-          videoCaptureDefaults: {
-            deviceId: options.videoDeviceId,
-            resolution: { width: 1280, height: 720, frameRate: 30 },
-          },
-          audioCaptureDefaults: {
-            deviceId: options.audioDeviceId,
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
-        })
+          const lkRoom = new Room({
+            adaptiveStream: true,
+            dynacast: true,
+            videoCaptureDefaults: {
+              deviceId: options.videoDeviceId,
+              resolution: { width: 1280, height: 720, frameRate: 30 },
+            },
+            audioCaptureDefaults: {
+              deviceId: options.audioDeviceId,
+              echoCancellation: true,
+              noiseSuppression: true,
+            },
+          })
 
-        lkRoom
-          .on(RoomEvent.ParticipantConnected, bumpParticipants)
-          .on(RoomEvent.ParticipantDisconnected, bumpParticipants)
-          .on(RoomEvent.TrackSubscribed, bumpParticipants)
-          .on(RoomEvent.TrackUnsubscribed, bumpParticipants)
-          .on(RoomEvent.TrackMuted, bumpParticipants)
-          .on(RoomEvent.TrackUnmuted, bumpParticipants)
-          .on(RoomEvent.LocalTrackPublished, bumpParticipants)
-          .on(RoomEvent.LocalTrackUnpublished, (pub) => {
-            if (pub.source === Track.Source.ScreenShare) {
-              setIsScreenSharing(false)
-              if (socket) {
-                socket.emit('meeting:screen-share-stop', { meetingCode: target.meetingCode })
+          lkRoom
+            .on(RoomEvent.ParticipantConnected, bumpParticipants)
+            .on(RoomEvent.ParticipantDisconnected, bumpParticipants)
+            .on(RoomEvent.TrackSubscribed, bumpParticipants)
+            .on(RoomEvent.TrackUnsubscribed, bumpParticipants)
+            .on(RoomEvent.TrackMuted, bumpParticipants)
+            .on(RoomEvent.TrackUnmuted, bumpParticipants)
+            .on(RoomEvent.LocalTrackPublished, bumpParticipants)
+            .on(RoomEvent.LocalTrackUnpublished, (pub) => {
+              if (pub.source === Track.Source.ScreenShare) {
+                setIsScreenSharing(false)
+                socket?.emit('meeting:screen-share-stop', { meetingCode: target.meetingCode })
               }
-            }
-            bumpParticipants()
+              bumpParticipants()
+            })
+            .on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
+              setActiveSpeakerIds(new Set(speakers.map((s) => s.identity)))
+            })
+            .on(RoomEvent.Reconnecting, () => setStage('reconnecting'))
+            .on(RoomEvent.Reconnected, () => setStage('in-meeting'))
+            .on(RoomEvent.Disconnected, () => {
+              if (roomRef.current === lkRoom) {
+                void cleanupRoom()
+              }
+            })
+
+          await lkRoom.connect(joinRes.livekitUrl, joinRes.token)
+
+          try {
+            await lkRoom.localParticipant.setMicrophoneEnabled(options.micEnabled)
+            setIsMicMuted(!options.micEnabled)
+          } catch {
+            setIsMicMuted(true)
+          }
+
+          try {
+            await lkRoom.localParticipant.setCameraEnabled(options.camEnabled)
+            setIsCamOff(!options.camEnabled)
+          } catch {
+            setIsCamOff(true)
+          }
+
+          roomRef.current = lkRoom
+          setRoom(lkRoom)
+          setStage('in-meeting')
+          bumpParticipants()
+        } else {
+          // MODE B: Built-in Socket.io WebRTC Mesh Fallback (zero external config needed!)
+          transportModeRef.current = 'mesh'
+          meshIceServersRef.current =
+            joinRes.iceServers?.length > 0
+              ? joinRes.iceServers
+              : [{ urls: 'stun:stun.l.google.com:19302' }]
+
+          let stream: MediaStream | null = null
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: options.videoDeviceId
+                ? { deviceId: { exact: options.videoDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                : { width: { ideal: 1280 }, height: { ideal: 720 } },
+              audio: options.audioDeviceId
+                ? { deviceId: { exact: options.audioDeviceId }, echoCancellation: true, noiseSuppression: true }
+                : { echoCancellation: true, noiseSuppression: true },
+            })
+          } catch {
+            // Allow joining audio-only or listen-only if camera/mic blocked
+            stream = new MediaStream()
+          }
+
+          stream.getAudioTracks().forEach((t) => {
+            t.enabled = options.micEnabled
           })
-          .on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
-            setActiveSpeakerIds(new Set(speakers.map((s) => s.identity)))
-          })
-          .on(RoomEvent.Reconnecting, () => {
-            setStage('reconnecting')
-          })
-          .on(RoomEvent.Reconnected, () => {
-            setStage('in-meeting')
-          })
-          .on(RoomEvent.Disconnected, () => {
-            if (roomRef.current === lkRoom) {
-              void cleanupRoom()
-            }
+          stream.getVideoTracks().forEach((t) => {
+            t.enabled = options.camEnabled
           })
 
-        await lkRoom.connect(joinRes.livekitUrl, joinRes.token)
-
-        // Enable camera / mic according to pre-join selection
-        try {
-          await lkRoom.localParticipant.setMicrophoneEnabled(options.micEnabled)
-          setIsMicMuted(!options.micEnabled)
-        } catch {
-          setIsMicMuted(true)
-          toast.error('Microphone permission denied or unavailable.')
+          meshLocalStreamRef.current = stream
+          setIsMicMuted(!options.micEnabled || stream.getAudioTracks().length === 0)
+          setIsCamOff(!options.camEnabled || stream.getVideoTracks().length === 0)
+          setStage('in-meeting')
+          bumpMesh()
         }
 
-        try {
-          await lkRoom.localParticipant.setCameraEnabled(options.camEnabled)
-          setIsCamOff(!options.camEnabled)
-        } catch {
-          setIsCamOff(true)
-          toast.error('Camera permission denied or unavailable.')
-        }
-
-        roomRef.current = lkRoom
-        setRoom(lkRoom)
-        setStage('in-meeting')
-        bumpParticipants()
-
-        // Sync Socket.io room state (presenter, raised hands, host controls)
+        // Sync Socket.io room state (and connect to existing peers in mesh mode)
         if (socket) {
           socket.emit(
             'meeting:join-room',
             { meetingCode: target.meetingCode },
-            (res: {
+            async (res: {
               success: boolean
               presenter?: { userId: number; fullName: string } | null
               allowScreenShare?: boolean
               raisedHands?: number[]
+              peers?: Array<{ userId: number; fullName: string }>
             }) => {
-              if (res?.success) {
-                setPresenterInfo(res.presenter || null)
-                if (typeof res.allowScreenShare === 'boolean') {
-                  setAllowScreenShare(res.allowScreenShare)
+              if (!res?.success) return
+              setPresenterInfo(res.presenter || null)
+              if (typeof res.allowScreenShare === 'boolean') {
+                setAllowScreenShare(res.allowScreenShare)
+              }
+              if (Array.isArray(res.raisedHands)) {
+                setRaisedHands(new Set(res.raisedHands))
+              }
+
+              if (transportModeRef.current === 'mesh' && Array.isArray(res.peers)) {
+                for (const p of res.peers) {
+                  const peer = createMeshPeer(p.userId, p.fullName, target.meetingCode)
+                  const offer = await peer.pc.createOffer()
+                  await peer.pc.setLocalDescription(offer)
+                  socket.emit('meeting:rtc-offer', {
+                    meetingCode: target.meetingCode,
+                    targetUserId: p.userId,
+                    sdp: { type: offer.type, sdp: offer.sdp },
+                  })
                 }
-                if (Array.isArray(res.raisedHands)) {
-                  setRaisedHands(new Set(res.raisedHands))
-                }
+                socket.emit('meeting:rtc-media-state', {
+                  meetingCode: target.meetingCode,
+                  micMuted: !options.micEnabled,
+                  camOff: !options.camEnabled,
+                  screenSharing: false,
+                })
               }
             }
           )
@@ -303,7 +487,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         await cleanupRoom()
       }
     },
-    [socket, bumpParticipants, cleanupRoom]
+    [socket, bumpParticipants, bumpMesh, cleanupRoom, createMeshPeer]
   )
 
   const leaveMeeting = useCallback(async () => {
@@ -327,41 +511,106 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   }, [cleanupRoom])
 
   const toggleMic = useCallback(async () => {
-    const lp: LocalParticipant | undefined = roomRef.current?.localParticipant
-    if (!lp) return
-    const nextEnabled = isMicMuted
-    try {
-      await lp.setMicrophoneEnabled(nextEnabled)
-      setIsMicMuted(!nextEnabled)
-      bumpParticipants()
-    } catch {
-      toast.error('Unable to toggle microphone')
+    const nextMuted = !isMicMuted
+    if (transportModeRef.current === 'livekit' && roomRef.current) {
+      try {
+        await roomRef.current.localParticipant.setMicrophoneEnabled(!nextMuted)
+        setIsMicMuted(nextMuted)
+        bumpParticipants()
+      } catch {
+        toast.error('Unable to toggle microphone')
+      }
+      return
     }
-  }, [isMicMuted, bumpParticipants])
+
+    if (transportModeRef.current === 'mesh' && meshLocalStreamRef.current) {
+      meshLocalStreamRef.current.getAudioTracks().forEach((t) => {
+        t.enabled = !nextMuted
+      })
+      setIsMicMuted(nextMuted)
+      const code = activeMeetingRef.current?.meetingCode
+      if (socket && code) {
+        socket.emit('meeting:rtc-media-state', {
+          meetingCode: code,
+          micMuted: nextMuted,
+          camOff: isCamOff,
+          screenSharing: isScreenSharing,
+        })
+      }
+      bumpMesh()
+    }
+  }, [isMicMuted, isCamOff, isScreenSharing, socket, bumpParticipants, bumpMesh])
 
   const toggleCamera = useCallback(async () => {
-    const lp: LocalParticipant | undefined = roomRef.current?.localParticipant
-    if (!lp) return
-    const nextEnabled = isCamOff
-    try {
-      await lp.setCameraEnabled(nextEnabled)
-      setIsCamOff(!nextEnabled)
-      bumpParticipants()
-    } catch {
-      toast.error('Unable to toggle camera')
+    const nextOff = !isCamOff
+    if (transportModeRef.current === 'livekit' && roomRef.current) {
+      try {
+        await roomRef.current.localParticipant.setCameraEnabled(!nextOff)
+        setIsCamOff(nextOff)
+        bumpParticipants()
+      } catch {
+        toast.error('Unable to toggle camera')
+      }
+      return
     }
-  }, [isCamOff, bumpParticipants])
+
+    if (transportModeRef.current === 'mesh' && meshLocalStreamRef.current) {
+      meshLocalStreamRef.current.getVideoTracks().forEach((t) => {
+        t.enabled = !nextOff
+      })
+      setIsCamOff(nextOff)
+      const code = activeMeetingRef.current?.meetingCode
+      if (socket && code) {
+        socket.emit('meeting:rtc-media-state', {
+          meetingCode: code,
+          micMuted: isMicMuted,
+          camOff: nextOff,
+          screenSharing: isScreenSharing,
+        })
+      }
+      bumpMesh()
+    }
+  }, [isCamOff, isMicMuted, isScreenSharing, socket, bumpParticipants, bumpMesh])
+
+  const stopMeshScreenShare = useCallback(async () => {
+    const code = activeMeetingRef.current?.meetingCode
+    if (meshScreenStreamRef.current) {
+      meshScreenStreamRef.current.getTracks().forEach((t) => t.stop())
+      meshScreenStreamRef.current = null
+    }
+    const camTrack = meshLocalStreamRef.current?.getVideoTracks()[0] || null
+    meshPeersRef.current.forEach((peer) => {
+      const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video')
+      if (sender && camTrack) {
+        void sender.replaceTrack(camTrack)
+      }
+    })
+    setIsScreenSharing(false)
+    if (socket && code) {
+      socket.emit('meeting:screen-share-stop', { meetingCode: code })
+      socket.emit('meeting:rtc-media-state', {
+        meetingCode: code,
+        micMuted: isMicMuted,
+        camOff: isCamOff,
+        screenSharing: false,
+      })
+    }
+    bumpMesh()
+  }, [socket, isMicMuted, isCamOff, bumpMesh])
 
   const toggleScreenShare = useCallback(async () => {
-    const lp: LocalParticipant | undefined = roomRef.current?.localParticipant
     const code = activeMeetingRef.current?.meetingCode
-    if (!lp || !code) return
+    if (!code) return
 
     if (isScreenSharing) {
-      await lp.setScreenShareEnabled(false).catch(() => {})
-      setIsScreenSharing(false)
-      socket?.emit('meeting:screen-share-stop', { meetingCode: code })
-      bumpParticipants()
+      if (transportModeRef.current === 'livekit' && roomRef.current) {
+        await roomRef.current.localParticipant.setScreenShareEnabled(false).catch(() => {})
+        setIsScreenSharing(false)
+        socket?.emit('meeting:screen-share-stop', { meetingCode: code })
+        bumpParticipants()
+      } else {
+        await stopMeshScreenShare()
+      }
       return
     }
 
@@ -382,36 +631,62 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    if (transportModeRef.current === 'livekit' && roomRef.current) {
+      try {
+        const pub = await roomRef.current.localParticipant.setScreenShareEnabled(true, { audio: true })
+        if (!pub) {
+          socket?.emit('meeting:screen-share-stop', { meetingCode: code })
+          return
+        }
+        setIsScreenSharing(true)
+        pub.track?.mediaStreamTrack?.addEventListener('ended', () => {
+          setIsScreenSharing(false)
+          void roomRef.current?.localParticipant.setScreenShareEnabled(false).catch(() => {})
+          socket?.emit('meeting:screen-share-stop', { meetingCode: code })
+          bumpParticipants()
+        })
+        bumpParticipants()
+      } catch {
+        socket?.emit('meeting:screen-share-stop', { meetingCode: code })
+      }
+      return
+    }
+
+    // Mesh screen share
     try {
-      const pub = await lp.setScreenShareEnabled(true, { audio: true })
-      if (!pub) {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const screenTrack = screenStream.getVideoTracks()[0]
+      if (!screenTrack) {
         socket?.emit('meeting:screen-share-stop', { meetingCode: code })
         return
       }
-      setIsScreenSharing(true)
-      // Handle browser's native "Stop sharing" button
-      pub.track?.mediaStreamTrack?.addEventListener('ended', () => {
-        setIsScreenSharing(false)
-        void lp.setScreenShareEnabled(false).catch(() => {})
-        socket?.emit('meeting:screen-share-stop', { meetingCode: code })
-        bumpParticipants()
+      meshScreenStreamRef.current = screenStream
+      meshPeersRef.current.forEach((peer) => {
+        const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video')
+        if (sender) void sender.replaceTrack(screenTrack)
       })
-      bumpParticipants()
+      setIsScreenSharing(true)
+      socket?.emit('meeting:rtc-media-state', {
+        meetingCode: code,
+        micMuted: isMicMuted,
+        camOff: isCamOff,
+        screenSharing: true,
+      })
+      screenTrack.addEventListener('ended', () => {
+        void stopMeshScreenShare()
+      })
+      bumpMesh()
     } catch {
       socket?.emit('meeting:screen-share-stop', { meetingCode: code })
-      // User cancelled browser screen picker
     }
-  }, [isScreenSharing, socket, bumpParticipants])
+  }, [isScreenSharing, isMicMuted, isCamOff, socket, bumpParticipants, bumpMesh, stopMeshScreenShare])
 
   const toggleHandRaise = useCallback(() => {
     const code = activeMeetingRef.current?.meetingCode
-    const lp = roomRef.current?.localParticipant
-    if (!socket || !code || !lp) return
-    const myUid = parseLiveKitUserId(lp.identity)
-    if (!myUid) return
-    const currentlyRaised = raisedHands.has(myUid)
+    if (!socket || !code || !myUserId) return
+    const currentlyRaised = raisedHands.has(myUserId)
     socket.emit('meeting:hand-raise', { meetingCode: code, raised: !currentlyRaised })
-  }, [socket, raisedHands])
+  }, [socket, myUserId, raisedHands])
 
   const sendReaction = useCallback(
     (emoji: string) => {
@@ -449,7 +724,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     [socket]
   )
 
-  // Global Socket.io listeners for Meeting lifecycle (invites, reminders, host controls)
+  // Global Socket.io listeners for Meeting lifecycle + Mesh fallback signaling
   useEffect(() => {
     if (!socket) return
 
@@ -477,8 +752,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     const onHostChanged = ({ meetingCode, newHostId }: { meetingCode: string; newHostId: number }) => {
       if (activeMeetingRef.current?.meetingCode !== meetingCode) return
       setActiveMeeting((prev) => (prev ? { ...prev, hostId: newHostId } : prev))
-      const lp = roomRef.current?.localParticipant
-      if (lp && parseLiveKitUserId(lp.identity) === newHostId) {
+      if (myUserId === newHostId) {
         setMyRole('HOST')
         toast.success('You are now the meeting host.')
       }
@@ -519,11 +793,16 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
 
     const onMutedByHost = ({ meetingCode, hostName }: { meetingCode: string; hostName: string }) => {
       if (activeMeetingRef.current?.meetingCode !== meetingCode) return
-      const lp = roomRef.current?.localParticipant
-      if (lp) {
-        void lp.setMicrophoneEnabled(false).catch(() => {})
+      if (transportModeRef.current === 'livekit' && roomRef.current) {
+        void roomRef.current.localParticipant.setMicrophoneEnabled(false).catch(() => {})
         setIsMicMuted(true)
         bumpParticipants()
+      } else if (meshLocalStreamRef.current) {
+        meshLocalStreamRef.current.getAudioTracks().forEach((t) => {
+          t.enabled = false
+        })
+        setIsMicMuted(true)
+        bumpMesh()
       }
       toast(`${hostName} muted your microphone.`, { icon: '🔇' })
     }
@@ -538,10 +817,98 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       if (activeMeetingRef.current?.meetingCode !== meetingCode) return
       setAllowScreenShare(allow)
       if (!allow && myRole !== 'HOST' && isScreenSharing) {
-        void roomRef.current?.localParticipant.setScreenShareEnabled(false).catch(() => {})
-        setIsScreenSharing(false)
+        if (transportModeRef.current === 'livekit') {
+          void roomRef.current?.localParticipant.setScreenShareEnabled(false).catch(() => {})
+          setIsScreenSharing(false)
+        } else {
+          void stopMeshScreenShare()
+        }
         toast('Host disabled screen sharing for participants.')
       }
+    }
+
+    // Mesh fallback signaling handlers
+    const onMeshPeerJoined = ({ meetingCode }: { meetingCode: string }) => {
+      if (activeMeetingRef.current?.meetingCode !== meetingCode || transportModeRef.current !== 'mesh') return
+      // The joining peer sends the offer
+    }
+
+    const onMeshPeerLeft = ({ meetingCode, userId }: { meetingCode: string; userId: number }) => {
+      if (activeMeetingRef.current?.meetingCode !== meetingCode || transportModeRef.current !== 'mesh') return
+      const peer = meshPeersRef.current.get(userId)
+      if (peer) {
+        peer.pc.close()
+        meshPeersRef.current.delete(userId)
+        bumpMesh()
+      }
+    }
+
+    const onMeshOffer = async (data: {
+      meetingCode: string
+      fromUserId: number
+      fromName: string
+      sdp: RTCSessionDescriptionInit
+    }) => {
+      if (activeMeetingRef.current?.meetingCode !== data.meetingCode || transportModeRef.current !== 'mesh') return
+      const peer = createMeshPeer(data.fromUserId, data.fromName, data.meetingCode)
+      await peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      while (peer.pendingIce.length > 0) {
+        const c = peer.pendingIce.shift()
+        if (c) await peer.pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {})
+      }
+      const answer = await peer.pc.createAnswer()
+      await peer.pc.setLocalDescription(answer)
+      socket.emit('meeting:rtc-answer', {
+        meetingCode: data.meetingCode,
+        targetUserId: data.fromUserId,
+        sdp: { type: answer.type, sdp: answer.sdp },
+      })
+    }
+
+    const onMeshAnswer = async (data: {
+      meetingCode: string
+      fromUserId: number
+      sdp: RTCSessionDescriptionInit
+    }) => {
+      if (activeMeetingRef.current?.meetingCode !== data.meetingCode || transportModeRef.current !== 'mesh') return
+      const peer = meshPeersRef.current.get(data.fromUserId)
+      if (!peer) return
+      await peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      while (peer.pendingIce.length > 0) {
+        const c = peer.pendingIce.shift()
+        if (c) await peer.pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {})
+      }
+    }
+
+    const onMeshIce = async (data: {
+      meetingCode: string
+      fromUserId: number
+      candidate: RTCIceCandidateInit
+    }) => {
+      if (activeMeetingRef.current?.meetingCode !== data.meetingCode || transportModeRef.current !== 'mesh') return
+      const peer = meshPeersRef.current.get(data.fromUserId)
+      if (!peer) return
+      if (!peer.pc.remoteDescription) {
+        peer.pendingIce.push(data.candidate)
+        return
+      }
+      await peer.pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(() => {})
+    }
+
+    const onMeshMediaState = (data: {
+      meetingCode: string
+      userId: number
+      micMuted: boolean
+      camOff: boolean
+      screenSharing: boolean
+    }) => {
+      if (activeMeetingRef.current?.meetingCode !== data.meetingCode || transportModeRef.current !== 'mesh') return
+      const peer = meshPeersRef.current.get(data.userId)
+      if (!peer) return
+      peer.micMuted = data.micMuted
+      peer.camOff = data.camOff
+      peer.screenSharing = data.screenSharing
+      bumpMesh()
     }
 
     socket.on('meeting:started', onMeetingStarted)
@@ -555,6 +922,12 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     socket.on('meeting:muted-by-host', onMutedByHost)
     socket.on('meeting:removed-by-host', onRemovedByHost)
     socket.on('meeting:screen-share-policy', onScreenPolicy)
+    socket.on('meeting:rtc-peer-joined', onMeshPeerJoined)
+    socket.on('meeting:rtc-peer-left', onMeshPeerLeft)
+    socket.on('meeting:rtc-offer', onMeshOffer)
+    socket.on('meeting:rtc-answer', onMeshAnswer)
+    socket.on('meeting:rtc-ice', onMeshIce)
+    socket.on('meeting:rtc-media-state', onMeshMediaState)
 
     return () => {
       socket.off('meeting:started', onMeetingStarted)
@@ -568,8 +941,14 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       socket.off('meeting:muted-by-host', onMutedByHost)
       socket.off('meeting:removed-by-host', onRemovedByHost)
       socket.off('meeting:screen-share-policy', onScreenPolicy)
+      socket.off('meeting:rtc-peer-joined', onMeshPeerJoined)
+      socket.off('meeting:rtc-peer-left', onMeshPeerLeft)
+      socket.off('meeting:rtc-offer', onMeshOffer)
+      socket.off('meeting:rtc-answer', onMeshAnswer)
+      socket.off('meeting:rtc-ice', onMeshIce)
+      socket.off('meeting:rtc-media-state', onMeshMediaState)
     }
-  }, [socket, cleanupRoom, bumpParticipants, myRole, isScreenSharing])
+  }, [socket, myUserId, cleanupRoom, bumpParticipants, bumpMesh, createMeshPeer, myRole, isScreenSharing, stopMeshScreenShare])
 
   useEffect(() => {
     return () => {
@@ -577,13 +956,73 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     }
   }, [cleanupRoom])
 
+  // Unified participant tiles across LiveKit SFU and Mesh fallback
+  const participantTiles = useMemo<UnifiedParticipantTile[]>(() => {
+    if (transportModeRef.current === 'livekit' && room) {
+      const list = [room.localParticipant, ...Array.from(room.remoteParticipants.values())]
+      return list.map((p) => {
+        const camPub = p.getTrackPublication(Track.Source.Camera)
+        const micPub = p.getTrackPublication(Track.Source.Microphone)
+        const scrPub = p.getTrackPublication(Track.Source.ScreenShare)
+        const isLocal = p.identity === room.localParticipant.identity
+        return {
+          identity: p.identity,
+          userId: parseLiveKitUserId(p.identity),
+          name: p.name || 'Employee',
+          isLocal,
+          videoStream: camPub?.track && !camPub.isMuted ? buildStreamFromTrack(camPub.track) : null,
+          audioStream: !isLocal && micPub?.track && !micPub.isMuted ? buildStreamFromTrack(micPub.track) : null,
+          screenStream: scrPub?.track && !scrPub.isMuted ? buildStreamFromTrack(scrPub.track) : null,
+          isMicMuted: !micPub || micPub.isMuted,
+          isCamOff: !camPub || camPub.isMuted || !camPub.track,
+          isScreenSharing: Boolean(scrPub?.track && !scrPub.isMuted),
+        }
+      })
+    }
+
+    if (transportModeRef.current === 'mesh') {
+      const tiles: UnifiedParticipantTile[] = [
+        {
+          identity: `user-${myUserId || 0}`,
+          userId: myUserId,
+          name: myName,
+          isLocal: true,
+          videoStream: !isCamOff && !isScreenSharing ? meshLocalStreamRef.current : null,
+          audioStream: null,
+          screenStream: isScreenSharing ? meshScreenStreamRef.current : null,
+          isMicMuted,
+          isCamOff,
+          isScreenSharing,
+        },
+      ]
+
+      meshPeersRef.current.forEach((peer) => {
+        tiles.push({
+          identity: `user-${peer.userId}`,
+          userId: peer.userId,
+          name: peer.name,
+          isLocal: false,
+          videoStream: !peer.camOff && !peer.screenSharing ? peer.remoteStream : null,
+          audioStream: peer.remoteStream,
+          screenStream: peer.screenSharing ? peer.remoteStream : null,
+          isMicMuted: peer.micMuted,
+          isCamOff: peer.camOff,
+          isScreenSharing: peer.screenSharing,
+        })
+      })
+      return tiles
+    }
+
+    return []
+  }, [room, participantsVersion, meshVersion, myUserId, myName, isMicMuted, isCamOff, isScreenSharing])
+
   const value = useMemo<MeetingContextValue>(
     () => ({
       stage,
       activeMeeting,
       myRole,
-      room,
-      participantsVersion,
+      myUserId,
+      participantTiles,
       activeSpeakerIds,
       pinnedIdentity,
       setPinnedIdentity,
@@ -615,8 +1054,8 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       stage,
       activeMeeting,
       myRole,
-      room,
-      participantsVersion,
+      myUserId,
+      participantTiles,
       activeSpeakerIds,
       pinnedIdentity,
       presenterInfo,
@@ -652,12 +1091,3 @@ export function useMeeting(): MeetingContextValue {
   if (!ctx) throw new Error('useMeeting must be used inside MeetingProvider')
   return ctx
 }
-
-export function getAllRoomParticipants(room: Room | null): Participant[] {
-  if (!room) return []
-  return [room.localParticipant, ...Array.from(room.remoteParticipants.values())] as (
-    | LocalParticipant
-    | RemoteParticipant
-  )[]
-}
-

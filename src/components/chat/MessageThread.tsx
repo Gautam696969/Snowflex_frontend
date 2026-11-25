@@ -1,14 +1,17 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
-  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles, Video, Users
+  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles, Video, Users, Calendar
 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import UserAvatar from '../UserAvatar'
 import RoleBadge from './RoleBadge'
 import MessageItem from './MessageItem'
 import StartMeetingModal from './StartMeetingModal'
 import { fetchMessages, type ChatConversationItem, type ChatMessageItem } from '../../lib/chat-api'
+import { createMeetingApi } from '../../lib/meeting-api'
 import { useChat } from '../../context/ChatContext'
 import { useVideoCall } from '../../context/VideoCallContext'
+import { useMeeting } from '../../context/MeetingContext'
 import type { SafeUser } from '../../lib/auth-api'
 
 interface MessageThreadProps {
@@ -73,6 +76,8 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
     onlineUsers,
   } = useChat()
   const { startCall, callState } = useVideoCall()
+  const { openPreJoin } = useMeeting()
+  const [creatingInstantMeet, setCreatingInstantMeet] = useState(false)
 
   const [messages, setMessages] = useState<ChatMessageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -404,19 +409,48 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
           </div>
         </div>
 
-        {/* 1-to-1 Video Call & Start Meeting Buttons */}
+        {/* Google Chat-style Instant Meet + Schedule + 1-to-1 Video Call */}
         {!conversation.isReadOnly && (
-          <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#193c33] hover:bg-[#245447] text-[#d9ed74] text-[12px] font-semibold cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+              onClick={async () => {
+                if (creatingInstantMeet) return
+                setCreatingInstantMeet(true)
+                try {
+                  const meeting = await createMeetingApi({
+                    title: `Meet with ${conversation.otherUser.fullName}`,
+                    chatId: conversation.id,
+                    invitedUserIds: [conversation.otherUser.id],
+                  })
+                  const fullUrl = `${window.location.origin}/meeting/${meeting.meetingCode}`
+                  void navigator.clipboard?.writeText(fullUrl).catch(() => {})
+                  toast.success('Meeting link sent to chat!')
+                  await openPreJoin(meeting.meetingCode)
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Unable to create meeting')
+                } finally {
+                  setCreatingInstantMeet(false)
+                }
+              }}
+              disabled={isDisconnected || creatingInstantMeet}
+              title="Send instant Google Meet-style link directly in chat"
+              aria-label="Send Meeting Link"
+            >
+              {creatingInstantMeet ? <Loader2 size={15} className="animate-spin" /> : <Users size={15} />}
+              <span className="hidden sm:inline">Meet</span>
+            </button>
+
+            <button
+              type="button"
+              className="inline-flex items-center justify-center w-[34px] h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#f7faf5] dark:bg-[#202b25] text-[#193c33] dark:text-[#d9ed74] hover:bg-[#e8f2e4] dark:hover:bg-[#2a3830] cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
               onClick={() => setShowStartMeetingModal(true)}
               disabled={isDisconnected}
-              title="Start or schedule a multi-participant meeting"
-              aria-label="Start Meeting"
+              title="Schedule or customize meeting"
+              aria-label="Schedule Meeting"
             >
-              <Users size={15} />
-              <span className="hidden sm:inline">Start Meeting</span>
+              <Calendar size={16} />
             </button>
 
             <button
@@ -439,12 +473,12 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
                   ? 'Reconnect to start a video call'
                   : callState !== 'idle'
                     ? 'Already on a call'
-                    : `Video call ${conversation.otherUser.fullName}`
+                    : `Direct video call ${conversation.otherUser.fullName}`
               }
               aria-label={`Start video call with ${conversation.otherUser.fullName}`}
             >
               <Video size={17} />
-              <span className="hidden sm:inline">Video Call</span>
+              <span className="hidden md:inline">Call</span>
             </button>
           </div>
         )}
