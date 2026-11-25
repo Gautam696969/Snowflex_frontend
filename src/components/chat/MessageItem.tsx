@@ -65,18 +65,28 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
         : formatMessageTime(message.createdAt)
 
     return (
-      <div className="flex justify-center my-2">
-        <div className="w-full max-w-[340px] rounded-2xl bg-[#f7faf5] dark:bg-[#19241e] border border-[#d6e2d2] dark:border-[#2c4034] p-3.5 shadow-sm flex flex-col gap-2.5">
+      <div className={`chat-message-row flex w-full my-1 ${isMine ? 'is-mine justify-end' : 'is-theirs justify-start'}`}>
+        <div
+          className={`w-full max-w-[min(82%,340px)] rounded-[14px] p-3.5 shadow-sm flex flex-col gap-2.5 border ${
+            isMine
+              ? 'bg-[#193c33] text-white border-[#245245] rounded-br-[3px]'
+              : 'bg-[#f7faf5] dark:bg-[#19241e] text-[#193c33] dark:text-[#edf5ef] border-[#d6e2d2] dark:border-[#2c4034] rounded-bl-[3px]'
+          }`}
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-[#193c33] text-[#d9ed74] grid place-items-center shrink-0">
+              <div
+                className={`w-8 h-8 rounded-lg grid place-items-center shrink-0 ${
+                  isMine ? 'bg-white/15 text-[#d9ed74]' : 'bg-[#193c33] text-[#d9ed74]'
+                }`}
+              >
                 <Video size={16} />
               </div>
               <div className="min-w-0">
-                <strong className="block text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] truncate">
+                <strong className={`block text-[13px] font-bold truncate ${isMine ? 'text-white' : 'text-[#193c33] dark:text-[#edf5ef]'}`}>
                   {card.title}
                 </strong>
-                <span className="block text-[11px] text-[#64776c] dark:text-[#96a99d]">
+                <span className={`block text-[11px] ${isMine ? 'text-white/75' : 'text-[#64776c] dark:text-[#96a99d]'}`}>
                   Host: {card.hostName}
                 </span>
               </div>
@@ -86,7 +96,7 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-[#55675c] dark:text-[#9cb0a3]">
+          <div className={`flex items-center justify-between text-[11px] ${isMine ? 'text-white/75' : 'text-[#55675c] dark:text-[#9cb0a3]'}`}>
             <span className="inline-flex items-center gap-1">
               <Calendar size={12} /> {when}
             </span>
@@ -96,11 +106,19 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
           </div>
 
           {/* Direct Clickable / Copyable Meeting URL (Google Chat style) */}
-          <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#111914] border border-[#dce5d9] dark:border-[#27382d] text-[11px]">
+          <div
+            className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-[11px] ${
+              isMine
+                ? 'bg-black/25 border-white/15'
+                : 'bg-white dark:bg-[#111914] border-[#dce5d9] dark:border-[#27382d]'
+            }`}
+          >
             <button
               type="button"
               onClick={() => void openPreJoin(card.meetingCode)}
-              className="flex-1 text-left truncate text-[#0f766e] dark:text-[#34d399] font-mono underline bg-transparent border-0 p-0 cursor-pointer inline-flex items-center gap-1"
+              className={`flex-1 text-left truncate font-mono underline bg-transparent border-0 p-0 cursor-pointer inline-flex items-center gap-1 ${
+                isMine ? 'text-[#d9ed74]' : 'text-[#0f766e] dark:text-[#34d399]'
+              }`}
               title="Open meeting"
             >
               <ExternalLink size={11} className="shrink-0" />
@@ -112,7 +130,11 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
                 const url = `${window.location.origin}/meeting/${card.meetingCode}`
                 void navigator.clipboard?.writeText(url).then(() => toast.success('Meeting URL copied!'))
               }}
-              className="w-6 h-6 rounded hover:bg-[#edf4ea] dark:hover:bg-[#223228] text-[#4d6355] dark:text-[#9eb2a5] border-0 bg-transparent grid place-items-center cursor-pointer shrink-0"
+              className={`w-6 h-6 rounded border-0 bg-transparent grid place-items-center cursor-pointer shrink-0 ${
+                isMine
+                  ? 'text-white/80 hover:bg-white/10'
+                  : 'text-[#4d6355] dark:text-[#9eb2a5] hover:bg-[#edf4ea] dark:hover:bg-[#223228]'
+              }`}
               title="Copy meeting URL"
             >
               <Copy size={12} />
@@ -122,10 +144,31 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
           <button
             type="button"
             onClick={() => void openPreJoin(card.meetingCode)}
-            className="w-full py-2 rounded-lg bg-[#193c33] hover:bg-[#245447] text-[#d9ed74] text-xs font-bold border-0 cursor-pointer transition-colors"
+            className={`w-full py-2 rounded-lg text-xs font-bold border-0 cursor-pointer transition-colors ${
+              isMine
+                ? 'bg-[#d9ed74] hover:bg-[#e4f58c] text-[#142b24]'
+                : 'bg-[#193c33] hover:bg-[#245447] text-[#d9ed74]'
+            }`}
           >
             Join Meeting
           </button>
+
+          <div className="chat-message-meta flex items-center justify-end gap-[4px] text-[10.5px]">
+            <span className={isMine ? 'text-white/72' : 'text-[#8c988e]'}>{formatMessageTime(message.createdAt)}</span>
+            {isMine && (
+              <span className="chat-message-status inline-flex items-center">
+                {isPending ? (
+                  <Clock size={12} className="text-white/60" />
+                ) : isRead ? (
+                  <CheckCheck size={14} className="text-[#d9ed74]" />
+                ) : isDelivered ? (
+                  <CheckCheck size={14} className="text-white/85" />
+                ) : (
+                  <Check size={13} className="text-white/60" />
+                )}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     )
