@@ -393,12 +393,12 @@ export default function LeaveManagementView({
         onSelectType={(typeId) => handleOpenApplyModal(typeId)}
       />
 
-      <div className="leave-view-tabs flex items-center gap-[6px] border-b border-[#dce2d7] dark:border-[#27372e] pb-0" role="tablist" aria-label="Leave requests">
+      <div className="leave-view-tabs flex items-center gap-[6px] border-b border-[#dce2d7] dark:border-[#27372e] pb-0 overflow-x-auto no-scrollbar whitespace-nowrap w-full" role="tablist" aria-label="Leave requests">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'my'}
-          className={`px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+          className={`shrink-0 px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
             activeTab === 'my'
               ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
               : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74]'
@@ -412,10 +412,10 @@ export default function LeaveManagementView({
             type="button"
             role="tab"
             aria-selected={activeTab === 'team'}
-            className={`px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+            className={`shrink-0 px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
               activeTab === 'team'
                 ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
-                : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74]'
+              : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74]'
             }`}
             onClick={() => setActiveTab('team')}
           >
@@ -427,7 +427,7 @@ export default function LeaveManagementView({
             type="button"
             role="tab"
             aria-selected={activeTab === 'admin'}
-            className={`px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+            className={`shrink-0 px-[16px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
               activeTab === 'admin'
                 ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
                 : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74]'

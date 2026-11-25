@@ -536,21 +536,21 @@ export default function AttendanceManagementView({
       </div>
 
       {/* Navigation Tabs (Requests vs Daily Logs) */}
-      <div className="flex items-center justify-between gap-[16px] flex-wrap border-b border-[#e5ebe2] dark:border-[#27382d] pb-[10px]">
-        <div className="flex items-center gap-[8px]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-[10px] sm:gap-[16px] border-b border-[#e5ebe2] dark:border-[#27382d] pb-[10px]">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-[6px] sm:gap-[8px] w-full sm:w-auto p-[3px] bg-[#f0f4ee] dark:bg-[#152019] sm:bg-transparent rounded-[10px] sm:rounded-none sm:p-0">
           <button
             type="button"
-            className={`flex items-center gap-[7px] px-[16px] py-[8px] rounded-[8px] text-[13px] font-bold border-0 cursor-pointer transition-all ${
+            className={`flex items-center justify-center gap-[6px] sm:gap-[7px] px-[10px] sm:px-[16px] py-[8px] rounded-[7px] sm:rounded-[8px] text-[12px] sm:text-[13px] font-bold border-0 cursor-pointer transition-all ${
               activeTab === 'requests'
                 ? 'bg-[#193c33] text-[#d9ed74] shadow-sm'
                 : 'bg-transparent text-[#64776c] dark:text-[#8e9f94] hover:text-[#193c33] dark:hover:text-[#d9ed74]'
             }`}
             onClick={() => setActiveTab('requests')}
           >
-            <Clock size={16} />
-            <span>Attendance Requests</span>
+            <Clock size={15} className="shrink-0" />
+            <span className="truncate">Attendance Requests</span>
             {pendingCount > 0 && (
-              <span className="px-[6px] py-[1px] rounded-full text-[10.5px] font-black bg-[#fee2e2] text-[#dc2626]">
+              <span className="px-[5px] py-[0.5px] rounded-full text-[10px] font-black bg-[#fee2e2] text-[#dc2626] shrink-0">
                 {pendingCount}
               </span>
             )}
@@ -558,16 +558,16 @@ export default function AttendanceManagementView({
 
           <button
             type="button"
-            className={`flex items-center gap-[7px] px-[16px] py-[8px] rounded-[8px] text-[13px] font-bold border-0 cursor-pointer transition-all ${
+            className={`flex items-center justify-center gap-[6px] sm:gap-[7px] px-[10px] sm:px-[16px] py-[8px] rounded-[7px] sm:rounded-[8px] text-[12px] sm:text-[13px] font-bold border-0 cursor-pointer transition-all ${
               activeTab === 'logs'
                 ? 'bg-[#193c33] text-[#d9ed74] shadow-sm'
                 : 'bg-transparent text-[#64776c] dark:text-[#8e9f94] hover:text-[#193c33] dark:hover:text-[#d9ed74]'
             }`}
             onClick={() => setActiveTab('logs')}
           >
-            <Calendar size={16} />
-            <span>Daily Attendance Logs</span>
-            <span className="px-[6px] py-[1px] rounded-full text-[10.5px] font-extrabold bg-[#e5ebe1] dark:bg-[#25362b] text-[#4d5e53] dark:text-[#a1b4a7]">
+            <Calendar size={15} className="shrink-0" />
+            <span className="truncate">Daily Attendance Logs</span>
+            <span className="px-[5px] py-[0.5px] rounded-full text-[10px] font-extrabold bg-[#e5ebe1] dark:bg-[#25362b] text-[#4d5e53] dark:text-[#a1b4a7] shrink-0">
               {logs.length}
             </span>
           </button>
@@ -575,22 +575,22 @@ export default function AttendanceManagementView({
 
         {/* Filters if on requests tab */}
         {activeTab === 'requests' && (
-          <div className="flex items-center gap-[10px] flex-wrap">
-            <div className="relative">
+          <div className="flex items-center gap-[8px] sm:gap-[10px] w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-auto">
               <Search size={14} className="absolute left-[10px] top-[9px] text-[#86998e]" />
               <input
                 type="text"
                 placeholder="Search requests..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-[30px] pr-[12px] py-[6px] rounded-[7px] text-[12px] border border-[#dce3d8] dark:border-[#2b3c31] bg-white dark:bg-[#16201a] text-[#193c33] dark:text-[#edf5ef] focus:outline-none focus:border-[#193c33]"
+                className="w-full sm:w-[200px] pl-[30px] pr-[12px] py-[6px] rounded-[7px] text-[12px] border border-[#dce3d8] dark:border-[#2b3c31] bg-white dark:bg-[#16201a] text-[#193c33] dark:text-[#edf5ef] focus:outline-none focus:border-[#193c33]"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-[12px] py-[6px] rounded-[7px] text-[12px] font-semibold border border-[#dce3d8] dark:border-[#2b3c31] bg-white dark:bg-[#16201a] text-[#193c33] dark:text-[#edf5ef] focus:outline-none"
+              className="shrink-0 px-[10px] sm:px-[12px] py-[6px] rounded-[7px] text-[12px] font-semibold border border-[#dce3d8] dark:border-[#2b3c31] bg-white dark:bg-[#16201a] text-[#193c33] dark:text-[#edf5ef] focus:outline-none"
             >
               <option value="ALL">All Statuses</option>
               <option value="PENDING">Pending ({pendingCount})</option>

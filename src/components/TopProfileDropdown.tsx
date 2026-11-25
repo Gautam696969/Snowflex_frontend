@@ -84,7 +84,7 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
     <div className={`topbar-profile-container relative inline-flex items-center ${className}`.trim()} ref={dropdownRef}>
       <button
         type="button"
-        className={`topbar-profile-trigger flex items-center gap-[8px] pt-[3px] pr-[10px] pb-[3px] pl-[3px] rounded-full border border-[#e1e8df] bg-white text-[#193c33] cursor-pointer outline-none transition-all duration-150 ease-out select-none hover:border-[#10b981] hover:bg-[#f7faf6] hover:shadow-[0_2px_10px_rgba(16,185,129,0.12)] dark:bg-[#1a231e] dark:border-[#303b34] dark:text-[#edf2ec] dark:hover:bg-[#25322a] ${isOpen ? 'is-active border-[#10b981] bg-[#f7faf6] shadow-[0_2px_10px_rgba(16,185,129,0.12)] dark:bg-[#25322a]' : ''} ${isProfileActive ? 'is-current-page border-[#10b981] shadow-[0_0_0_1.5px_rgba(16,185,129,0.25)]' : ''}`}
+        className={`topbar-profile-trigger flex items-center gap-[6px] sm:gap-[8px] p-[3px] sm:pt-[3px] sm:pr-[10px] sm:pb-[3px] sm:pl-[3px] rounded-full border border-[#e1e8df] bg-white text-[#193c33] cursor-pointer outline-none transition-all duration-150 ease-out select-none hover:border-[#10b981] hover:bg-[#f7faf6] hover:shadow-[0_2px_10px_rgba(16,185,129,0.12)] dark:bg-[#1a231e] dark:border-[#303b34] dark:text-[#edf2ec] dark:hover:bg-[#25322a] ${isOpen ? 'is-active border-[#10b981] bg-[#f7faf6] shadow-[0_2px_10px_rgba(16,185,129,0.12)] dark:bg-[#25322a]' : ''} ${isProfileActive ? 'is-current-page border-[#10b981] shadow-[0_0_0_1.5px_rgba(16,185,129,0.25)]' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
@@ -95,15 +95,22 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
           <UserAvatar name={displayName} avatarUrl={user?.avatarUrl} size={32} className="topbar-profile-avatar-initials" />
           <span className="topbar-profile-status-indicator absolute bottom-[1px] right-[1px] w-[8px] h-[8px] rounded-full bg-[#10b981] border-[1.5px] border-white" title="Online" />
         </div>
-        <span className="topbar-profile-name text-[12px] font-semibold text-[#193c33] max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis dark:text-[#edf2ec]">{displayName}</span>
+        <span className="topbar-profile-name hidden sm:inline text-[12px] font-semibold text-[#193c33] max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis dark:text-[#edf2ec]">{displayName}</span>
         <ChevronDown
           size={14}
-          className={`topbar-profile-chevron text-[#798a7f] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? 'rotate-180' : ''}`}
+          className={`topbar-profile-chevron hidden sm:block text-[#798a7f] transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {isOpen && (
-        <div className="topbar-profile-menu-popover absolute top-[calc(100%+8px)] right-0 w-[270px] bg-white border border-[#e2e8df] rounded-[14px] shadow-[0_16px_36px_-4px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.06)] p-[8px] z-[1000] animate-[popoverFadeIn_0.16s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.45)]" role="menu">
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-[999] sm:hidden backdrop-blur-[2px] transition-opacity"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="topbar-profile-menu-popover fixed top-[64px] right-3 sm:absolute sm:top-[calc(100%+8px)] sm:right-0 w-[270px] max-w-[calc(100vw-24px)] bg-white border border-[#e2e8df] rounded-[14px] shadow-[0_16px_36px_-4px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.06)] p-[8px] z-[1000] animate-[popoverFadeIn_0.16s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.45)]" role="menu">
           {/* Header Card */}
           <div
             className="topbar-profile-card-header flex items-center gap-[11px] p-[9px_10px] rounded-[9px] bg-[#fbfdfa] border border-[#eaf0e7] cursor-pointer transition-all duration-150 hover:bg-[#f2f7ef] hover:border-[#dbe7d7] dark:bg-[#151d18] dark:border-[#27352d] dark:hover:bg-[#202c24]"
@@ -198,6 +205,7 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
             <LogoutButton variant="ghost" className="topbar-menu-logout-btn !w-full !justify-start !p-[8px_10px] !rounded-[8px] !text-[#dc2626] !border-none" />
           </div>
         </div>
+        </>
       )}
     </div>
   )

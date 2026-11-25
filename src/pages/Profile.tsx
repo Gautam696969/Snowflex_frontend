@@ -131,10 +131,10 @@ export default function Profile() {
       {/* Main Content Stage */}
       <section className="workbench-main">
         {/* Top Header Bar */}
-        <header className="workbench-topbar">
-          <div className="topbar-location">
+        <header className="workbench-topbar sticky z-[2] top-0 flex h-[58px] sm:h-[62px] items-center justify-between px-3 sm:px-[38px] border-b border-[#e4e9e1] bg-[rgba(255,255,255,0.93)] backdrop-blur-[10px]">
+          <div className="topbar-location flex items-center gap-[8px] sm:gap-[12px] min-w-0">
             <button
-              className="mobile-sidebar-open-button"
+              className="mobile-sidebar-open-button hidden max-[1023px]:grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef]"
               type="button"
               aria-label="Open navigation"
               aria-expanded={mobileSidebarOpen}
@@ -142,21 +142,21 @@ export default function Profile() {
             >
               <Menu size={19} />
             </button>
-            <span className="breadcrumb">Workspace</span>
-            <span className="breadcrumb-divider">/</span>
-            <Link to="/dashboard" className="breadcrumb" style={{ textDecoration: 'none' }}>
+            <span className="breadcrumb text-[#87948b] text-[11px] hidden sm:inline">Workspace</span>
+            <span className="breadcrumb-divider text-[#c2cbc2] text-[11px] hidden sm:inline">/</span>
+            <Link to="/dashboard" className="breadcrumb text-[#87948b] text-[11px] hidden sm:inline" style={{ textDecoration: 'none' }}>
               Dashboard
             </Link>
-            <span className="breadcrumb-divider">/</span>
-            <strong>My Profile</strong>
+            <span className="breadcrumb-divider text-[#c2cbc2] text-[11px] hidden sm:inline">/</span>
+            <strong className="text-[12px] sm:text-[11px] font-bold text-[#193c33] dark:text-[#edf2ec] truncate">My Profile</strong>
           </div>
 
-          <div className="topbar-actions">
-            <div className="dash-snowflake-pill" title="Live Snowflake Connection">
-              <span className="dash-pulse-dot" />
+          <div className="topbar-actions flex items-center gap-[6px] sm:gap-[12px] shrink-0">
+            <div className="dash-snowflake-pill hidden md:inline-flex items-center gap-[6px] px-[10px] py-[3px] rounded-[20px] bg-[#edf6ec] border border-[#d3e7d1] text-[#2b5636] text-[11px] font-semibold dark:bg-[#1a2e22] dark:border-[#2e4c38] dark:text-[#8ee6ab]" title="Live Snowflake Connection">
+              <span className="dash-pulse-dot w-[7px] h-[7px] rounded-full bg-[#10b981] animate-[pulse-ring_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" />
               <span>Snowflake Live</span>
             </div>
-            <span className="today-label">
+            <span className="today-label text-[#87948b] text-[11px] hidden lg:inline">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
             <NotificationBell />
@@ -217,10 +217,10 @@ export default function Profile() {
 
             {/* Right Column: Tabbed Forms */}
             <div className="profile-right-col min-w-0">
-              <div className="profile-tabs-bar flex items-center gap-[6px] mb-[20px] border-b border-[#dce2d7] dark:border-[#27372e] pb-0">
+              <div className="profile-tabs-bar flex items-center gap-[6px] mb-[20px] border-b border-[#dce2d7] dark:border-[#27372e] pb-0 overflow-x-auto no-scrollbar whitespace-nowrap w-full">
                 <button
                   type="button"
-                  className={`profile-tab-btn inline-flex items-center gap-[8px] px-[18px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+                  className={`profile-tab-btn shrink-0 inline-flex items-center gap-[8px] px-[14px] sm:px-[18px] py-[9px] sm:py-[10px] text-[12px] sm:text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
                     activeTab === 'info'
                       ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
                       : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74] hover:bg-[rgba(25,60,51,0.04)]'
@@ -232,7 +232,7 @@ export default function Profile() {
                 </button>
                 <button
                   type="button"
-                  className={`profile-tab-btn inline-flex items-center gap-[8px] px-[18px] py-[10px] text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
+                  className={`profile-tab-btn shrink-0 inline-flex items-center gap-[8px] px-[14px] sm:px-[18px] py-[9px] sm:py-[10px] text-[12px] sm:text-[13px] font-bold border-0 border-b-[3px] cursor-pointer transition-all -mb-[1px] rounded-t-[6px] ${
                     activeTab === 'security'
                       ? 'active text-[#10b981] dark:text-[#d9ed74] border-b-[#10b981] dark:border-b-[#d9ed74] bg-white dark:bg-transparent'
                       : 'text-[#55675c] dark:text-[#8c9d92] border-transparent bg-transparent hover:text-[#193c33] dark:hover:text-[#d9ed74] hover:bg-[rgba(25,60,51,0.04)]'

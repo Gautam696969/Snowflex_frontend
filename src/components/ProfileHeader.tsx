@@ -74,7 +74,7 @@ export default function ProfileHeader({
 
           {/* Quick attribute meta pills grid */}
           <div className="profile-meta-grid grid grid-cols-4 gap-[12px] pt-[16px] border-t border-[#edf1eb] dark:border-[#25352c]">
-            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0" title="Work Email">
+            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0">
               <Mail size={15} className="meta-icon text-[#3b5c42] dark:text-[#d9ed74] shrink-0" />
               <div className="meta-copy flex flex-col min-w-0">
                 <small className="text-[9px] font-bold text-[#708477] tracking-[0.06em]">EMAIL ADDRESS</small>
@@ -82,7 +82,7 @@ export default function ProfileHeader({
               </div>
             </div>
 
-            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0" title="Employee ID Code">
+            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0">
               <Hash size={15} className="meta-icon text-[#3b5c42] dark:text-[#d9ed74] shrink-0" />
               <div className="meta-copy flex flex-col min-w-0">
                 <small className="text-[9px] font-bold text-[#708477] tracking-[0.06em]">EMPLOYEE CODE</small>
@@ -90,7 +90,7 @@ export default function ProfileHeader({
               </div>
             </div>
 
-            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0" title="Department">
+            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0">
               <Building2 size={15} className="meta-icon text-[#3b5c42] dark:text-[#d9ed74] shrink-0" />
               <div className="meta-copy flex flex-col min-w-0">
                 <small className="text-[9px] font-bold text-[#708477] tracking-[0.06em]">ORGANIZATION TEAM</small>
@@ -98,7 +98,7 @@ export default function ProfileHeader({
               </div>
             </div>
 
-            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0" title="Date of Onboarding">
+            <div className="profile-meta-item flex items-center gap-[10px] px-[14px] py-[10px] bg-[#f7faf6] dark:bg-[#141c18] border border-[#e2ebd0] dark:border-[#25362b] rounded-[10px] min-w-0">
               <Calendar size={15} className="meta-icon text-[#3b5c42] dark:text-[#d9ed74] shrink-0" />
               <div className="meta-copy flex flex-col min-w-0">
                 <small className="text-[9px] font-bold text-[#708477] tracking-[0.06em]">JOINED DATE</small>

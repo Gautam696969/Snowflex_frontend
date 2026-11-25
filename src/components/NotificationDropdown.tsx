@@ -40,7 +40,18 @@ export default function NotificationDropdown({
   }
 
   return (
-    <div className="notif-dropdown-popover absolute top-[calc(100%+8px)] right-0 w-[380px] max-w-[calc(100vw-20px)] bg-white border border-[#dce5d9] rounded-[14px] shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16),0_0_0_1px_rgba(0,0,0,0.04)] z-[1000] overflow-hidden animate-[notifDropIn_0.2s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.45)]" role="dialog" aria-label="Notifications panel">
+    <>
+      {/* Mobile backdrop to dim background and capture clicks */}
+      <div
+        className="fixed inset-0 bg-black/40 z-[999] sm:hidden backdrop-blur-[2px] transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="notif-dropdown-popover fixed top-[64px] left-3 right-3 sm:left-auto sm:right-0 sm:absolute sm:top-[calc(100%+8px)] w-auto sm:w-[380px] max-w-none sm:max-w-[calc(100vw-20px)] bg-white border border-[#dce5d9] rounded-[14px] shadow-[0_16px_40px_-8px_rgba(15,23,42,0.22),0_0_0_1px_rgba(0,0,0,0.04)] z-[1000] overflow-hidden animate-[notifDropIn_0.2s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.55)]"
+        role="dialog"
+        aria-label="Notifications panel"
+      >
       {/* Header */}
       <div className="notif-dropdown-header flex items-center justify-between p-[12px_16px] bg-[#f7faf5] border-b border-[#e3ece0] dark:bg-[#151d18] dark:border-[#27352d]">
         <div className="notif-header-title-box flex items-center gap-[8px]">
@@ -99,6 +110,7 @@ export default function NotificationDropdown({
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

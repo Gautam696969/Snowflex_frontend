@@ -1224,26 +1224,26 @@ export default function Dashboard() {
 
       {/* Main Workspace Body */}
       <section className="workbench-main min-w-0 flex-1">
-        <header className="workbench-topbar sticky z-[2] top-0 flex h-[62px] items-center justify-between px-[38px] border-b border-[#e4e9e1] bg-[rgba(255,255,255,0.93)] backdrop-blur-[10px]">
-          <div className="topbar-location flex items-center gap-[12px] min-w-0">
+        <header className="workbench-topbar sticky z-[2] top-0 flex h-[58px] sm:h-[62px] items-center justify-between px-3 sm:px-[38px] border-b border-[#e4e9e1] bg-[rgba(255,255,255,0.93)] backdrop-blur-[10px]">
+          <div className="topbar-location flex items-center gap-[8px] sm:gap-[12px] min-w-0">
             <button className="mobile-sidebar-open-button hidden max-[1023px]:grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef]" type="button" aria-label="Open navigation" aria-expanded={mobileSidebarOpen} onClick={() => setMobileSidebarOpen(true)}>
               <Menu size={19} />
             </button>
-            <span className="breadcrumb text-[#87948b] text-[11px]">Workspace</span>
-            <span className="breadcrumb-divider text-[#c2cbc2] text-[11px]">/</span>
-            <strong className="text-[11px] font-semibold">{activeItem?.label}</strong>
+            <span className="breadcrumb text-[#87948b] text-[11px] hidden sm:inline">Workspace</span>
+            <span className="breadcrumb-divider text-[#c2cbc2] text-[11px] hidden sm:inline">/</span>
+            <strong className="text-[12px] sm:text-[11px] font-bold text-[#193c33] dark:text-[#edf2ec] truncate">{activeItem?.label}</strong>
           </div>
-          <div className="topbar-actions flex items-center gap-[12px]">
-            <div className="dash-snowflake-pill inline-flex items-center gap-[6px] px-[10px] py-[3px] rounded-[20px] bg-[#edf6ec] border border-[#d3e7d1] text-[#2b5636] text-[11px] font-semibold" title="Live Snowflake Connection">
+          <div className="topbar-actions flex items-center gap-[6px] sm:gap-[12px] shrink-0">
+            <div className="dash-snowflake-pill hidden md:inline-flex items-center gap-[6px] px-[10px] py-[3px] rounded-[20px] bg-[#edf6ec] border border-[#d3e7d1] text-[#2b5636] text-[11px] font-semibold dark:bg-[#1a2e22] dark:border-[#2e4c38] dark:text-[#8ee6ab]" title="Live Snowflake Connection">
               <span className="dash-pulse-dot w-[7px] h-[7px] rounded-full bg-[#10b981] animate-[pulse-ring_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" />
               <span>Snowflake Live</span>
             </div>
-            <span className="today-label text-[#87948b] text-[11px]">
+            <span className="today-label text-[#87948b] text-[11px] hidden lg:inline">
               {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
             <NotificationBell />
             <ThemeToggle className="topbar-theme-toggle" />
-            <FullscreenToggle className="topbar-fullscreen-toggle" />
+            <FullscreenToggle className="topbar-fullscreen-toggle hidden sm:flex" />
             <button
               className="icon-button grid w-[32px] h-[32px] place-items-center border border-[#e1e8df] rounded-[5px] text-[#546a5d] bg-white cursor-pointer hover:bg-[#f3f6ef] transition-colors"
               type="button"
@@ -1257,7 +1257,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className={`page-content w-[min(100%,1600px)] mx-auto p-[37px_38px_24px] ${view === 'assistant' ? 'ai-page-content' : view === 'chat' ? 'chat-page-content' : ''}`}>
+        <div className={`page-content w-[min(100%,1600px)] mx-auto p-[16px_14px_24px] sm:p-[28px_24px_24px] md:p-[37px_38px_24px] ${view === 'assistant' ? 'ai-page-content' : view === 'chat' ? 'chat-page-content' : ''}`}>
           {view === 'chat' || view === 'assistant' ? (
             /* Compact Header for Chat & AI Employee */
             <section className="chat-hero-compact flex items-center justify-between gap-[10px] sm:gap-[16px] min-h-[46px] sm:h-[56px] sm:min-h-[56px] px-[12px] sm:px-[20px] py-[6px] sm:py-0 mb-[10px] rounded-[12px] bg-[linear-gradient(135deg,rgba(25,60,51,0.04)_0%,rgba(217,237,116,0.08)_50%,rgba(25,60,51,0.02)_100%)] bg-white dark:bg-[#17211b] dark:bg-[linear-gradient(135deg,rgba(25,60,51,0.35)_0%,rgba(20,32,26,0.8)_100%)] border border-[#e1e7de] dark:border-[#2b3930] shadow-[0_2px_8px_-2px_rgba(25,60,51,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] box-border shrink-0 flex-none flex-wrap">
