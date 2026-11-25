@@ -75,9 +75,46 @@ export async function updateUserProfile(token: string, payload: UpdateProfilePay
   return json.data
 }
 
+async function compressAvatarIfNeeded(file: File): Promise<File> {
+  if (file.size <= 180 * 1024 || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    return file
+  }
+  try {
+    const imgUrl = URL.createObjectURL(file)
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => resolve(image)
+      image.onerror = reject
+      image.src = imgUrl
+    })
+    URL.revokeObjectURL(imgUrl)
+
+    const maxDim = 512
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+    const width = Math.max(1, Math.round(img.width * scale))
+    const height = Math.max(1, Math.round(img.height * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return file
+    ctx.drawImage(img, 0, 0, width, height)
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.85)
+    )
+    if (!blob) return file
+    return new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
+  } catch {
+    return file
+  }
+}
+
 export async function uploadAvatar(token: string, file: File): Promise<string> {
+  const optimizedFile = await compressAvatarIfNeeded(file)
   const formData = new FormData()
-  formData.append('avatar', file)
+  formData.append('avatar', optimizedFile)
 
   const response = await fetch(`${apiBase}/users/me/avatar`, {
     method: 'POST',
