@@ -40,7 +40,6 @@ export default function CameraCaptureModal({
   })
   const [isStreaming, setIsStreaming] = useState(false)
   const [isStartingCamera, setIsStartingCamera] = useState(false)
-  const [cameraTimeout, setCameraTimeout] = useState(false)
   const [isFlashing, setIsFlashing] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
@@ -110,7 +109,6 @@ export default function CameraCaptureModal({
       setCapturedImage(null)
       setCameraError(null)
       setSubmitError(null)
-      setCameraTimeout(false)
       setIsSubmitting(false)
       setIsStreaming(false)
     } else {
@@ -121,8 +119,6 @@ export default function CameraCaptureModal({
   // Start camera stream with multi-tiered fallback and mobile-friendly constraints
   const startCamera = useCallback(async () => {
     setCameraError(null)
-    setCameraTimeout(false)
-    setIsStreaming(false)
     setIsStartingCamera(true)
 
     // Clean up any existing stream before starting a new one
@@ -130,105 +126,75 @@ export default function CameraCaptureModal({
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setCameraError(
-        'Camera API is not supported on this device/browser. You can use your phone camera or upload a selfie below.'
+        'Camera API is not supported on this device/browser. Please tap "Use Phone Camera" below.'
       )
       setIsStartingCamera(false)
+      setIsStreaming(false)
       return
     }
 
     let mediaStream: MediaStream | null = null
 
-    // Tier 1: Ideal dimensions without rigid max constraints (avoids portrait OverconstrainedError on Android)
     try {
+      // Standard mobile-friendly constraints without over-constraining
       mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: facingMode },
         audio: false,
       })
     } catch (err1) {
-      console.warn('Tier 1 camera constraints failed, attempting fallback...', err1)
+      console.warn('FacingMode camera failed, trying generic video...', err1)
       try {
-        // Tier 2: Simple facingMode
         mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facingMode } },
+          video: true,
           audio: false,
         })
       } catch (err2) {
-        console.warn('Tier 2 camera constraints failed, attempting basic video...', err2)
-        try {
-          // Tier 3: Basic generic video
-          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        } catch (err3) {
-          console.error('All camera attempts failed:', err3)
-          setIsStartingCamera(false)
-          const errorObj = err3 as { name?: string; message?: string }
-          if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
-            setCameraError(
-              'Camera permission denied. To re-enable: tap the lock or site settings icon in your browser URL bar, set Camera to "Allow", and retry.'
-            )
-          } else if (errorObj?.name === 'NotFoundError' || errorObj?.name === 'DevicesNotFoundError') {
-            setCameraError('No camera found on this device. You can take a selfie using the phone camera button below.')
-          } else if (errorObj?.name === 'NotReadableError' || errorObj?.name === 'TrackStartError') {
-            setCameraError('Camera is currently busy in another app or browser tab. Please close other camera apps and retry.')
-          } else {
-            setCameraError('Unable to access camera. Please allow camera permissions or tap "Use Phone Camera" below.')
-          }
-          return
+        console.error('All camera attempts failed:', err2)
+        setIsStartingCamera(false)
+        setIsStreaming(false)
+        const errorObj = err2 as { name?: string; message?: string }
+        if (errorObj?.name === 'NotAllowedError' || errorObj?.name === 'PermissionDeniedError') {
+          setCameraError(
+            'Camera permission denied. Tap the lock icon in your browser URL bar to allow camera, or tap "Use Phone Camera" below.'
+          )
+        } else if (errorObj?.name === 'NotFoundError' || errorObj?.name === 'DevicesNotFoundError') {
+          setCameraError('No camera found on this device. You can take a selfie using the phone camera button below.')
+        } else if (errorObj?.name === 'NotReadableError' || errorObj?.name === 'TrackStartError') {
+          setCameraError('Camera is currently busy in another app or tab. Please close other camera apps and retry.')
+        } else {
+          setCameraError('Unable to access camera. Please allow camera permissions or tap "Use Phone Camera" below.')
         }
+        return
       }
     }
 
     if (!mediaStream) {
       setIsStartingCamera(false)
+      setIsStreaming(false)
       return
     }
 
     streamRef.current = mediaStream
     checkCameraDevices()
 
+    // Immediately mark as streaming so video is visible and never blocked by black overlay
+    setIsStreaming(true)
+    setIsStartingCamera(false)
+
     // Attach stream directly to video element and trigger playback
     const video = videoRef.current
     if (video) {
       video.srcObject = mediaStream
-      video.setAttribute('playsinline', 'true')
-      video.setAttribute('webkit-playsinline', 'true')
       video.muted = true
       video.defaultMuted = true
+      video.setAttribute('muted', '')
+      video.setAttribute('playsinline', '')
+      video.setAttribute('webkit-playsinline', '')
+      video.setAttribute('autoplay', '')
 
-      const markReady = () => {
-        setIsStreaming(true)
-        setIsStartingCamera(false)
-      }
-
-      video.onloadedmetadata = () => {
-        video.play().then(markReady).catch((err) => {
-          console.warn('Playback onloadedmetadata error:', err)
-          markReady()
-        })
-      }
-      video.oncanplay = markReady
-      video.onplaying = markReady
-
-      try {
-        await video.play()
-        markReady()
-      } catch (playErr) {
-        console.warn('Initial video.play() catch:', playErr)
-        // If readyState is ready, still mark as streaming so canvas can capture
-        if (video.readyState >= 1) {
-          markReady()
-        }
-      }
-
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        markReady()
-      }
-    } else {
-      setIsStreaming(true)
-      setIsStartingCamera(false)
+      video.play().catch((playErr) => {
+        console.warn('video.play() warning:', playErr)
+      })
     }
   }, [facingMode, stopTracks, checkCameraDevices])
 
@@ -246,23 +212,12 @@ export default function CameraCaptureModal({
     }
   }, [isOpen, step, facingMode, startCamera, stopTracks])
 
-  // Watchdog timer: If camera takes longer than 4.5s to start, offer user-gesture tap or fallback
+  // Watchdog timer: If camera takes longer than 4.5s to start, offer phone camera fallback
   useEffect(() => {
     if (isStartingCamera && !isStreaming && !cameraError) {
       const timer = setTimeout(() => {
-        const video = videoRef.current
-        if (video && streamRef.current && streamRef.current.active) {
-          video.play().then(() => {
-            setIsStreaming(true)
-            setIsStartingCamera(false)
-          }).catch(() => {})
-          if (video.videoWidth > 0 || video.readyState >= 1) {
-            setIsStreaming(true)
-            setIsStartingCamera(false)
-            return
-          }
-        }
-        setCameraTimeout(true)
+        setIsStartingCamera(false)
+        setCameraError('Camera took too long to start. Please tap "Use Phone Camera" below.')
       }, 4500)
       return () => clearTimeout(timer)
     }
@@ -591,64 +546,14 @@ export default function CameraCaptureModal({
                   autoPlay
                   playsInline
                   muted
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    isStreaming ? 'opacity-100' : 'opacity-0'
-                  } ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                  className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
                 />
 
-                {/* Loading state or watchdog timeout before video begins streaming */}
-                {!isStreaming && !cameraError && (
-                  <div
-                    className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1410] text-gray-300 gap-3 z-10 p-5 text-center cursor-pointer"
-                    onClick={() => {
-                      if (videoRef.current) {
-                        videoRef.current.play().then(() => setIsStreaming(true)).catch(() => {})
-                      }
-                    }}
-                  >
-                    {!cameraTimeout ? (
-                      <>
-                        <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-                        <span className="text-[12px] font-medium tracking-wide">Starting camera viewfinder…</span>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center gap-3 animate-fade-in max-w-[300px]">
-                        <AlertCircle size={32} className="text-amber-400" />
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[13px] font-bold text-white">Camera viewfinder waiting</span>
-                          <span className="text-[11.5px] text-gray-300 leading-snug">
-                            Tap below to activate camera preview, or use your phone camera app.
-                          </span>
-                        </div>
-                        <div className="flex flex-col w-full gap-2 mt-1">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (videoRef.current) {
-                                videoRef.current.play().then(() => setIsStreaming(true)).catch(() => {})
-                              }
-                              void startCamera()
-                            }}
-                            className="w-full py-2 px-3 rounded-[8px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[12px] transition-colors cursor-pointer shadow flex items-center justify-center gap-2"
-                          >
-                            <RefreshCw size={14} />
-                            <span>Tap to Activate Camera</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              fileInputRef.current?.click()
-                            }}
-                            className="w-full py-2 px-3 rounded-[8px] bg-white/15 hover:bg-white/25 text-white font-semibold text-[12px] transition-colors cursor-pointer border border-white/20 flex items-center justify-center gap-2"
-                          >
-                            <Smartphone size={14} />
-                            <span>Use Phone Camera</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                {/* Lightweight connecting indicator while stream is initializing */}
+                {isStartingCamera && !isStreaming && !cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xs text-gray-300 gap-3 z-10 p-5 text-center pointer-events-none">
+                    <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                    <span className="text-[12px] font-medium tracking-wide">Starting camera…</span>
                   </div>
                 )}
 
@@ -726,7 +631,7 @@ export default function CameraCaptureModal({
                 <button
                   type="button"
                   onClick={handleCapture}
-                  disabled={(!isStreaming && !streamRef.current?.active) || Boolean(cameraError)}
+                  disabled={Boolean(cameraError)}
                   className="group relative w-15 h-15 rounded-full border-4 border-[#193c33] dark:border-[#d9ed74] p-1 flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-md"
                   aria-label="Capture attendance selfie"
                 >

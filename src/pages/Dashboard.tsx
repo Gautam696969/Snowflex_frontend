@@ -1331,7 +1331,7 @@ export default function Dashboard() {
                         className="primary-action inline-flex min-h-[36px] items-center justify-center gap-[7px] px-[14px] border border-[#193c33] rounded-[6px] text-white bg-[#193c33] text-[11px] font-bold cursor-pointer hover:bg-[#265648] transition-all shadow-sm"
                         type="button"
                         onClick={() => {
-                          setCameraModalInitialStep('prompt')
+                          setCameraModalInitialStep('camera')
                           setCameraModalMode('check-in')
                         }}
                       >
@@ -1774,7 +1774,7 @@ export default function Dashboard() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setCameraModalInitialStep('prompt')
+                                  setCameraModalInitialStep('camera')
                                   setCameraModalMode('check-in')
                                 }}
                                 className="inline-flex items-center gap-[7px] px-[18px] py-[10px] rounded-[9px] bg-[#193c33] hover:bg-[#255648] text-white text-[13px] font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02]"
