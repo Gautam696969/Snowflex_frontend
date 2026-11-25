@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
-  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles, Video
+  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles, Video, Users
 } from 'lucide-react'
 import UserAvatar from '../UserAvatar'
 import RoleBadge from './RoleBadge'
 import MessageItem from './MessageItem'
+import StartMeetingModal from './StartMeetingModal'
 import { fetchMessages, type ChatConversationItem, type ChatMessageItem } from '../../lib/chat-api'
 import { useChat } from '../../context/ChatContext'
 import { useVideoCall } from '../../context/VideoCallContext'
@@ -82,6 +83,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
   const [sending, setSending] = useState(false)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
   const [sendError, setSendError] = useState('')
+  const [showStartMeetingModal, setShowStartMeetingModal] = useState(false)
 
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const isScrolledToBottomRef = useRef(true)
@@ -402,37 +404,61 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
           </div>
         </div>
 
-        {/* 1-to-1 Video Call Action Button */}
+        {/* 1-to-1 Video Call & Start Meeting Buttons */}
         {!conversation.isReadOnly && (
-          <button
-            type="button"
-            className="ml-auto inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#f7faf5] dark:bg-[#202b25] text-[#193c33] dark:text-[#d9ed74] hover:bg-[#e8f2e4] dark:hover:bg-[#2a3830] text-[12px] font-semibold cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed shrink-0"
-            onClick={() =>
-              void startCall(
-                {
-                  id: conversation.otherUser.id,
-                  fullName: conversation.otherUser.fullName,
-                  role: conversation.otherUser.role,
-                  avatarUrl: conversation.otherUser.avatarUrl,
-                },
-                conversation.id
-              )
-            }
-            disabled={isDisconnected || callState !== 'idle'}
-            title={
-              isDisconnected
-                ? 'Reconnect to start a video call'
-                : callState !== 'idle'
-                  ? 'Already on a call'
-                  : `Video call ${conversation.otherUser.fullName}`
-            }
-            aria-label={`Start video call with ${conversation.otherUser.fullName}`}
-          >
-            <Video size={17} />
-            <span className="hidden sm:inline">Video Call</span>
-          </button>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#193c33] hover:bg-[#245447] text-[#d9ed74] text-[12px] font-semibold cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+              onClick={() => setShowStartMeetingModal(true)}
+              disabled={isDisconnected}
+              title="Start or schedule a multi-participant meeting"
+              aria-label="Start Meeting"
+            >
+              <Users size={15} />
+              <span className="hidden sm:inline">Start Meeting</span>
+            </button>
+
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#f7faf5] dark:bg-[#202b25] text-[#193c33] dark:text-[#d9ed74] hover:bg-[#e8f2e4] dark:hover:bg-[#2a3830] text-[12px] font-semibold cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+              onClick={() =>
+                void startCall(
+                  {
+                    id: conversation.otherUser.id,
+                    fullName: conversation.otherUser.fullName,
+                    role: conversation.otherUser.role,
+                    avatarUrl: conversation.otherUser.avatarUrl,
+                  },
+                  conversation.id
+                )
+              }
+              disabled={isDisconnected || callState !== 'idle'}
+              title={
+                isDisconnected
+                  ? 'Reconnect to start a video call'
+                  : callState !== 'idle'
+                    ? 'Already on a call'
+                    : `Video call ${conversation.otherUser.fullName}`
+              }
+              aria-label={`Start video call with ${conversation.otherUser.fullName}`}
+            >
+              <Video size={17} />
+              <span className="hidden sm:inline">Video Call</span>
+            </button>
+          </div>
         )}
       </div>
+
+      <StartMeetingModal
+        isOpen={showStartMeetingModal}
+        onClose={() => setShowStartMeetingModal(false)}
+        chatId={conversation.id}
+        otherUser={{
+          id: conversation.otherUser.id,
+          fullName: conversation.otherUser.fullName,
+        }}
+      />
 
       {/* Connection & Read-Only Status Banners */}
       {isDisconnected && (

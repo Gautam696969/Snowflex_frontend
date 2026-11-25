@@ -1,5 +1,6 @@
-import { Check, CheckCheck, Clock, Video } from 'lucide-react'
+import { Check, CheckCheck, Clock, Video, Users, Calendar } from 'lucide-react'
 import type { ChatMessageItem } from '../../lib/chat-api'
+import { useMeeting } from '../../context/MeetingContext'
 
 interface MessageItemProps {
   message: ChatMessageItem
@@ -13,13 +14,79 @@ function formatMessageTime(isoDate: string): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+interface MeetingCardPayload {
+  meetingCode: string
+  title: string
+  hostName: string
+  status: string
+  scheduledAt: string | null
+  startedAt: string | null
+  participantCount: number
+}
+
 export default function MessageItem({ message, isMine }: MessageItemProps) {
+  const { openPreJoin } = useMeeting()
   const isRead = Boolean(message.readAt)
   const isDelivered = Boolean(message.deliveredAt)
   const isPending = Boolean(message.isPending)
 
-  if (message.body.startsWith('📹 ')) {
-    const cleanText = message.body.replace(/^📹\s*/, '')
+  if (message.body.startsWith('[MEETING_CARD]')) {
+    try {
+      const card = JSON.parse(message.body.slice('[MEETING_CARD]'.length)) as MeetingCardPayload
+      const when = card.scheduledAt
+        ? new Date(card.scheduledAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : card.startedAt
+          ? new Date(card.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : formatMessageTime(message.createdAt)
+
+      return (
+        <div className="flex justify-center my-2">
+          <div className="w-full max-w-[340px] rounded-2xl bg-[#f7faf5] dark:bg-[#19241e] border border-[#d6e2d2] dark:border-[#2c4034] p-3.5 shadow-sm flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#193c33] text-[#d9ed74] grid place-items-center shrink-0">
+                  <Video size={16} />
+                </div>
+                <div className="min-w-0">
+                  <strong className="block text-[13px] font-bold text-[#193c33] dark:text-[#edf5ef] truncate">
+                    {card.title}
+                  </strong>
+                  <span className="block text-[11px] text-[#64776c] dark:text-[#96a99d]">
+                    Host: {card.hostName}
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold uppercase bg-[#ecfdf5] text-[#059669] dark:bg-[#122b1f] dark:text-[#34d399] border border-[#a7f3d0]/60 shrink-0">
+                {card.status}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-[#55675c] dark:text-[#9cb0a3]">
+              <span className="inline-flex items-center gap-1">
+                <Calendar size={12} /> {when}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Users size={12} /> {card.participantCount} invited
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void openPreJoin(card.meetingCode)}
+              className="w-full py-2 rounded-lg bg-[#193c33] hover:bg-[#245447] text-[#d9ed74] text-xs font-bold border-0 cursor-pointer transition-colors"
+            >
+              Join Meeting
+            </button>
+          </div>
+        </div>
+      )
+    } catch {
+      // fall through if malformed
+    }
+  }
+
+  if (message.body.startsWith('📹 ') || message.body.startsWith('🎥 ')) {
+    const cleanText = message.body.replace(/^(📹|🎥)\s*/, '')
     const isMissed = /missed|declined/i.test(cleanText)
     return (
       <div className="flex justify-center my-1.5">
