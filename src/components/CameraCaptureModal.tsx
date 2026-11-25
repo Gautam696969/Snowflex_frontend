@@ -41,6 +41,7 @@ export default function CameraCaptureModal({
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -261,16 +262,15 @@ export default function CameraCaptureModal({
     if (!ctx) return
 
     ctx.save()
-    // Mirror only front camera
-    if (facingMode === 'user') {
-      ctx.translate(targetWidth, 0)
-      ctx.scale(-1, 1)
-    }
+    // Un-mirror front camera in saved snapshot: the viewfinder preview is mirrored for UX,
+    // but the recorded attendance photo must be natural (un-mirrored) so employee badges,
+    // faces, and background text are recorded correctly.
     ctx.drawImage(video, 0, 0, targetWidth, targetHeight)
     ctx.restore()
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
     setCapturedImage(dataUrl)
+    setSubmitError(null)
     stopTracks()
     setStep('preview')
   }
@@ -330,6 +330,7 @@ export default function CameraCaptureModal({
 
   const handleRetake = () => {
     setCapturedImage(null)
+    setSubmitError(null)
     setIsStreaming(false)
     setStep('camera')
   }
@@ -342,11 +343,17 @@ export default function CameraCaptureModal({
   const handleConfirmSubmit = async () => {
     if (!capturedImage || isSubmitting) return
     setIsSubmitting(true)
+    setSubmitError(null)
     try {
       await onConfirm(capturedImage)
       onClose()
-    } catch (err) {
-      console.error('Confirmation error:', err)
+    } catch (err: unknown) {
+      console.error('Attendance photo upload error:', err)
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to record attendance photo. Please check your internet connection and retry.'
+      setSubmitError(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -685,7 +692,40 @@ export default function CameraCaptureModal({
                 <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-[6px] bg-black/75 backdrop-blur-md text-white font-mono text-[11px] font-semibold border border-white/10 shadow">
                   {timeString}
                 </div>
+
+                {/* Uploading overlay */}
+                {isSubmitting && (
+                  <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-3 z-20 px-6 text-center animate-fade-in">
+                    <div className="w-10 h-10 border-3 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-bold tracking-wide text-emerald-400">
+                        Uploading & Verifying Attendance…
+                      </span>
+                      <span className="text-[11px] text-gray-300">
+                        Forwarding timestamp and photo to Admin & Super Admin
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Upload Failure Banner */}
+              {submitError && (
+                <div className="w-full max-w-[420px] mt-3 p-3 rounded-[10px] bg-red-950/80 border border-red-500/40 text-red-200 flex items-start gap-2.5 text-left text-[12px] animate-fade-in">
+                  <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <strong className="block font-bold text-red-300">Upload Failed</strong>
+                    <span>{submitError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleConfirmSubmit()}
+                    className="shrink-0 px-2.5 py-1 rounded-[6px] bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] cursor-pointer transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Confirmation Actions Footer */}

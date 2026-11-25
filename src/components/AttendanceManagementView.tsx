@@ -2,7 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Clock, Calendar, XCircle, Plus,
   RefreshCw, Search, UserCheck, Check, X,
-  Camera, CheckCircle2, Image as ImageIcon
+  Camera, CheckCircle2, Image as ImageIcon,
+  ZoomIn, ZoomOut, RotateCcw, Download,
+  ShieldCheck, AlertTriangle
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import UserAvatar from './UserAvatar'
@@ -11,6 +13,25 @@ import CameraCaptureModal from './CameraCaptureModal'
 import { useAttendanceRequests } from '../hooks/useAttendanceRequests'
 import { type SafeUser, readToken, normalizeRole } from '../lib/auth-api'
 import { apiBase } from '../lib/api-config'
+
+export function resolveAttendancePhotoUrl(
+  photoUrl: string | null | undefined,
+  recordId: number,
+  type: 'checkin' | 'checkout'
+): string {
+  if (!photoUrl) {
+    return `${apiBase}/attendance/${recordId}/photo/${type}`
+  }
+  if (photoUrl.startsWith('data:image/')) {
+    return photoUrl
+  }
+  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
+    return photoUrl
+  }
+  // Relative path (e.g. /uploads/attendance/... or uploads/attendance/...)
+  const serverOrigin = apiBase.replace(/\/api\/?$/, '')
+  return `${serverOrigin}${photoUrl.startsWith('/') ? photoUrl : `/${photoUrl}`}`
+}
 
 interface AttendanceManagementViewProps {
   currentUser?: SafeUser | null
@@ -72,6 +93,17 @@ function formatTypeLabel(type: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+interface LightboxPhotoState {
+  url: string
+  fallbackUrl?: string
+  title: string
+  employeeName: string
+  type: 'Check-In' | 'Check-Out'
+  time?: string
+  date?: string
+  status?: string
+}
+
 export default function AttendanceManagementView({
   currentUser,
 }: AttendanceManagementViewProps) {
@@ -87,8 +119,36 @@ export default function AttendanceManagementView({
   // Camera modal state
   const [cameraModalMode, setCameraModalMode] = useState<'check-in' | 'check-out' | null>(null)
 
-  // Photo lightbox preview
-  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; title: string; time?: string } | null>(null)
+  // Photo lightbox preview with zoom, download & fallback
+  const [lightboxPhoto, setLightboxPhoto] = useState<LightboxPhotoState | null>(null)
+  const [lightboxZoom, setLightboxZoom] = useState<number>(1)
+  const [lightboxLoading, setLightboxLoading] = useState<boolean>(true)
+  const [lightboxError, setLightboxError] = useState<boolean>(false)
+
+  const handleDownloadPhoto = async () => {
+    if (!lightboxPhoto) return
+    try {
+      const response = await fetch(lightboxPhoto.url)
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const safeName = (lightboxPhoto.employeeName || 'employee').replace(/\s+/g, '_').toLowerCase()
+      const safeType = lightboxPhoto.type.replace(/\s+/g, '_').toLowerCase()
+      link.href = objectUrl
+      link.download = `${safeName}_${safeType}_attendance.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(objectUrl)
+      toast.success('Attendance photo downloaded')
+    } catch {
+      const link = document.createElement('a')
+      link.href = lightboxPhoto.url
+      link.download = 'attendance_photo.jpg'
+      link.target = '_blank'
+      link.click()
+    }
+  }
 
   // Today shift punch status for employee
   const [todayStatus, setTodayStatus] = useState<TodayAttendanceStatus | null>(null)
@@ -281,20 +341,35 @@ export default function AttendanceManagementView({
             {todayStatus?.record?.checkInPhoto && (
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  setLightboxZoom(1)
+                  setLightboxLoading(true)
+                  setLightboxError(false)
                   setLightboxPhoto({
-                    url: todayStatus.record!.checkInPhoto!,
+                    url: resolveAttendancePhotoUrl(todayStatus.record!.checkInPhoto, todayStatus.record!.id, 'checkin'),
+                    fallbackUrl: `${apiBase}/attendance/${todayStatus.record!.id}/photo/checkin`,
                     title: 'Check-In Verification Photo',
+                    employeeName: currentUser?.fullName || 'Employee',
+                    type: 'Check-In',
                     time: formatTime(todayStatus.record!.checkIn),
+                    date: formatDate(todayStatus.record!.attendanceDate),
+                    status: todayStatus.record!.status,
                   })
-                }
+                }}
                 className="group relative flex items-center gap-2 p-1.5 pr-3 rounded-[9px] bg-white/90 dark:bg-[#1a251f] border border-[#d5e0d3] dark:border-[#2f4236] shadow-sm hover:border-[#10b981] transition-all cursor-pointer text-left"
                 title="View verified check-in photo"
               >
                 <img
-                  src={todayStatus.record.checkInPhoto}
+                  src={resolveAttendancePhotoUrl(todayStatus.record.checkInPhoto, todayStatus.record.id, 'checkin')}
                   alt="Check-in selfie"
                   className="w-8 h-8 rounded-[6px] object-cover border border-[#c5d3c3]"
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    if (!target.dataset.retried) {
+                      target.dataset.retried = 'true'
+                      target.src = `${apiBase}/attendance/${todayStatus.record!.id}/photo/checkin`
+                    }
+                  }}
                 />
                 <div className="flex flex-col">
                   <span className="text-[10px] uppercase font-bold text-[#4e6456] dark:text-[#8ea295]">Check-In</span>
@@ -308,20 +383,35 @@ export default function AttendanceManagementView({
             {todayStatus?.record?.checkOutPhoto && (
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  setLightboxZoom(1)
+                  setLightboxLoading(true)
+                  setLightboxError(false)
                   setLightboxPhoto({
-                    url: todayStatus.record!.checkOutPhoto!,
+                    url: resolveAttendancePhotoUrl(todayStatus.record!.checkOutPhoto, todayStatus.record!.id, 'checkout'),
+                    fallbackUrl: `${apiBase}/attendance/${todayStatus.record!.id}/photo/checkout`,
                     title: 'Check-Out Verification Photo',
+                    employeeName: currentUser?.fullName || 'Employee',
+                    type: 'Check-Out',
                     time: formatTime(todayStatus.record!.checkOut),
+                    date: formatDate(todayStatus.record!.attendanceDate),
+                    status: todayStatus.record!.status,
                   })
-                }
+                }}
                 className="group relative flex items-center gap-2 p-1.5 pr-3 rounded-[9px] bg-white/90 dark:bg-[#1a251f] border border-[#d5e0d3] dark:border-[#2f4236] shadow-sm hover:border-[#10b981] transition-all cursor-pointer text-left"
                 title="View verified check-out photo"
               >
                 <img
-                  src={todayStatus.record.checkOutPhoto}
+                  src={resolveAttendancePhotoUrl(todayStatus.record.checkOutPhoto, todayStatus.record.id, 'checkout')}
                   alt="Check-out selfie"
                   className="w-8 h-8 rounded-[6px] object-cover border border-[#c5d3c3]"
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    if (!target.dataset.retried) {
+                      target.dataset.retried = 'true'
+                      target.src = `${apiBase}/attendance/${todayStatus.record!.id}/photo/checkout`
+                    }
+                  }}
                 />
                 <div className="flex flex-col">
                   <span className="text-[10px] uppercase font-bold text-[#4e6456] dark:text-[#8ea295]">Check-Out</span>
@@ -761,40 +851,98 @@ export default function AttendanceManagementView({
                       </span>
                     </td>
                     <td className="p-[12px_16px]">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {row.checkInPhoto ? (
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              setLightboxZoom(1)
+                              setLightboxLoading(true)
+                              setLightboxError(false)
                               setLightboxPhoto({
-                                url: row.checkInPhoto!,
+                                url: resolveAttendancePhotoUrl(row.checkInPhoto, row.id, 'checkin'),
+                                fallbackUrl: `${apiBase}/attendance/${row.id}/photo/checkin`,
                                 title: `${row.fullName || 'Employee'} — Check-In Photo`,
+                                employeeName: row.fullName || 'Employee',
+                                type: 'Check-In',
                                 time: formatTime(row.checkIn),
+                                date: formatDate(row.attendanceDate),
+                                status: row.status,
                               })
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] bg-[#edf4ea] text-[#193c33] border border-[#d2e2cf] text-[10.5px] font-bold hover:bg-[#d9ed74] transition-colors cursor-pointer"
-                            title="Click to view check-in selfie"
+                            }}
+                            className="group relative flex items-center gap-1.5 p-1 rounded-[8px] bg-[#f4faf4] dark:bg-[#1a251f] border border-[#d2e2cf] dark:border-[#2f4236] hover:border-[#10b981] hover:shadow-sm transition-all cursor-pointer text-left"
+                            title="Click to view Check-In photo"
                           >
-                            <Camera size={12} />
-                            <span>In</span>
+                            <div className="relative w-9 h-9 rounded-[6px] overflow-hidden bg-black/10 shrink-0">
+                              <img
+                                src={resolveAttendancePhotoUrl(row.checkInPhoto, row.id, 'checkin')}
+                                alt="Check-in selfie"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                onError={(e) => {
+                                  const target = e.currentTarget
+                                  if (!target.dataset.retried) {
+                                    target.dataset.retried = 'true'
+                                    target.src = `${apiBase}/attendance/${row.id}/photo/checkin`
+                                  }
+                                }}
+                              />
+                              <span className="absolute bottom-0 right-0 px-1 text-[8px] font-black uppercase tracking-wider bg-emerald-600 text-white rounded-tl-[3px]">
+                                IN
+                              </span>
+                            </div>
+                            <div className="flex flex-col pr-1">
+                              <span className="text-[9.5px] font-bold uppercase text-[#476652] dark:text-[#8ea295]">In</span>
+                              <span className="text-[11px] font-bold text-[#193c33] dark:text-[#edf5ef]">
+                                {formatTime(row.checkIn)}
+                              </span>
+                            </div>
                           </button>
                         ) : null}
 
                         {row.checkOutPhoto ? (
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              setLightboxZoom(1)
+                              setLightboxLoading(true)
+                              setLightboxError(false)
                               setLightboxPhoto({
-                                url: row.checkOutPhoto!,
+                                url: resolveAttendancePhotoUrl(row.checkOutPhoto, row.id, 'checkout'),
+                                fallbackUrl: `${apiBase}/attendance/${row.id}/photo/checkout`,
                                 title: `${row.fullName || 'Employee'} — Check-Out Photo`,
+                                employeeName: row.fullName || 'Employee',
+                                type: 'Check-Out',
                                 time: formatTime(row.checkOut),
+                                date: formatDate(row.attendanceDate),
+                                status: row.status,
                               })
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] bg-[#e6edf4] text-[#1e3a5f] border border-[#ccdbe8] text-[10.5px] font-bold hover:bg-[#bfdbfe] transition-colors cursor-pointer"
-                            title="Click to view check-out selfie"
+                            }}
+                            className="group relative flex items-center gap-1.5 p-1 rounded-[8px] bg-[#f0f6fb] dark:bg-[#16232e] border border-[#cbdceb] dark:border-[#263e52] hover:border-[#3b82f6] hover:shadow-sm transition-all cursor-pointer text-left"
+                            title="Click to view Check-Out photo"
                           >
-                            <Camera size={12} />
-                            <span>Out</span>
+                            <div className="relative w-9 h-9 rounded-[6px] overflow-hidden bg-black/10 shrink-0">
+                              <img
+                                src={resolveAttendancePhotoUrl(row.checkOutPhoto, row.id, 'checkout')}
+                                alt="Check-out selfie"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                onError={(e) => {
+                                  const target = e.currentTarget
+                                  if (!target.dataset.retried) {
+                                    target.dataset.retried = 'true'
+                                    target.src = `${apiBase}/attendance/${row.id}/photo/checkout`
+                                  }
+                                }}
+                              />
+                              <span className="absolute bottom-0 right-0 px-1 text-[8px] font-black uppercase tracking-wider bg-blue-600 text-white rounded-tl-[3px]">
+                                OUT
+                              </span>
+                            </div>
+                            <div className="flex flex-col pr-1">
+                              <span className="text-[9.5px] font-bold uppercase text-[#355b7c] dark:text-[#8eb2d4]">Out</span>
+                              <span className="text-[11px] font-bold text-[#193c33] dark:text-[#edf5ef]">
+                                {formatTime(row.checkOut)}
+                              </span>
+                            </div>
                           </button>
                         ) : null}
 
@@ -827,45 +975,165 @@ export default function AttendanceManagementView({
         />
       )}
 
-      {/* Photo Lightbox Preview Modal */}
+      {/* Photo Lightbox Preview Modal with Zoom, Download & Fallback */}
       {lightboxPhoto && (
         <div
-          className="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[10001] animate-fade-in"
+          className="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 z-[10001] animate-fade-in"
           onClick={() => setLightboxPhoto(null)}
         >
           <div
-            className="relative max-w-[500px] w-full bg-white dark:bg-[#18231d] rounded-[16px] overflow-hidden shadow-2xl border border-white/20"
+            className="relative max-w-[620px] w-full bg-white dark:bg-[#18231d] rounded-[20px] overflow-hidden shadow-2xl border border-white/20 flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-3.5 px-4 bg-[#f6faf4] dark:bg-[#131d17] border-b border-[#e5ece3] dark:border-[#27362c]">
-              <div className="flex items-center gap-2">
-                <ImageIcon size={17} className="text-[#193c33] dark:text-[#d9ed74]" />
-                <span className="text-[13.5px] font-bold text-[#193c33] dark:text-[#edf5ef]">
-                  {lightboxPhoto.title}
+            {/* Header: Title + Zoom + Download + Close */}
+            <div className="flex items-center justify-between p-3.5 px-4 sm:px-5 bg-[#f6faf4] dark:bg-[#131d17] border-b border-[#e5ece3] dark:border-[#27362c]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[#e3efe0] dark:bg-[#1e2f22] flex items-center justify-center text-[#193c33] dark:text-[#d9ed74] shrink-0">
+                  <ImageIcon size={17} />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-[#476652] dark:text-[#8ea295]">
+                    {lightboxPhoto.type} • VERIFICATION
+                  </span>
+                  <span className="text-[14px] font-bold text-[#193c33] dark:text-[#edf5ef] truncate">
+                    {lightboxPhoto.title}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Toolbar */}
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                {/* Zoom Controls */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom((prev) => Math.max(prev - 0.25, 0.75))}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#55695b] hover:text-[#193c33] hover:bg-[#e4ede1] dark:text-[#9fb2a4] dark:hover:text-white dark:hover:bg-[#202e24] transition-colors cursor-pointer"
+                  title="Zoom Out"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom(1)}
+                  className="px-2 h-8 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold text-[#55695b] hover:text-[#193c33] hover:bg-[#e4ede1] dark:text-[#9fb2a4] dark:hover:text-white dark:hover:bg-[#202e24] transition-colors cursor-pointer"
+                  title="Reset Zoom"
+                >
+                  {Math.round(lightboxZoom * 100)}%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLightboxZoom((prev) => Math.min(prev + 0.25, 3))}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#55695b] hover:text-[#193c33] hover:bg-[#e4ede1] dark:text-[#9fb2a4] dark:hover:text-white dark:hover:bg-[#202e24] transition-colors cursor-pointer"
+                  title="Zoom In"
+                >
+                  <ZoomIn size={16} />
+                </button>
+
+                {/* Download Button */}
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadPhoto()}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#55695b] hover:text-[#193c33] hover:bg-[#e4ede1] dark:text-[#9fb2a4] dark:hover:text-white dark:hover:bg-[#202e24] transition-colors cursor-pointer"
+                  title="Download Photo"
+                >
+                  <Download size={16} />
+                </button>
+
+                <div className="w-[1px] h-4 bg-[#d5e0d3] dark:bg-[#2f4236] mx-1" />
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxPhoto(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[#63776a] hover:text-[#193c33] hover:bg-[#e4ede1] dark:text-[#9fb2a4] dark:hover:text-white dark:hover:bg-[#202e24] cursor-pointer"
+                  aria-label="Close photo preview"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+            </div>
+
+            {/* Photo Viewport Area */}
+            <div className="relative p-3 bg-[#0d1410] flex items-center justify-center overflow-auto min-h-[300px] max-h-[65vh]">
+              {lightboxLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1410] text-gray-400 gap-2 z-10">
+                  <div className="w-9 h-9 border-3 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
+                  <span className="text-[12px] font-medium">Loading high-resolution photo…</span>
+                </div>
+              )}
+
+              {lightboxError ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center text-gray-200 gap-3 z-10">
+                  <AlertTriangle size={36} className="text-amber-400" />
+                  <div className="flex flex-col gap-1 max-w-[320px]">
+                    <strong className="text-[14px] text-white">Photo Not Available On Disk</strong>
+                    <span className="text-[12px] text-gray-300">
+                      The image file from this session could not be loaded from temporary storage.
+                    </span>
+                  </div>
+                  {lightboxPhoto.fallbackUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLightboxError(false)
+                        setLightboxLoading(true)
+                        if (lightboxPhoto.fallbackUrl) {
+                          setLightboxPhoto({
+                            ...lightboxPhoto,
+                            url: `${lightboxPhoto.fallbackUrl}?t=${Date.now()}`,
+                          })
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-bold cursor-pointer transition-colors shadow"
+                    >
+                      <RotateCcw size={14} />
+                      <span>Retry With Verification Badge</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="transition-transform duration-150 ease-out flex items-center justify-center"
+                  style={{ transform: `scale(${lightboxZoom})`, transformOrigin: 'center center' }}
+                >
+                  <img
+                    src={lightboxPhoto.url}
+                    alt={lightboxPhoto.title}
+                    className="max-h-[60vh] max-w-full w-auto object-contain rounded-[10px] shadow-lg"
+                    onLoad={() => {
+                      setLightboxLoading(false)
+                      setLightboxError(false)
+                    }}
+                    onError={() => {
+                      setLightboxLoading(false)
+                      if (lightboxPhoto.fallbackUrl && lightboxPhoto.url !== lightboxPhoto.fallbackUrl) {
+                        setLightboxPhoto((prev) =>
+                          prev ? { ...prev, url: prev.fallbackUrl! } : null
+                        )
+                      } else {
+                        setLightboxError(true)
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Metadata Footer */}
+            <div className="p-3 px-4 sm:px-5 bg-[#f6faf4] dark:bg-[#131d17] border-t border-[#e5ece3] dark:border-[#27362c] flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 text-[12px] text-[#425749] dark:text-[#9fb2a4]">
+                <ShieldCheck size={16} className="text-[#10b981]" />
+                <span className="font-semibold">{lightboxPhoto.employeeName}</span>
+                {lightboxPhoto.time && <span>• Punch Time: <strong className="text-[#193c33] dark:text-[#edf5ef]">{lightboxPhoto.time}</strong></span>}
+                {lightboxPhoto.date && <span className="hidden sm:inline">({lightboxPhoto.date})</span>}
+              </div>
+
+              {lightboxPhoto.status && (
+                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-extrabold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  {lightboxPhoto.status}
                 </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setLightboxPhoto(null)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[#63776a] hover:text-[#193c33] hover:bg-[#e4ede1] cursor-pointer"
-              >
-                <X size={16} />
-              </button>
+              )}
             </div>
-
-            <div className="p-3 bg-black flex items-center justify-center">
-              <img
-                src={lightboxPhoto.url}
-                alt={lightboxPhoto.title}
-                className="max-h-[65vh] w-auto object-contain rounded-[8px]"
-              />
-            </div>
-
-            {lightboxPhoto.time && (
-              <div className="p-3 px-4 bg-[#f6faf4] dark:bg-[#131d17] text-center text-[12px] font-semibold text-[#526658] dark:text-[#9fb2a4]">
-                Recorded at {lightboxPhoto.time}
-              </div>
-            )}
           </div>
         </div>
       )}
