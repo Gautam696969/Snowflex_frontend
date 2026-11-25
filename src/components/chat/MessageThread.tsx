@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
-  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles
+  ArrowLeft, Send, ArrowDown, WifiOff, AlertTriangle, Loader2, Sparkles, Video
 } from 'lucide-react'
 import UserAvatar from '../UserAvatar'
 import RoleBadge from './RoleBadge'
 import MessageItem from './MessageItem'
 import { fetchMessages, type ChatConversationItem, type ChatMessageItem } from '../../lib/chat-api'
 import { useChat } from '../../context/ChatContext'
+import { useVideoCall } from '../../context/VideoCallContext'
 import type { SafeUser } from '../../lib/auth-api'
 
 interface MessageThreadProps {
@@ -70,6 +71,7 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
     typingUsers,
     onlineUsers,
   } = useChat()
+  const { startCall, callState } = useVideoCall()
 
   const [messages, setMessages] = useState<ChatMessageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -399,6 +401,37 @@ export default function MessageThread({ conversation, currentUser, onBack }: Mes
             </div>
           </div>
         </div>
+
+        {/* 1-to-1 Video Call Action Button */}
+        {!conversation.isReadOnly && (
+          <button
+            type="button"
+            className="ml-auto inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] rounded-[8px] border border-[#dce4d9] dark:border-[#2e3d35] bg-[#f7faf5] dark:bg-[#202b25] text-[#193c33] dark:text-[#d9ed74] hover:bg-[#e8f2e4] dark:hover:bg-[#2a3830] text-[12px] font-semibold cursor-pointer transition-colors disabled:opacity-45 disabled:cursor-not-allowed shrink-0"
+            onClick={() =>
+              void startCall(
+                {
+                  id: conversation.otherUser.id,
+                  fullName: conversation.otherUser.fullName,
+                  role: conversation.otherUser.role,
+                  avatarUrl: conversation.otherUser.avatarUrl,
+                },
+                conversation.id
+              )
+            }
+            disabled={isDisconnected || callState !== 'idle'}
+            title={
+              isDisconnected
+                ? 'Reconnect to start a video call'
+                : callState !== 'idle'
+                  ? 'Already on a call'
+                  : `Video call ${conversation.otherUser.fullName}`
+            }
+            aria-label={`Start video call with ${conversation.otherUser.fullName}`}
+          >
+            <Video size={17} />
+            <span className="hidden sm:inline">Video Call</span>
+          </button>
+        )}
       </div>
 
       {/* Connection & Read-Only Status Banners */}

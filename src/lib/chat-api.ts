@@ -124,3 +124,17 @@ export async function fetchUnreadCount(): Promise<number> {
   const res = await chatFetch<{ count: number }>('/chat/unread-count')
   return res.count || 0
 }
+
+export async function fetchIceServers(): Promise<RTCIceServer[]> {
+  try {
+    const res = await chatFetch<{ iceServers: RTCIceServer[] }>('/chat/ice-servers')
+    if (Array.isArray(res.iceServers) && res.iceServers.length > 0) {
+      return res.iceServers
+    }
+  } catch {
+    // Fall back to env-configured STUN if backend is unreachable
+  }
+
+  const fallbackStun = (import.meta.env.VITE_WEBRTC_STUN_URL || 'stun:stun.l.google.com:19302').trim()
+  return [{ urls: fallbackStun }]
+}

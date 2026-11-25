@@ -1,4 +1,4 @@
-import { Check, CheckCheck, Clock } from 'lucide-react'
+import { Check, CheckCheck, Clock, Video } from 'lucide-react'
 import type { ChatMessageItem } from '../../lib/chat-api'
 
 interface MessageItemProps {
@@ -17,6 +17,26 @@ export default function MessageItem({ message, isMine }: MessageItemProps) {
   const isRead = Boolean(message.readAt)
   const isDelivered = Boolean(message.deliveredAt)
   const isPending = Boolean(message.isPending)
+
+  if (message.body.startsWith('📹 ')) {
+    const cleanText = message.body.replace(/^📹\s*/, '')
+    const isMissed = /missed|declined/i.test(cleanText)
+    return (
+      <div className="flex justify-center my-1.5">
+        <div
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] font-medium border ${
+            isMissed
+              ? 'bg-[#fef2f2] dark:bg-[#2b1414] text-[#b91c1c] dark:text-[#fca5a5] border-[#fecaca] dark:border-[#4d1f1f]'
+              : 'bg-[#f1f5ee] dark:bg-[#1e2923] text-[#355143] dark:text-[#b7c9bd] border-[#dce5d9] dark:border-[#2e3d35]'
+          }`}
+        >
+          <Video size={13} className="shrink-0" />
+          <span>{cleanText}</span>
+          <span className="text-[10px] opacity-70">{formatMessageTime(message.createdAt)}</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={`chat-message-row flex w-full ${isMine ? 'is-mine justify-end' : 'is-theirs justify-start'}`}>
