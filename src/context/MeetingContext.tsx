@@ -230,8 +230,11 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
   }, [socket, bumpMesh])
 
   const createMeshPeer = useCallback(
-    (peerUserId: number, peerName: string, meetingCode: string): MeshPeerState => {
+    (peerUserId: number, peerName: string, meetingCode: string, reuseExisting = false): MeshPeerState => {
       const existing = meshPeersRef.current.get(peerUserId)
+      if (existing && reuseExisting && existing.pc.signalingState !== 'closed') {
+        return existing
+      }
       if (existing) {
         existing.pc.close()
       }
@@ -244,6 +247,16 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         local.getTracks().forEach((track) => {
           pc.addTrack(track, local)
         })
+      }
+
+      // Ensure audio & video transceivers always exist even if user has no webcam/mic
+      const hasAudioSender = pc.getSenders().some((s) => s.track?.kind === 'audio')
+      const hasVideoSender = pc.getSenders().some((s) => s.track?.kind === 'video')
+      if (!hasAudioSender) {
+        pc.addTransceiver('audio', { direction: 'sendrecv' })
+      }
+      if (!hasVideoSender) {
+        pc.addTransceiver('video', { direction: 'sendrecv' })
       }
 
       const peerState: MeshPeerState = {
@@ -580,8 +593,9 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
     }
     const camTrack = meshLocalStreamRef.current?.getVideoTracks()[0] || null
     meshPeersRef.current.forEach((peer) => {
-      const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video')
-      if (sender && camTrack) {
+      const videoTransceiver = peer.pc.getTransceivers().find((t) => t.receiver.track?.kind === 'video')
+      const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video') || videoTransceiver?.sender
+      if (sender) {
         void sender.replaceTrack(camTrack)
       }
     })
@@ -660,11 +674,33 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
         socket?.emit('meeting:screen-share-stop', { meetingCode: code })
         return
       }
+      screenTrack.enabled = true
       meshScreenStreamRef.current = screenStream
-      meshPeersRef.current.forEach((peer) => {
-        const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video')
-        if (sender) void sender.replaceTrack(screenTrack)
-      })
+
+      for (const peer of meshPeersRef.current.values()) {
+        const videoTransceiver = peer.pc.getTransceivers().find((t) => t.receiver.track?.kind === 'video')
+        const sender = peer.pc.getSenders().find((s) => s.track?.kind === 'video') || videoTransceiver?.sender
+        if (sender) {
+          await sender.replaceTrack(screenTrack)
+          if (videoTransceiver && videoTransceiver.direction === 'recvonly') {
+            videoTransceiver.direction = 'sendrecv'
+          }
+        } else {
+          peer.pc.addTrack(screenTrack, screenStream)
+        }
+
+        // Renegotiate if needed so remote side always activates the video stream
+        if (peer.pc.signalingState === 'stable' && socket) {
+          const offer = await peer.pc.createOffer()
+          await peer.pc.setLocalDescription(offer)
+          socket.emit('meeting:rtc-offer', {
+            meetingCode: code,
+            targetUserId: peer.userId,
+            sdp: { type: offer.type, sdp: offer.sdp },
+          })
+        }
+      }
+
       setIsScreenSharing(true)
       socket?.emit('meeting:rtc-media-state', {
         meetingCode: code,
@@ -850,7 +886,7 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       sdp: RTCSessionDescriptionInit
     }) => {
       if (activeMeetingRef.current?.meetingCode !== data.meetingCode || transportModeRef.current !== 'mesh') return
-      const peer = createMeshPeer(data.fromUserId, data.fromName, data.meetingCode)
+      const peer = createMeshPeer(data.fromUserId, data.fromName, data.meetingCode, true)
       await peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
       while (peer.pendingIce.length > 0) {
         const c = peer.pendingIce.shift()
@@ -997,14 +1033,16 @@ export function MeetingProvider({ children }: { children: ReactNode }) {
       ]
 
       meshPeersRef.current.forEach((peer) => {
+        const videoTracks = peer.remoteStream.getVideoTracks()
+        const screenOnlyStream = videoTracks.length > 0 ? new MediaStream(videoTracks) : peer.remoteStream
         tiles.push({
           identity: `user-${peer.userId}`,
           userId: peer.userId,
           name: peer.name,
           isLocal: false,
-          videoStream: !peer.camOff && !peer.screenSharing ? peer.remoteStream : null,
+          videoStream: !peer.camOff && !peer.screenSharing ? screenOnlyStream : null,
           audioStream: peer.remoteStream,
-          screenStream: peer.screenSharing ? peer.remoteStream : null,
+          screenStream: peer.screenSharing ? screenOnlyStream : null,
           isMicMuted: peer.micMuted,
           isCamOff: peer.camOff,
           isScreenSharing: peer.screenSharing,

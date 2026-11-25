@@ -141,16 +141,34 @@ function ScreenShareStage({
   isLocal: boolean
 }) {
   const screenRef = useRef<HTMLVideoElement>(null)
+  const [hasFrames, setHasFrames] = useState(false)
 
   useEffect(() => {
-    if (screenRef.current) {
-      screenRef.current.srcObject = stream
-    }
+    const el = screenRef.current
+    if (!el) return
+    setHasFrames(false)
+    const videoTracks = stream.getVideoTracks()
+    el.srcObject = videoTracks.length > 0 ? new MediaStream(videoTracks) : stream
+    void el.play().catch(() => {})
   }, [stream])
 
   return (
     <div className="relative flex-1 min-h-0 rounded-2xl overflow-hidden bg-black border border-[#2a4233] flex items-center justify-center">
-      <video ref={screenRef} autoPlay playsInline muted={isLocal} className="w-full h-full object-contain" />
+      <video
+        ref={screenRef}
+        autoPlay
+        playsInline
+        muted
+        onLoadedData={() => setHasFrames(true)}
+        onPlaying={() => setHasFrames(true)}
+        className="w-full h-full object-contain"
+      />
+      {!hasFrames && !isLocal && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-300 text-xs pointer-events-none">
+          <Loader2 size={24} className="animate-spin text-emerald-400" />
+          <span>Connecting {presenterName}&apos;s screen stream...</span>
+        </div>
+      )}
       <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-500 text-black text-xs font-extrabold shadow flex items-center gap-1.5">
         <MonitorUp size={14} />
         <span>{presenterName} is presenting</span>
