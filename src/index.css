@@ -5790,10 +5790,14 @@ html.dark .chat-messages-scroll {
   color: #f87171;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .notif-dropdown-popover {
-    right: -45px;
-    width: 320px;
+    position: fixed !important;
+    top: 62px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
   }
 }
 
@@ -11517,15 +11521,21 @@ html.dark .chat-messages-scroll {
   }
 
   .notif-dropdown-popover {
-    right: -45px !important;
-    width: min(340px, calc(100vw - 20px)) !important;
-    max-width: calc(100vw - 20px) !important;
+    position: fixed !important;
+    top: 62px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
   }
 
   .topbar-profile-menu-popover {
-    right: 0 !important;
-    width: min(280px, calc(100vw - 20px)) !important;
-    max-width: calc(100vw - 20px) !important;
+    position: fixed !important;
+    top: 62px !important;
+    right: 12px !important;
+    left: auto !important;
+    width: min(280px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
   }
 }
 

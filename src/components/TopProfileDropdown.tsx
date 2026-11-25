@@ -106,11 +106,11 @@ export default function TopProfileDropdown({ user, className = '' }: TopProfileD
         <>
           {/* Mobile backdrop */}
           <div
-            className="fixed inset-0 bg-black/40 z-[999] sm:hidden backdrop-blur-[2px] transition-opacity"
+            className="fixed inset-0 bg-black/40 z-[999] md:hidden backdrop-blur-[2px] transition-opacity"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="topbar-profile-menu-popover fixed top-[64px] right-3 sm:absolute sm:top-[calc(100%+8px)] sm:right-0 w-[270px] max-w-[calc(100vw-24px)] bg-white border border-[#e2e8df] rounded-[14px] shadow-[0_16px_36px_-4px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.06)] p-[8px] z-[1000] animate-[popoverFadeIn_0.16s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.45)]" role="menu">
+          <div className="topbar-profile-menu-popover fixed top-[62px] right-3 md:absolute md:top-[calc(100%+8px)] md:right-0 w-[270px] max-w-[calc(100vw-24px)] bg-white border border-[#e2e8df] rounded-[14px] shadow-[0_16px_36px_-4px_rgba(15,23,42,0.16),0_4px_12px_rgba(15,23,42,0.06)] p-[8px] z-[1000] animate-[popoverFadeIn_0.16s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.45)]" role="menu">
           {/* Header Card */}
           <div
             className="topbar-profile-card-header flex items-center gap-[11px] p-[9px_10px] rounded-[9px] bg-[#fbfdfa] border border-[#eaf0e7] cursor-pointer transition-all duration-150 hover:bg-[#f2f7ef] hover:border-[#dbe7d7] dark:bg-[#151d18] dark:border-[#27352d] dark:hover:bg-[#202c24]"

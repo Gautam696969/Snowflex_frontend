@@ -43,12 +43,12 @@ export default function NotificationDropdown({
     <>
       {/* Mobile backdrop to dim background and capture clicks */}
       <div
-        className="fixed inset-0 bg-black/40 z-[999] sm:hidden backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-black/40 z-[999] md:hidden backdrop-blur-[2px] transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
-        className="notif-dropdown-popover fixed top-[64px] left-3 right-3 sm:left-auto sm:right-0 sm:absolute sm:top-[calc(100%+8px)] w-auto sm:w-[380px] max-w-none sm:max-w-[calc(100vw-20px)] bg-white border border-[#dce5d9] rounded-[14px] shadow-[0_16px_40px_-8px_rgba(15,23,42,0.22),0_0_0_1px_rgba(0,0,0,0.04)] z-[1000] overflow-hidden animate-[notifDropIn_0.2s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.55)]"
+        className="notif-dropdown-popover fixed top-[62px] left-3 right-3 md:left-auto md:right-0 md:absolute md:top-[calc(100%+8px)] w-auto md:w-[380px] max-w-none md:max-w-[calc(100vw-20px)] bg-white border border-[#dce5d9] rounded-[14px] shadow-[0_16px_40px_-8px_rgba(15,23,42,0.22),0_0_0_1px_rgba(0,0,0,0.04)] z-[1000] overflow-hidden animate-[notifDropIn_0.2s_cubic-bezier(0.16,1,0.3,1)] dark:bg-[#1a231e] dark:border-[#303b34] dark:shadow-[0_20px_45px_rgba(0,0,0,0.55)]"
         role="dialog"
         aria-label="Notifications panel"
       >
