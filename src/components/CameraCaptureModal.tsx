@@ -534,7 +534,7 @@ export default function CameraCaptureModal({
 
             {/* Viewfinder Area */}
             <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
-              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
+              <div className="relative w-full aspect-[3/4] max-h-[58vh] sm:max-h-[460px] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
                 {/* Visual Shutter Flash Effect */}
                 {isFlashing && (
                   <div className="absolute inset-0 bg-white z-30 transition-opacity duration-150 pointer-events-none" />
@@ -682,7 +682,7 @@ export default function CameraCaptureModal({
 
             {/* Image Preview Body */}
             <div className="relative p-3 sm:p-4 flex flex-col items-center justify-center bg-[#0d1410] overflow-hidden">
-              <div className="relative w-full aspect-[4/3] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
+              <div className="relative w-full aspect-[3/4] max-h-[58vh] sm:max-h-[460px] max-w-[420px] rounded-[16px] overflow-hidden bg-black flex items-center justify-center border border-[#2d3a31] shadow-inner">
                 <img
                   src={capturedImage}
                   alt="Captured attendance verification snapshot"
