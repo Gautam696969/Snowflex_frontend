@@ -8,19 +8,34 @@ import PasswordInput from '../components/PasswordInput'
 import AuthLayout from '../layouts/AuthLayout'
 import PwaInstallBanner from '../components/PwaInstallBanner'
 import { getLoginErrors } from '../lib/validation'
-import { login, storeToken } from '../lib/auth-api'
+import { login, readRefreshToken, readToken, refreshSessionToken, storeToken } from '../lib/auth-api'
 
 export default function Login() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [touched, setTouched] = useState({ email: false, password: false })
   const [loading, setLoading] = useState(false)
   const [helpMessage, setHelpMessage] = useState('')
   const [serverError, setServerError] = useState('')
   const [deactivatedNotice, setDeactivatedNotice] = useState('')
+
+  // Silently auto-login if user already has a valid token or refresh token
+  useEffect(() => {
+    const existingToken = readToken()
+    const existingRefresh = readRefreshToken()
+    if (existingToken) {
+      navigate('/dashboard', { replace: true })
+      return
+    }
+    if (existingRefresh) {
+      void refreshSessionToken().then((next) => {
+        if (next) navigate('/dashboard', { replace: true })
+      }).catch(() => {})
+    }
+  }, [navigate])
 
   useEffect(() => {
     const noticeFromUrl = searchParams.get('notice')
@@ -48,7 +63,7 @@ export default function Login() {
     try {
       const result = await login({ email: cleanEmail, password })
       sessionStorage.removeItem('snowflex_morning_checkin_dismissed')
-      storeToken(result.token, remember)
+      storeToken(result.token, true, result.refreshToken)
       toast.success('Welcome back!')
       navigate('/dashboard', { replace: true })
     } catch (error) {

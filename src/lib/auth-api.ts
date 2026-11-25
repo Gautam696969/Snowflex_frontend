@@ -27,6 +27,65 @@ function normalizeAvatarFields<T>(value: T): T {
 
 import { apiBase } from './api-config'
 const tokenKey = 'snowflex.auth.token'
+const refreshTokenKey = 'snowflex.auth.refresh_token'
+
+export function isTransientNetworkError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : String(err || '').toLowerCase()
+  return (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('network request failed') ||
+    msg.includes('load failed') ||
+    msg.includes('unable to reach') ||
+    msg.includes('timeout') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504')
+  )
+}
+
+export class AuthExpiredError extends Error {
+  constructor(message = 'Session expired. Please sign in again.') {
+    super(message)
+    this.name = 'AuthExpiredError'
+  }
+}
+
+let inFlightRefresh: Promise<string | null> | null = null
+
+export async function refreshSessionToken(): Promise<string | null> {
+  if (inFlightRefresh) return inFlightRefresh
+
+  inFlightRefresh = (async () => {
+    try {
+      const storedRefresh = readRefreshToken()
+      const response = await fetch(`${apiBase}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(storedRefresh ? { refreshToken: storedRefresh } : {}),
+      })
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          return null
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
+      const body = (await response.json().catch(() => null)) as
+        | (ApiResponse & { data?: { token?: string; refreshToken?: string } })
+        | null
+      const nextToken = body?.data?.token
+      if (!nextToken) return null
+      storeToken(nextToken, true, body?.data?.refreshToken)
+      return nextToken
+    } finally {
+      inFlightRefresh = null
+    }
+  })()
+
+  return inFlightRefresh
+}
 
 export function handleDeactivatedResponse(message?: string): void {
   const notice = message || 'Your account has been deactivated. Please contact HR.'
@@ -41,23 +100,57 @@ export function handleDeactivatedResponse(message?: string): void {
   }
 }
 
-async function request<T extends ApiResponse>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T extends ApiResponse>(
+  path: string,
+  options: RequestInit = {},
+  allowRefresh = true
+): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
     cache: 'no-store',
+    credentials: 'include',
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
   })
   const body = (await response.json().catch(() => null)) as T | null
-  if (!response.ok || !body?.success) {
-    const errorMsg = body?.message || 'Unable to reach the authentication service.'
-    const isDeactivated =
-      (response.status === 401 || response.status === 403) &&
-      (errorMsg.toLowerCase().includes('your account has been deactivated') ||
-        errorMsg.toLowerCase().includes('account has been deactivated') ||
-        (errorMsg.toLowerCase().includes('contact hr') && !path.includes('/terminate')))
 
-    if (isDeactivated && !path.startsWith('/auth/login')) {
-      handleDeactivatedResponse(errorMsg)
+  const errorMsg = body?.message || (response.status >= 500 ? `Server error (${response.status})` : 'Unable to reach the authentication service.')
+  const isDeactivated =
+    (response.status === 401 || response.status === 403) &&
+    (errorMsg.toLowerCase().includes('your account has been deactivated') ||
+      errorMsg.toLowerCase().includes('account has been deactivated') ||
+      (errorMsg.toLowerCase().includes('contact hr') && !path.includes('/terminate')))
+
+  if (isDeactivated && !path.startsWith('/auth/login')) {
+    handleDeactivatedResponse(errorMsg)
+    throw new AuthExpiredError(errorMsg)
+  }
+
+  // Auto-refresh access token on 401 and retry the original request once
+  if (
+    response.status === 401 &&
+    allowRefresh &&
+    !path.startsWith('/auth/login') &&
+    !path.startsWith('/auth/refresh') &&
+    !path.startsWith('/auth/register')
+  ) {
+    try {
+      const nextToken = await refreshSessionToken()
+      if (nextToken) {
+        const nextHeaders = new Headers(options.headers || {})
+        nextHeaders.set('Authorization', `Bearer ${nextToken}`)
+        return request<T>(path, { ...options, headers: nextHeaders }, false)
+      }
+      throw new AuthExpiredError('Session expired. Please sign in again.')
+    } catch (refreshErr) {
+      if (refreshErr instanceof AuthExpiredError) throw refreshErr
+      if (isTransientNetworkError(refreshErr)) throw refreshErr
+      throw new AuthExpiredError('Session expired. Please sign in again.')
+    }
+  }
+
+  if (!response.ok || !body?.success) {
+    if (response.status === 401) {
+      throw new AuthExpiredError(errorMsg)
     }
     throw new Error(errorMsg)
   }
@@ -96,10 +189,10 @@ export function resetPassword(input: { token: string; password: string }): Promi
   return request('/auth/reset-password', { method: 'POST', body: JSON.stringify(input) })
 }
 
-export async function login(input: { email: string; password: string }): Promise<{ token: string; user: SafeUser }> {
+export async function login(input: { email: string; password: string }): Promise<{ token: string; refreshToken?: string; user: SafeUser }> {
   const cleanEmail = (input.email || '').trim().toLowerCase()
   console.log(`[DEBUG_AUTH] Submitting login for email: "${cleanEmail}"`)
-  const response = await request<ApiResponse & { data: { token: string; user: SafeUser } }>('/auth/login', {
+  const response = await request<ApiResponse & { data: { token: string; refreshToken?: string; user: SafeUser } }>('/auth/login', {
     method: 'POST', body: JSON.stringify({ email: cleanEmail, password: input.password }),
   })
   if (response.data?.user) {
@@ -121,22 +214,37 @@ export async function getCurrentUser(token: string): Promise<SafeUser> {
 }
 
 export async function logout(token: string): Promise<void> {
-  await request('/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+  const refreshToken = readRefreshToken()
+  await request('/auth/logout', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+  })
 }
 
-export function storeToken(token: string, remember: boolean): void {
-  clearToken()
+export function storeToken(token: string, remember = true, refreshToken?: string): void {
+  sessionStorage.removeItem(tokenKey)
+  localStorage.removeItem(tokenKey)
   ;(remember ? localStorage : sessionStorage).setItem(tokenKey, token)
+  if (refreshToken) {
+    localStorage.setItem(refreshTokenKey, refreshToken)
+  }
   window.dispatchEvent(new Event('auth-token-changed'))
 }
 
 export function readToken(): string | null {
-  return sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey)
+  return localStorage.getItem(tokenKey) || sessionStorage.getItem(tokenKey)
+}
+
+export function readRefreshToken(): string | null {
+  return localStorage.getItem(refreshTokenKey) || sessionStorage.getItem(refreshTokenKey)
 }
 
 export function clearToken(): void {
   sessionStorage.removeItem(tokenKey)
   localStorage.removeItem(tokenKey)
+  sessionStorage.removeItem(refreshTokenKey)
+  localStorage.removeItem(refreshTokenKey)
   window.dispatchEvent(new Event('auth-token-changed'))
 }
 

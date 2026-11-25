@@ -11,8 +11,8 @@ import {
   Camera
 } from 'lucide-react'
 import {
-  apiRequest, clearToken, getCurrentUser, getDashboard,
-  getDepartments, getEmployees, getUsers, logout, readToken,
+  apiRequest, AuthExpiredError, clearToken, getCurrentUser, getDashboard,
+  getDepartments, getEmployees, getUsers, isTransientNetworkError, logout, readToken, refreshSessionToken,
   getAdminSystemInfo, getEmployeeStats, terminateEmployee, reactivateEmployee,
   normalizeRole,
   type AdminSystemInfo, type EmployeeStats
@@ -320,31 +320,68 @@ export default function Dashboard() {
 
   useEffect(() => {
     let active = true
-    const currentToken = readToken()
-    if (!currentToken) {
-      navigate('/login', { replace: true })
-      return () => { active = false }
-    }
-    setToken(currentToken)
-    getCurrentUser(currentToken)
-      .then(async (authenticatedUser) => {
-        if (!active) return
-        console.log(`[DEBUG_AUTH] Dashboard session established for: "${authenticatedUser.email}", Role: "${authenticatedUser.role}"`)
-        setUser(authenticatedUser)
-        void fetchTodayAttendance(currentToken, authenticatedUser, true)
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+    const bootstrapSession = async (attempt = 0) => {
+      let currentToken = readToken()
+      if (!currentToken) {
         try {
-          await loadData(currentToken, authenticatedUser, view)
+          currentToken = await refreshSessionToken()
+        } catch (err) {
+          if (!active) return
+          if (isTransientNetworkError(err) && attempt < 6) {
+            setNotice('Waking up server... retrying automatically.')
+            retryTimer = setTimeout(() => void bootstrapSession(attempt + 1), 3000)
+            return
+          }
+        }
+      }
+
+      if (!currentToken) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      setToken(currentToken)
+      try {
+        const authenticatedUser = await getCurrentUser(currentToken)
+        if (!active) return
+        setNotice('')
+        const latestToken = readToken() || currentToken
+        setToken(latestToken)
+        setUser(authenticatedUser)
+        void fetchTodayAttendance(latestToken, authenticatedUser, true)
+        try {
+          await loadData(latestToken, authenticatedUser, view)
         } catch (loadErr) {
           console.error('[DEBUG_AUTH] Error loading dashboard data:', loadErr)
         }
-      })
-      .catch((error) => {
-        console.warn('[DEBUG_AUTH] getCurrentUser session validation failed:', error)
-        clearToken()
-        toast.error(error instanceof Error ? error.message : 'Session expired. Please sign in again.')
-        navigate('/login', { replace: true })
-      })
-    return () => { active = false }
+      } catch (error) {
+        if (!active) return
+        // Do NOT log user out on network errors or while Render is waking up
+        if (!(error instanceof AuthExpiredError) && isTransientNetworkError(error) && attempt < 6) {
+          setNotice('Waking up server / reconnecting... please wait.')
+          retryTimer = setTimeout(() => void bootstrapSession(attempt + 1), 3000)
+          return
+        }
+        if (error instanceof AuthExpiredError) {
+          clearToken()
+          toast.error(error.message)
+          navigate('/login', { replace: true })
+          return
+        }
+        setNotice('Network issue connecting to server. Retrying...')
+        if (attempt < 6) {
+          retryTimer = setTimeout(() => void bootstrapSession(attempt + 1), 3000)
+        }
+      }
+    }
+
+    void bootstrapSession(0)
+    return () => {
+      active = false
+      if (retryTimer) clearTimeout(retryTimer)
+    }
   }, [navigate])
 
   useEffect(() => {
