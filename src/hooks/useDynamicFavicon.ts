@@ -59,7 +59,7 @@ function drawRoundedRect(
   ctx.closePath()
 }
 
-function buildFullBodyRobotFrames(): string[] {
+function buildRobotFaceFrames(): string[] {
   if (typeof document === 'undefined') return ['/favicon-blue.svg']
 
   const size = 64
@@ -69,9 +69,10 @@ function buildFullBodyRobotFrames(): string[] {
   const ctx = canvas.getContext('2d')
   if (!ctx) return ['/favicon-blue.svg']
 
-  // 20-frame seamless sinusoidal loop (~1.8s cycle @ 90ms) for silky-smooth Chrome tab motion:
-  // gentle antigravity float, smooth right-hand wave, breathing aura, soft hover beam & natural blink
-  const totalFrames = 20
+  // 24-frame silky sinusoidal loop (~2.1s cycle @ 90ms):
+  // bold, readable AI robot face with smooth levitation, subtle tilt, glowing aura,
+  // breathing antenna LED, playful eye glance, and soft natural blink
+  const totalFrames = 24
 
   return Array.from({ length: totalFrames }, (_, idx) => {
     const phase = (idx / totalFrames) * Math.PI * 2
@@ -79,185 +80,111 @@ function buildFullBodyRobotFrames(): string[] {
     const cos1 = Math.cos(phase)
     const sin2 = Math.sin(phase * 2)
 
-    const bobY = sin1 * 2.3
-    const gentleSwayDeg = cos1 * 3.2
-    const leftArmAngle = -14 + sin1 * 10
-    const rightArmAngle = -52 + sin2 * 16
-    const leftLegLift = Math.max(0, sin1) * 1.8
-    const rightLegLift = Math.max(0, -sin1) * 1.8
-    const auraAlpha = 0.16 + ((sin1 + 1) / 2) * 0.14
-    const auraRadius = 26 + ((cos1 + 1) / 2) * 3
+    const bobY = sin1 * 2.2
+    const tiltDeg = cos1 * 2.6
+    const eyeShiftX = sin1 * 1.8
     const ledGlow = 0.45 + ((sin2 + 1) / 2) * 0.55
+    const auraAlpha = 0.16 + ((sin1 + 1) / 2) * 0.14
 
-    // Smooth 4-frame natural eye blink near the end of the loop (frames 15..18)
+    // Soft 4-frame blink near end of loop (frames 18..21)
     let eyeScaleY = 1
-    if (idx === 15 || idx === 18) eyeScaleY = 0.52
-    else if (idx === 16 || idx === 17) eyeScaleY = 0.18
+    if (idx === 18 || idx === 21) eyeScaleY = 0.5
+    else if (idx === 19 || idx === 20) eyeScaleY = 0.14
 
     ctx.clearRect(0, 0, size, size)
 
-    // Smooth breathing emerald-cyan aura behind robot
-    const auraGrad = ctx.createRadialGradient(32, 32, 6, 32, 32, auraRadius)
-    auraGrad.addColorStop(0, `rgba(16, 185, 129, ${(auraAlpha * 1.1).toFixed(3)})`)
-    auraGrad.addColorStop(0.65, `rgba(127, 231, 255, ${(auraAlpha * 0.55).toFixed(3)})`)
-    auraGrad.addColorStop(1, 'rgba(16, 185, 129, 0)')
-    ctx.fillStyle = auraGrad
+    // Soft breathing emerald-cyan halo behind the face
+    const aura = ctx.createRadialGradient(32, 34, 8, 32, 34, 30)
+    aura.addColorStop(0, `rgba(16, 185, 129, ${(auraAlpha * 1.15).toFixed(3)})`)
+    aura.addColorStop(0.65, `rgba(127, 231, 255, ${(auraAlpha * 0.55).toFixed(3)})`)
+    aura.addColorStop(1, 'rgba(16, 185, 129, 0)')
+    ctx.fillStyle = aura
     ctx.beginPath()
-    ctx.arc(32, 32, auraRadius, 0, Math.PI * 2)
-    ctx.fill()
-
-    // Soft antigravity hover shadow ring under feet (shrinks smoothly as bot floats higher)
-    const hoverScale = 1 - (bobY / 2.3) * -0.14
-    ctx.fillStyle = `rgba(16, 185, 129, ${(0.28 - (bobY / 2.3) * 0.08).toFixed(3)})`
-    ctx.beginPath()
-    ctx.ellipse(32, 59, 13 * hoverScale, 2.5, 0, 0, Math.PI * 2)
+    ctx.arc(32, 34, 30, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.save()
-    ctx.translate(32, 33 + bobY)
-    ctx.rotate((gentleSwayDeg * Math.PI) / 180)
-    ctx.translate(-32, -33)
+    ctx.translate(32, 35 + bobY)
+    ctx.rotate((tiltDeg * Math.PI) / 180)
+    ctx.translate(-32, -35)
 
-    // Antenna stem + smoothly breathing golden LED
+    // Antenna stem + breathing golden LED
     ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 3.5
+    ctx.lineWidth = 4.2
     ctx.lineCap = 'round'
     ctx.beginPath()
-    ctx.moveTo(32, 13)
-    ctx.lineTo(32, 6.5)
+    ctx.moveTo(32, 17)
+    ctx.lineTo(32, 8.5)
     ctx.stroke()
 
-    ctx.fillStyle = `rgba(255, 210, 63, ${(0.18 + ledGlow * 0.35).toFixed(3)})`
+    ctx.fillStyle = `rgba(255, 210, 63, ${(0.22 + ledGlow * 0.4).toFixed(3)})`
     ctx.beginPath()
-    ctx.arc(32, 5.5, 5 + ledGlow * 1.8, 0, Math.PI * 2)
+    ctx.arc(32, 7.5, 6 + ledGlow * 2.2, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = ledGlow > 0.72 ? '#ffef8a' : '#ffd23f'
     ctx.strokeStyle = '#143229'
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 1.8
     ctx.beginPath()
-    ctx.arc(32, 5.5, 3.4, 0, Math.PI * 2)
+    ctx.arc(32, 7.5, 4.3, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
-
-    // Left Arm (smooth gentle balance swing)
-    ctx.save()
-    ctx.translate(18.5, 32)
-    ctx.rotate((leftArmAngle * Math.PI) / 180)
-    ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 5.4
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(-9, 5)
-    ctx.stroke()
-    ctx.fillStyle = '#d9ed74'
-    ctx.strokeStyle = '#143229'
-    ctx.lineWidth = 1.4
-    ctx.beginPath()
-    ctx.arc(-10.2, 5.6, 3.2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
-    ctx.restore()
-
-    // Right Arm (silky smooth wave)
-    ctx.save()
-    ctx.translate(45.5, 32)
-    ctx.rotate((rightArmAngle * Math.PI) / 180)
-    ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 5.4
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(10.5, 3)
-    ctx.stroke()
-    ctx.fillStyle = '#d9ed74'
-    ctx.strokeStyle = '#143229'
-    ctx.lineWidth = 1.4
-    ctx.beginPath()
-    ctx.arc(11.8, 3.4, 3.3, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
-    ctx.restore()
-
-    // Left & Right Legs + Boots (smooth alternating float)
-    const drawLeg = (x: number, lift: number) => {
-      const legY = 44 - lift
-      drawRoundedRect(ctx, x, legY, 6.4, 9.8, 2.5)
-      ctx.fillStyle = '#193c33'
-      ctx.fill()
-      ctx.strokeStyle = '#10b981'
-      ctx.lineWidth = 2
-      ctx.stroke()
-
-      drawRoundedRect(ctx, x - 1.4, legY + 8.3, 9.2, 4.3, 2.1)
-      ctx.fillStyle = '#d9ed74'
-      ctx.fill()
-      ctx.strokeStyle = '#143229'
-      ctx.lineWidth = 1.4
-      ctx.stroke()
-    }
-    drawLeg(21.6, leftLegLift)
-    drawLeg(36, rightLegLift)
 
     // Side Ears
-    drawRoundedRect(ctx, 13, 17, 4, 8, 2)
+    drawRoundedRect(ctx, 4.5, 27, 6.5, 16, 3.2)
     ctx.fillStyle = '#10b981'
     ctx.fill()
-    drawRoundedRect(ctx, 47, 17, 4, 8, 2)
-    ctx.fillStyle = '#10b981'
-    ctx.fill()
+    ctx.strokeStyle = '#143229'
+    ctx.lineWidth = 1.6
+    ctx.stroke()
 
-    // Rounded Head + Dark Face Visor
-    drawRoundedRect(ctx, 16, 12, 32, 18, 7)
+    drawRoundedRect(ctx, 53, 27, 6.5, 16, 3.2)
+    ctx.fillStyle = '#10b981'
+    ctx.fill()
+    ctx.stroke()
+
+    // Big Bold Rounded Head
+    drawRoundedRect(ctx, 9.5, 16.5, 45, 37, 13)
     ctx.fillStyle = '#193c33'
     ctx.fill()
     ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 2.8
+    ctx.lineWidth = 3.6
     ctx.stroke()
 
-    drawRoundedRect(ctx, 19.5, 15, 25, 12, 4.5)
+    // Dark Face Visor Screen
+    drawRoundedRect(ctx, 15, 22, 34, 25, 8.5)
     ctx.fillStyle = '#07110d'
     ctx.fill()
+    ctx.strokeStyle = '#255243'
+    ctx.lineWidth = 1.4
+    ctx.stroke()
 
-    // Smooth Blinking Cyan Eyes
-    const eyeH = 5.8 * eyeScaleY
-    const eyeY = 20.4 - eyeH / 2
+    // Glowing Cyan Eyes (smooth glance + soft blink)
+    const eyeH = 10.5 * eyeScaleY
+    const eyeY = 32 - eyeH / 2
     ctx.fillStyle = '#7fe7ff'
-    drawRoundedRect(ctx, 23.4, eyeY, 5.2, eyeH, Math.min(2.4, eyeH / 2))
+    drawRoundedRect(ctx, 21 + eyeShiftX, eyeY, 7.5, eyeH, Math.min(3.6, eyeH / 2))
     ctx.fill()
-    drawRoundedRect(ctx, 35.4, eyeY, 5.2, eyeH, Math.min(2.4, eyeH / 2))
+    drawRoundedRect(ctx, 35.5 + eyeShiftX, eyeY, 7.5, eyeH, Math.min(3.6, eyeH / 2))
     ctx.fill()
 
-    // Friendly Smile
+    // Eye catchlight shine when open
+    if (eyeScaleY > 0.7) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+      ctx.beginPath()
+      ctx.arc(23.5 + eyeShiftX, eyeY + 2.6, 1.4, 0, Math.PI * 2)
+      ctx.arc(38 + eyeShiftX, eyeY + 2.6, 1.4, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // Smooth Friendly Smile
     ctx.strokeStyle = '#7fe7ff'
-    ctx.lineWidth = 1.8
+    ctx.lineWidth = 2.6
     ctx.lineCap = 'round'
     ctx.beginPath()
-    ctx.moveTo(27.2, 24.8)
-    ctx.quadraticCurveTo(32, 27.3, 36.8, 24.8)
+    ctx.moveTo(25 + eyeShiftX * 0.45, 40.2)
+    ctx.quadraticCurveTo(32 + eyeShiftX * 0.45, 44.8, 39 + eyeShiftX * 0.45, 40.2)
     ctx.stroke()
-
-    // Body Torso + Smoothly Breathing Chest Core
-    drawRoundedRect(ctx, 18.5, 30.5, 27, 14.5, 5.5)
-    ctx.fillStyle = '#193c33'
-    ctx.fill()
-    ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 2.6
-    ctx.stroke()
-
-    drawRoundedRect(ctx, 23.5, 33.8, 17, 7.8, 3)
-    ctx.fillStyle = '#07110d'
-    ctx.fill()
-
-    ctx.fillStyle = `rgba(127, 231, 255, ${(0.55 + ((cos1 + 1) / 2) * 0.45).toFixed(3)})`
-    ctx.beginPath()
-    ctx.arc(28.5, 37.7, 2.2, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = '#10b981'
-    drawRoundedRect(ctx, 33, 36.4, 5, 2.6, 1.3)
-    ctx.fill()
 
     ctx.restore()
     return canvas.toDataURL('image/png')
@@ -266,7 +193,7 @@ function buildFullBodyRobotFrames(): string[] {
 
 /**
  * Hook to dynamically toggle the Chrome tab favicon:
- * - Landing page ('/'): Animated full-body Snowflex Robot bot
+ * - Landing page ('/'): Smoothly animated Snowflex AI Robot face
  * - Register, Login, Auth, and Dashboard pages: Green favicon (/favicon-green.svg) and green theme color (#193c33)
  */
 export function useDynamicFavicon() {
@@ -290,7 +217,7 @@ export function useDynamicFavicon() {
       return
     }
 
-    const frames = buildFullBodyRobotFrames()
+    const frames = buildRobotFaceFrames()
     let frameIndex = 0
     updateFavicon(frames[0], 'image/png')
 
