@@ -31,20 +31,69 @@ function formatNow(): string {
 }
 
 function localFallbackReply(message: string): string {
-  const q = message.toLowerCase()
-  if (q.includes('leave') || q.includes('chutti')) {
-    return 'Today 2 teammates are on leave (demo data): Priya Sharma (Sick Leave) and Rohan Mehta (Casual Leave), with 1 request pending approval. 📋'
+  const q = message.toLowerCase().trim()
+  const isHinglish = /\b(kya|hai|hain|kaise|kab|kaun|chutti|mera|meri|aaj|kal|batao|bata|karo|naam|bhai|yaar|theek|haan|nahi)\b/.test(q)
+
+  if (q.includes('leave') || q.includes('chutti') || q.includes('holiday') || q.includes('vacation') || q.includes('absent')) {
+    return isHinglish
+      ? 'Aaj 2 teammates leave par hain (demo data): Priya Sharma (Sick Leave) aur Rohan Mehta (Casual Leave), aur 1 request pending hai. 📋'
+      : 'Today 2 teammates are on leave (demo data): Priya Sharma (Sick Leave) and Rohan Mehta (Casual Leave), with 1 request pending approval. 📋'
   }
-  if (q.includes('attendance')) {
-    return "Today's attendance is 94% (demo data): 47 of 50 employees checked in with verified selfies, and 2 arrived slightly late. 📸"
+  if (q.includes('attendance') || q.includes('selfie') || q.includes('check-in') || q.includes('checkin') || q.includes('late') || q.includes('present')) {
+    return isHinglish
+      ? 'Aaj ki attendance 94% hai (demo data): 47/50 employees ne selfie check-in kiya hai, aur 2 thoda late aaye. 📸'
+      : "Today's attendance is 94% (demo data): 47 of 50 employees checked in with verified selfies, and 2 arrived slightly late. 📸"
   }
-  if (q.includes('shift')) {
-    return 'Your next shift is tomorrow 09:00 AM – 06:00 PM IST (demo data). Snowflex sends a push reminder 5 minutes before check-in and check-out! ⏰'
+  if (q.includes('shift') || q.includes('timing') || q.includes('schedule') || q.includes('roster')) {
+    return isHinglish
+      ? 'Aapki next shift kal 09:00 AM – 06:00 PM IST hai (demo data). Snowflex check-in aur check-out se 5 min pehle push reminder bhejta hai! ⏰'
+      : 'Your next shift is tomorrow 09:00 AM – 06:00 PM IST (demo data). Snowflex sends a push reminder 5 minutes before check-in and check-out! ⏰'
   }
-  if (q.includes('about snowflex') || q.includes('snowflex')) {
-    return 'Snowflex is an all-in-one employee management PWA! ✨ It includes selfie attendance, 5-min shift reminders, leave approvals, team chat, HD video meetings, and an AI assistant.'
+  if (q.includes('report') || q.includes('analytics') || q.includes('export') || q.includes('summary') || q.includes('csv') || q.includes('pdf')) {
+    return isHinglish
+      ? 'Aap attendance, late arrivals aur leave trends ke instant reports ek click me export kar sakte hain (demo data)! 📊'
+      : 'You can generate instant attendance, late-arrival, and leave-summary reports in one click and export them anytime (demo data)! 📊'
   }
-  return 'I can help with Snowflex attendance, shifts, leave summaries, and reminders! 😊 Try tapping one of the quick questions above.'
+  if (q.includes('notification') || q.includes('reminder') || q.includes('alert') || q.includes('push')) {
+    return isHinglish
+      ? 'Snowflex shift start aur end se 5 minute pehle smart push notifications bhejta hai — app band ho tab bhi! 🔔'
+      : 'Snowflex sends smart push reminders 5 minutes before shift start and end — even when the app is closed! 🔔'
+  }
+  if (q.includes('chat') || q.includes('meet') || q.includes('video') || q.includes('call') || q.includes('screen')) {
+    return isHinglish
+      ? 'Snowflex me built-in live team chat aur HD video meetings hain screen sharing ke saath — kisi external app ki zarurat nahi! 📹'
+      : 'Snowflex includes built-in live team chat and HD video meetings with screen sharing — no external meeting app needed! 📹'
+  }
+  if (q.includes('price') || q.includes('pricing') || q.includes('free') || q.includes('cost') || q.includes('plan') || q.includes('trial') || q.includes('signup')) {
+    return isHinglish
+      ? 'Aap free account banakar apni team ke saath Snowflex turant try kar sakte hain! 🚀 Top-right se Get Started par click karein.'
+      : 'You can start using Snowflex for free with your team right away! 🚀 Click Get Started on the page to create your workspace.'
+  }
+  if (q.includes('theme') || q.includes('dark') || q.includes('light') || q.includes('mode')) {
+    return isHinglish
+      ? 'Snowflex dark aur light dono modes support karta hai — upar theme toggle se aap kabhi bhi switch kar sakte hain! 🌗'
+      : 'Snowflex supports both dark and light modes seamlessly — you can switch anytime from the theme toggle! 🌗'
+  }
+  if (q.includes('about snowflex') || q.includes('snowflex') || q.includes('feature') || q.includes('kya karta')) {
+    return isHinglish
+      ? 'Snowflex ek all-in-one employee management PWA hai! ✨ Isme selfie attendance, 5-min shift reminders, leave approvals, team chat, video meetings aur AI assistant sab milta hai.'
+      : 'Snowflex is an all-in-one employee management PWA! ✨ It includes selfie attendance, 5-min shift reminders, leave approvals, team chat, HD video meetings, and an AI assistant.'
+  }
+  if (/^(hi|hii|hey|hello|namaste|hola|yo)\b/.test(q)) {
+    return isHinglish
+      ? 'Hii buddy! 👋 Main Snowflex AI hoon. Attendance, shifts, leave ya reports ke baare me kuch bhi puchho!'
+      : "Hii buddy! 👋 I'm Snowflex AI. Ask me anything about attendance, shifts, leave, or team reports!"
+  }
+  if (q.includes('thank') || q.includes('shukriya') || q.includes('dhanyawad')) {
+    return isHinglish
+      ? 'Most welcome! 😊 Kuch aur puchhna ho to zarur batayein.'
+      : "You're very welcome! 😊 Let me know if you'd like to explore anything else in Snowflex."
+  }
+
+  const topicPreview = message.trim().slice(0, 45)
+  return isHinglish
+    ? `"${topicPreview}" ke baare me: Snowflex AI aapki team ki attendance, shifts, leave aur live chat ko automate karta hai (demo mode). ✨ Attendance, shift ya leave ke baare me puchh kar dekhein!`
+    : `Great question about "${topicPreview}"! Snowflex helps teams automate attendance, shift reminders, leave approvals, and live collaboration (demo mode). ✨ Try asking about attendance, shifts, leaves, or video meetings!`
 }
 
 function isWakeupOrNetworkError(status: number | null, err: unknown): boolean {
@@ -452,3 +501,4 @@ export default function SnowflexChatDemo({
     </div>
   )
 }
+
