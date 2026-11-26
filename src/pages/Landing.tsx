@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { toggleThemeMode } from '../lib/theme'
 import { readToken } from '../lib/auth-api'
+import SnowflexAISection from '../components/SnowflexAISection'
 import './Landing.css'
 
 type ShowcaseTab = 'attendance' | 'meet' | 'ai'
@@ -54,29 +55,6 @@ const features = [
     icon: Smartphone,
     title: 'Installable PWA',
     desc: 'Stay logged in across restarts with offline resilience and adaptive dark/light mode.',
-  },
-]
-
-const aiHighlights = [
-  {
-    icon: CheckCircle2,
-    title: 'Smart attendance insights',
-    desc: 'Spot late trends, shift adherence, and daily check-in summaries at a glance.',
-  },
-  {
-    icon: BellRing,
-    title: 'Shift reminders',
-    desc: 'Stay ahead of check-in and check-out windows with timely workspace nudges.',
-  },
-  {
-    icon: CalendarCheck,
-    title: 'Instant leave summaries',
-    desc: 'Check remaining balances, pending requests, and upcoming holidays in seconds.',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Ask anything about your team',
-    desc: 'Query HR policies, attendance status, and operations data in natural language.',
   },
 ]
 
@@ -468,109 +446,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 3.5. Snowflex AI Section */}
-        <section
-          id="snowflex-ai"
-          className="max-w-[1160px] mx-auto px-4 sm:px-6 py-14 sm:py-20 border-t border-[#e4ece0] dark:border-[#1c2c22]"
-        >
-          <div className="flex flex-col items-center text-center max-w-[660px] mx-auto mb-10">
-            <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2 flex-wrap">
-              {/* Pure CSS/SVG Animated Robot Bot */}
-              <div
-                className="snow-ai-bot-wrap relative inline-flex items-center justify-center cursor-pointer outline-none"
-                tabIndex={0}
-                aria-label="Snowflex AI Robot Mascot"
-              >
-                <div
-                  role="status"
-                  className="snow-ai-bot-bubble pointer-events-none opacity-0 translate-y-1 scale-95 transition-all duration-200 absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-xl bg-[#193c33] text-[#d9ed74] text-[11px] font-bold shadow-lg border border-[#2c5d4f] z-20"
-                >
-                  Hi! I&apos;m Snowflex AI
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-[#193c33] border-r border-b border-[#2c5d4f]" />
-                </div>
-
-                <div className="snow-ai-bot-float">
-                  <svg
-                    viewBox="0 0 88 88"
-                    className="snow-ai-bot-svg w-14 h-14 sm:w-16 sm:h-16 transition-transform duration-200 drop-shadow-[0_6px_14px_rgba(16,185,129,0.22)]"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    {/* Antenna stem & pulsing light */}
-                    <line x1="44" y1="18" x2="44" y2="10" stroke="#10b981" strokeWidth="3" strokeLinecap="round" />
-                    <circle cx="44" cy="8" r="4.5" fill="#d9ed74" stroke="#193c33" strokeWidth="1.5" className="snow-ai-bot-antenna" />
-
-                    {/* Waving right hand */}
-                    <g className="snow-ai-bot-hand">
-                      <path d="M68 48 C75 43, 79 35, 76 29" stroke="#193c33" strokeWidth="4.5" strokeLinecap="round" />
-                      <circle cx="76" cy="27" r="4" fill="#d9ed74" stroke="#193c33" strokeWidth="1.8" />
-                    </g>
-
-                    {/* Left arm */}
-                    <path d="M20 48 C15 51, 13 56, 15 61" stroke="#193c33" strokeWidth="4.5" strokeLinecap="round" />
-                    <circle cx="15" cy="62" r="3.5" fill="#10b981" />
-
-                    {/* Robot head */}
-                    <rect x="20" y="18" width="48" height="34" rx="12" fill="#193c33" stroke="#10b981" strokeWidth="2.2" />
-                    {/* Face screen */}
-                    <rect x="26" y="24" width="36" height="22" rx="7" fill="#0d1712" />
-                    {/* Blinking eyes */}
-                    <rect x="33" y="31" width="6" height="7" rx="3" fill="#d9ed74" className="snow-ai-bot-eye" />
-                    <rect x="49" y="31" width="6" height="7" rx="3" fill="#d9ed74" className="snow-ai-bot-eye" />
-                    {/* Subtle smile */}
-                    <path d="M39 41 Q44 44 49 41" stroke="#34d399" strokeWidth="2" strokeLinecap="round" />
-
-                    {/* Compact torso */}
-                    <rect x="26" y="55" width="36" height="22" rx="9" fill="#193c33" stroke="#10b981" strokeWidth="2" />
-                    <circle cx="44" cy="66" r="4" fill="#10b981" />
-                  </svg>
-                </div>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14241d] dark:text-white m-0">
-                Meet Snowflex AI
-              </h2>
-            </div>
-
-            <p className="text-sm sm:text-base text-[#54695c] dark:text-[#9cb0a3] m-0">
-              Your smart assistant for attendance, shifts, leave and reports.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {aiHighlights.map((item) => {
-              const Icon = item.icon
-              return (
-                <div
-                  key={item.title}
-                  className="group p-5 rounded-2xl bg-white dark:bg-[#121c16] border border-[#e0e8dc] dark:border-[#223529] hover:border-[#10b981]/60 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-[#eef6ea] dark:bg-[#1a2b21] text-[#193c33] dark:text-[#d9ed74] grid place-items-center mb-3 transition-transform duration-200 group-hover:scale-110">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="text-sm sm:text-[15px] font-bold text-[#14241d] dark:text-white m-0 mb-1">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-[#566b5e] dark:text-[#96aa9d] m-0 leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="flex justify-center">
-            <Link
-              to={isLoggedIn ? '/dashboard?view=assistant' : '/register'}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#193c33] hover:bg-[#235246] text-[#d9ed74] text-xs sm:text-sm font-bold no-underline shadow-md transition-all hover:-translate-y-0.5"
-            >
-              <Sparkles size={15} />
-              <span>Try Snowflex AI</span>
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-        </section>
+        <SnowflexAISection isLoggedIn={isLoggedIn} />
 
         {/* 4. Simple 3-Step Workflow */}
         <section id="workflow" className="max-w-[1160px] mx-auto px-4 sm:px-6 py-12 sm:py-16">

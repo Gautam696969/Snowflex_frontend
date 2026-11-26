@@ -1,0 +1,143 @@
+@keyframes sfAiFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes sfAiShadowPulse {
+  0%, 100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 0.34;
+  }
+  50% {
+    transform: scaleX(0.84) scaleY(0.86);
+    opacity: 0.2;
+  }
+}
+
+@keyframes sfAiBlink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes sfAiWave {
+  0%, 58%, 100% {
+    transform: rotate(0deg);
+  }
+  66% {
+    transform: rotate(-28deg);
+  }
+  74% {
+    transform: rotate(14deg);
+  }
+  82% {
+    transform: rotate(-22deg);
+  }
+  90% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes sfAiLedPulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes sfAiChestLedA {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes sfAiChestLedB {
+  0%, 49% {
+    opacity: 0.3;
+  }
+  50%, 100% {
+    opacity: 1;
+  }
+}
+
+@keyframes sfAiJumpOnce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-18px) scale(1.03);
+  }
+  70% {
+    transform: translateY(2px) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sf-ai-float {
+  animation: sfAiFloat 3.8s ease-in-out infinite;
+}
+
+.sf-ai-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sfAiShadowPulse 3.8s ease-in-out infinite;
+}
+
+.sf-ai-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sfAiBlink 4.4s ease-in-out infinite;
+}
+
+.sf-ai-right-arm {
+  transform-box: fill-box;
+  transform-origin: 18% 20%;
+  animation: sfAiWave 5.2s ease-in-out infinite;
+}
+
+.sf-ai-antenna-led {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sfAiLedPulse 1.8s ease-in-out infinite;
+}
+
+.sf-ai-chest-led-a {
+  animation: sfAiChestLedA 1.4s steps(1, end) infinite;
+}
+
+.sf-ai-chest-led-b {
+  animation: sfAiChestLedB 1.4s steps(1, end) infinite;
+}
+
+.sf-ai-robot-hover.is-jumping {
+  animation: sfAiJumpOnce 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-ai-float,
+  .sf-ai-shadow,
+  .sf-ai-eye,
+  .sf-ai-right-arm,
+  .sf-ai-antenna-led,
+  .sf-ai-chest-led-a,
+  .sf-ai-chest-led-b,
+  .sf-ai-robot-hover.is-jumping {
+    animation: none !important;
+  }
+}
