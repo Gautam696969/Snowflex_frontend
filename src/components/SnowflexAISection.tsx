@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './SnowflexAISection.css'
+
+const SnowflexChatDemo = lazy(() => import('./SnowflexChatDemo'))
 
 interface SnowflexAISectionProps {
   isLoggedIn?: boolean
@@ -37,11 +38,14 @@ const AI_FEATURES = [
   },
 ]
 
-export default function SnowflexAISection({ isLoggedIn = false }: SnowflexAISectionProps) {
+export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: SnowflexAISectionProps) {
   const [msgIndex, setMsgIndex] = useState(0)
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 })
   const [isJumping, setIsJumping] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [hasOpenedChat, setHasOpenedChat] = useState(false)
   const robotWrapRef = useRef<HTMLDivElement>(null)
+  const ctaBtnRef = useRef<HTMLButtonElement>(null)
   const jumpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -301,14 +305,30 @@ export default function SnowflexAISection({ isLoggedIn = false }: SnowflexAISect
             ))}
           </div>
 
-          <Link
-            to={isLoggedIn ? '/dashboard?view=assistant' : '/register'}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#193c33] hover:bg-[#235246] dark:bg-[#10b981] dark:hover:bg-[#34d399] text-[#d9ed74] dark:text-[#08150e] text-sm font-extrabold no-underline shadow-lg shadow-[#193c33]/15 transition-all duration-200 hover:-translate-y-0.5"
+          <button
+            ref={ctaBtnRef}
+            type="button"
+            onClick={() => {
+              triggerJump()
+              setHasOpenedChat(true)
+              setChatOpen(true)
+            }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#193c33] hover:bg-[#235246] dark:bg-[#10b981] dark:hover:bg-[#34d399] text-[#d9ed74] dark:text-[#08150e] text-sm font-extrabold border-0 cursor-pointer shadow-lg shadow-[#193c33]/15 transition-all duration-200 hover:-translate-y-0.5"
           >
             <span>Try Snowflex AI →</span>
-          </Link>
+          </button>
         </div>
       </div>
+
+      {hasOpenedChat && (
+        <Suspense fallback={null}>
+          <SnowflexChatDemo
+            isOpen={chatOpen}
+            onClose={() => setChatOpen(false)}
+            returnFocusTo={ctaBtnRef}
+          />
+        </Suspense>
+      )}
     </section>
   )
 }
