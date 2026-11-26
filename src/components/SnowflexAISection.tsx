@@ -314,7 +314,7 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
               setHasOpenedChat(true)
               setChatOpen(true)
             }}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#193c33] hover:bg-[#235246] dark:bg-[#10b981] dark:hover:bg-[#34d399] text-[#d9ed74] dark:text-[#08150e] text-sm font-extrabold border-0 cursor-pointer shadow-lg shadow-[#193c33]/15 transition-all duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-sm font-extrabold border-0 cursor-pointer shadow-lg shadow-[#10b981]/20 dark:shadow-[#193c33]/15 transition-all duration-200 hover:-translate-y-0.5"
           >
             <span>Try Snowflex AI →</span>
           </button>

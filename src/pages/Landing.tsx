@@ -115,7 +115,7 @@ export default function Landing() {
       >
         <div className="max-w-[1160px] mx-auto px-4 sm:px-6 h-[68px] flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 no-underline text-inherit group">
-            <span className="w-9 h-9 rounded-xl bg-[#193c33] text-[#d9ed74] grid place-items-center shadow-md transition-transform duration-200 group-hover:scale-105">
+            <span className="w-9 h-9 rounded-xl bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] grid place-items-center shadow-md transition-transform duration-200 group-hover:scale-105">
               <Snowflake size={20} strokeWidth={2.3} />
             </span>
             <div className="flex flex-col leading-none">
@@ -152,7 +152,7 @@ export default function Landing() {
             {isLoggedIn ? (
               <Link
                 to="/dashboard"
-                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#193c33] hover:bg-[#235246] text-[#d9ed74] text-xs sm:text-sm font-bold no-underline shadow-sm transition-all hover:-translate-y-0.5"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-xs sm:text-sm font-bold no-underline shadow-sm transition-all hover:-translate-y-0.5"
               >
                 <span>Open Dashboard</span>
                 <ArrowRight size={15} />
@@ -167,7 +167,7 @@ export default function Landing() {
                 </Link>
                 <Link
                   to="/register"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#193c33] hover:bg-[#235246] text-[#d9ed74] text-xs sm:text-sm font-bold no-underline shadow-sm transition-all hover:-translate-y-0.5"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-xs sm:text-sm font-bold no-underline shadow-sm transition-all hover:-translate-y-0.5"
                 >
                   <span>Get Started</span>
                   <ArrowRight size={15} />
@@ -208,7 +208,7 @@ export default function Landing() {
                 <Link
                   to="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center py-2.5 rounded-xl bg-[#193c33] text-[#d9ed74] text-sm font-bold no-underline"
+                  className="flex-1 text-center py-2.5 rounded-xl bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] text-sm font-bold no-underline"
                 >
                   Open Dashboard
                 </Link>
@@ -224,7 +224,7 @@ export default function Landing() {
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 text-center py-2.5 rounded-xl bg-[#193c33] text-[#d9ed74] text-sm font-bold no-underline"
+                    className="flex-1 text-center py-2.5 rounded-xl bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] text-sm font-bold no-underline"
                   >
                     Get Started
                   </Link>
@@ -259,7 +259,7 @@ export default function Landing() {
             <div className="snow-animate-fade-up snow-animate-delay-3 flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <Link
                 to={isLoggedIn ? '/dashboard' : '/register'}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#193c33] hover:bg-[#235246] text-[#d9ed74] text-sm font-bold no-underline shadow-lg shadow-[#193c33]/15 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-sm font-bold no-underline shadow-lg shadow-[#10b981]/20 dark:shadow-[#193c33]/15 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
               >
                 <span>{isLoggedIn ? 'Go to Workspace' : 'Start Free Workspace'}</span>
                 <ArrowRight size={16} />
@@ -312,7 +312,7 @@ export default function Landing() {
                       onClick={() => setActiveTab(t.id)}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-bold border-0 cursor-pointer transition-all ${
                         activeTab === t.id
-                          ? 'bg-[#193c33] text-[#d9ed74] shadow-sm'
+                          ? 'bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] shadow-sm'
                           : 'bg-transparent text-[#586e60] dark:text-[#96a99d] hover:text-[#193c33] dark:hover:text-white'
                       }`}
                     >
@@ -326,12 +326,14 @@ export default function Landing() {
               <div className="p-5 sm:p-6 min-h-[280px] flex flex-col justify-center">
                 {activeTab === 'attendance' && (
                   <div className="flex flex-col sm:flex-row items-center gap-5">
-                    <div className="relative w-36 h-44 rounded-2xl bg-[#0d1611] border-2 border-[#10b981]/50 overflow-hidden flex items-center justify-center shrink-0">
-                      <div className="w-20 h-24 rounded-[50%] border-2 border-dashed border-[#34d399]/80 flex items-center justify-center text-3xl">
-                        👤
+                    <div className="relative w-36 h-44 rounded-2xl bg-[#eef7f1] dark:bg-[#0d1611] border-2 border-[#10b981]/45 dark:border-[#10b981]/50 overflow-hidden flex items-center justify-center shrink-0">
+                      <div className="w-20 h-24 rounded-[50%] border-2 border-dashed border-[#10b981]/80 dark:border-[#34d399]/80 bg-white/60 dark:bg-transparent flex items-center justify-center text-[#193c33] dark:text-[#34d399]">
+                        <svg viewBox="0 0 24 24" className="w-9 h-9" fill="currentColor" aria-hidden="true">
+                          <path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.08 0-7.5 2.02-7.5 4.5V20a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-1.25c0-2.48-3.42-4.5-7.5-4.5Z" />
+                        </svg>
                       </div>
-                      <div className="snow-animate-scan absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#34d399] to-transparent" />
-                      <span className="absolute bottom-2 px-2 py-0.5 rounded-full bg-black/75 text-[#34d399] font-mono text-[9.5px] font-bold">
+                      <div className="snow-animate-scan absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#10b981] dark:via-[#34d399] to-transparent" />
+                      <span className="absolute bottom-2 px-2 py-0.5 rounded-full bg-white/95 dark:bg-black/75 text-[#059669] dark:text-[#34d399] border border-[#10b981]/30 dark:border-transparent font-mono text-[9.5px] font-bold shadow-sm">
                         VERIFIED • 09:00 AM
                       </span>
                     </div>
@@ -361,7 +363,7 @@ export default function Landing() {
                     </div>
                     <div className="p-3.5 rounded-xl bg-[#f4f8f2] dark:bg-[#18251e] border border-[#dce6d8] dark:border-[#293e31] flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-[#193c33] text-[#d9ed74] grid place-items-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] grid place-items-center shrink-0">
                           <Video size={17} />
                         </div>
                         <div className="min-w-0">
@@ -371,7 +373,7 @@ export default function Landing() {
                           </div>
                         </div>
                       </div>
-                      <span className="px-3 py-1.5 rounded-lg bg-[#193c33] text-[#d9ed74] text-[11px] font-bold shrink-0">
+                      <span className="px-3 py-1.5 rounded-lg bg-[#10b981] dark:bg-[#193c33] text-white dark:text-[#d9ed74] text-[11px] font-bold shrink-0">
                         Join Now
                       </span>
                     </div>
@@ -391,7 +393,7 @@ export default function Landing() {
 
                 {activeTab === 'ai' && (
                   <div className="flex flex-col gap-3">
-                    <div className="self-end max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-[#193c33] text-white text-xs font-medium">
+                    <div className="self-end max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-[#10b981] dark:bg-[#193c33] text-white text-xs font-medium">
                       &ldquo;How many casual leaves do I have left this quarter?&rdquo;
                     </div>
                     <div className="self-start max-w-[92%] p-3.5 rounded-2xl rounded-bl-sm bg-[#f2f7ef] dark:bg-[#18261e] border border-[#dce6d8] dark:border-[#293e31] text-xs flex flex-col gap-1.5">
@@ -488,7 +490,7 @@ export default function Landing() {
           <div className="flex flex-wrap justify-center gap-3">
             <Link
               to={isLoggedIn ? '/dashboard' : '/register'}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#193c33] hover:bg-[#235246] text-[#d9ed74] text-sm font-bold no-underline shadow-md transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-sm font-bold no-underline shadow-md transition-all hover:-translate-y-0.5"
             >
               <span>{isLoggedIn ? 'Open Dashboard' : 'Create Account'}</span>
               <ArrowRight size={16} />
