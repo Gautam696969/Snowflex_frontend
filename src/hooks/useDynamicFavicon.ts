@@ -69,101 +69,168 @@ function buildFullBodyRobotFrames(): string[] {
   const ctx = canvas.getContext('2d')
   if (!ctx) return ['/favicon-blue.svg']
 
-  // 4 lively frames: bounce + arm wave + eye blink + leg step
-  const configs = [
-    { bobY: 0, waveDeg: -38, leftArmDeg: 14, leftLegLift: 0, rightLegLift: 0, blink: false, glow: false },
-    { bobY: -2, waveDeg: -62, leftArmDeg: 22, leftLegLift: 3, rightLegLift: 0, blink: false, glow: true },
-    { bobY: 0, waveDeg: -32, leftArmDeg: 10, leftLegLift: 0, rightLegLift: 0, blink: true, glow: false },
-    { bobY: -1.5, waveDeg: -56, leftArmDeg: 20, leftLegLift: 0, rightLegLift: 3, blink: false, glow: true },
+  type EyeMode = 'open' | 'happy' | 'blink' | 'spark'
+  interface FrameCfg {
+    bobY: number
+    tiltDeg: number
+    leftArmAngle: number
+    rightArmAngle: number
+    leftLegKick: number
+    rightLegKick: number
+    jetFlame: boolean
+    eyeMode: EyeMode
+    ringColor: string
+    ringRadius: number
+    sparkle: boolean
+  }
+
+  // 8-frame choreographed dance: jump + tilt + double-arm wave + leg kicks + jetpack flames + sparkles
+  // Note: left arm mirrors right arm across X, so positive leftArmAngle raises it up and negative lowers it.
+  const configs: FrameCfg[] = [
+    { bobY: 1, tiltDeg: -7, leftArmAngle: 50, rightArmAngle: 20, leftLegKick: 4, rightLegKick: 0, jetFlame: false, eyeMode: 'open', ringColor: 'rgba(16, 185, 129, 0.24)', ringRadius: 27, sparkle: false },
+    { bobY: -3.5, tiltDeg: 0, leftArmAngle: 65, rightArmAngle: -65, leftLegKick: 2, rightLegKick: 2, jetFlame: true, eyeMode: 'happy', ringColor: 'rgba(127, 231, 255, 0.34)', ringRadius: 30, sparkle: true },
+    { bobY: 1, tiltDeg: 7, leftArmAngle: -20, rightArmAngle: -55, leftLegKick: 0, rightLegKick: 4, jetFlame: false, eyeMode: 'open', ringColor: 'rgba(16, 185, 129, 0.24)', ringRadius: 27, sparkle: false },
+    { bobY: -3, tiltDeg: 4, leftArmAngle: 25, rightArmAngle: -75, leftLegKick: 3, rightLegKick: 0, jetFlame: true, eyeMode: 'spark', ringColor: 'rgba(255, 210, 63, 0.32)', ringRadius: 30, sparkle: true },
+    { bobY: 1.5, tiltDeg: 0, leftArmAngle: -15, rightArmAngle: 15, leftLegKick: 0, rightLegKick: 0, jetFlame: false, eyeMode: 'blink', ringColor: 'rgba(16, 185, 129, 0.2)', ringRadius: 26, sparkle: false },
+    { bobY: -4, tiltDeg: -6, leftArmAngle: 75, rightArmAngle: -25, leftLegKick: 0, rightLegKick: 3, jetFlame: true, eyeMode: 'happy', ringColor: 'rgba(127, 231, 255, 0.34)', ringRadius: 30, sparkle: true },
+    { bobY: 0.5, tiltDeg: 5, leftArmAngle: 40, rightArmAngle: -60, leftLegKick: 4, rightLegKick: 0, jetFlame: false, eyeMode: 'open', ringColor: 'rgba(16, 185, 129, 0.28)', ringRadius: 28, sparkle: false },
+    { bobY: -2, tiltDeg: -3, leftArmAngle: 60, rightArmAngle: -60, leftLegKick: 1, rightLegKick: 1, jetFlame: true, eyeMode: 'spark', ringColor: 'rgba(217, 237, 116, 0.34)', ringRadius: 29, sparkle: true },
   ]
 
   return configs.map((cfg, idx) => {
     ctx.clearRect(0, 0, size, size)
+
+    // Subtle pulsing neon halo behind the robot so tab motion pops even at 16x16
+    ctx.fillStyle = cfg.ringColor
+    ctx.beginPath()
+    ctx.arc(32, 32, cfg.ringRadius, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Sparkle bursts on celebration frames
+    if (cfg.sparkle) {
+      const drawStar = (sx: number, sy: number, r: number, color: string) => {
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.moveTo(sx, sy - r)
+        ctx.lineTo(sx + r * 0.32, sy - r * 0.32)
+        ctx.lineTo(sx + r, sy)
+        ctx.lineTo(sx + r * 0.32, sy + r * 0.32)
+        ctx.lineTo(sx, sy + r)
+        ctx.lineTo(sx - r * 0.32, sy + r * 0.32)
+        ctx.lineTo(sx - r, sy)
+        ctx.lineTo(sx - r * 0.32, sy - r * 0.32)
+        ctx.closePath()
+        ctx.fill()
+      }
+      drawStar(9, 12, 4.5, '#ffd23f')
+      drawStar(55, 13, 4.2, '#7fe7ff')
+    }
+
     ctx.save()
-    ctx.translate(0, cfg.bobY)
+    ctx.translate(32, 34 + cfg.bobY)
+    ctx.rotate((cfg.tiltDeg * Math.PI) / 180)
+    ctx.translate(-32, -34)
 
     // Antenna stem + pulsing LED
     ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 3.5
+    ctx.lineWidth = 3.6
     ctx.lineCap = 'round'
     ctx.beginPath()
     ctx.moveTo(32, 13)
     ctx.lineTo(32, 6.5)
     ctx.stroke()
 
-    if (cfg.glow) {
-      ctx.fillStyle = 'rgba(255, 210, 63, 0.38)'
+    if (cfg.sparkle) {
+      ctx.fillStyle = 'rgba(255, 210, 63, 0.45)'
       ctx.beginPath()
-      ctx.arc(32, 5.5, 6.2, 0, Math.PI * 2)
+      ctx.arc(32, 5.5, 6.5, 0, Math.PI * 2)
       ctx.fill()
     }
-    ctx.fillStyle = cfg.glow ? '#fff07c' : '#ffd23f'
+    ctx.fillStyle = cfg.sparkle ? '#fff07c' : '#ffd23f'
     ctx.strokeStyle = '#143229'
     ctx.lineWidth = 1.6
     ctx.beginPath()
-    ctx.arc(32, 5.5, 3.6, 0, Math.PI * 2)
+    ctx.arc(32, 5.5, 3.8, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
 
-    // Left Arm (pivots from shoulder)
+    // Left Arm (animated cheer/wave)
     ctx.save()
     ctx.translate(18.5, 32)
-    ctx.rotate((cfg.leftArmDeg * Math.PI) / 180)
+    ctx.rotate((cfg.leftArmAngle * Math.PI) / 180)
     ctx.strokeStyle = '#10b981'
     ctx.lineWidth = 5.5
     ctx.lineCap = 'round'
     ctx.beginPath()
     ctx.moveTo(0, 0)
-    ctx.lineTo(-5, 11)
+    ctx.lineTo(-10, 4)
     ctx.stroke()
     ctx.fillStyle = '#d9ed74'
     ctx.strokeStyle = '#143229'
     ctx.lineWidth = 1.5
     ctx.beginPath()
-    ctx.arc(-5.5, 12.5, 3.2, 0, Math.PI * 2)
+    ctx.arc(-11.5, 4.5, 3.4, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
     ctx.restore()
 
-    // Right Arm (waves up high!)
+    // Right Arm (animated cheer/wave)
     ctx.save()
     ctx.translate(45.5, 32)
-    ctx.rotate((cfg.waveDeg * Math.PI) / 180)
+    ctx.rotate((cfg.rightArmAngle * Math.PI) / 180)
     ctx.strokeStyle = '#10b981'
     ctx.lineWidth = 5.5
     ctx.lineCap = 'round'
     ctx.beginPath()
     ctx.moveTo(0, 0)
-    ctx.lineTo(10, -5)
+    ctx.lineTo(10, 4)
     ctx.stroke()
     ctx.fillStyle = '#d9ed74'
     ctx.strokeStyle = '#143229'
     ctx.lineWidth = 1.5
     ctx.beginPath()
-    ctx.arc(11.5, -6, 3.4, 0, Math.PI * 2)
+    ctx.arc(11.5, 4.5, 3.4, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
     ctx.restore()
 
-    // Left & Right Legs + Boots
-    const drawLeg = (x: number, lift: number) => {
-      const legY = 44 - lift
-      drawRoundedRect(ctx, x, legY, 6.5, 10.5, 2.5)
+    // Left & Right Legs + Boots + Optional Rocket Jetpack Thrusters
+    const drawLeg = (x: number, kick: number) => {
+      const legY = 44 - kick
+      if (cfg.jetFlame) {
+        ctx.fillStyle = '#f97316'
+        ctx.beginPath()
+        ctx.moveTo(x + 0.5, legY + 13)
+        ctx.lineTo(x + 6, legY + 13)
+        ctx.lineTo(x + 3.2, legY + 20)
+        ctx.closePath()
+        ctx.fill()
+
+        ctx.fillStyle = '#fde047'
+        ctx.beginPath()
+        ctx.moveTo(x + 1.5, legY + 13)
+        ctx.lineTo(x + 5, legY + 13)
+        ctx.lineTo(x + 3.2, legY + 17.5)
+        ctx.closePath()
+        ctx.fill()
+      }
+
+      drawRoundedRect(ctx, x, legY, 6.5, 10, 2.5)
       ctx.fillStyle = '#193c33'
       ctx.fill()
       ctx.strokeStyle = '#10b981'
       ctx.lineWidth = 2
       ctx.stroke()
 
-      drawRoundedRect(ctx, x - 1.5, legY + 9, 9.5, 4.5, 2.2)
+      drawRoundedRect(ctx, x - 1.5, legY + 8.5, 9.5, 4.5, 2.2)
       ctx.fillStyle = '#d9ed74'
       ctx.fill()
       ctx.strokeStyle = '#143229'
       ctx.lineWidth = 1.4
       ctx.stroke()
     }
-    drawLeg(21.5, cfg.leftLegLift)
-    drawLeg(36, cfg.rightLegLift)
+    drawLeg(21.5, cfg.leftLegKick)
+    drawLeg(36, cfg.rightLegKick)
 
     // Ears
     drawRoundedRect(ctx, 13, 17, 4, 8, 2)
@@ -185,12 +252,28 @@ function buildFullBodyRobotFrames(): string[] {
     ctx.fillStyle = '#07110d'
     ctx.fill()
 
-    // Cyan Eyes (open or blink)
+    // Expressive Eyes
     ctx.fillStyle = '#7fe7ff'
-    if (cfg.blink) {
+    ctx.strokeStyle = '#7fe7ff'
+    ctx.lineCap = 'round'
+    if (cfg.eyeMode === 'blink') {
       drawRoundedRect(ctx, 23, 19.5, 6, 2.2, 1.1)
       ctx.fill()
       drawRoundedRect(ctx, 35, 19.5, 6, 2.2, 1.1)
+      ctx.fill()
+    } else if (cfg.eyeMode === 'happy') {
+      ctx.lineWidth = 2.6
+      ctx.beginPath()
+      ctx.arc(26, 21.5, 3, Math.PI, 0)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(38, 21.5, 3, Math.PI, 0)
+      ctx.stroke()
+    } else if (cfg.eyeMode === 'spark') {
+      ctx.fillStyle = '#ffd23f'
+      drawRoundedRect(ctx, 23.2, 17.2, 5.4, 6, 2.5)
+      ctx.fill()
+      drawRoundedRect(ctx, 35.4, 17.2, 5.4, 6, 2.5)
       ctx.fill()
     } else {
       drawRoundedRect(ctx, 23.5, 17.5, 5, 5.8, 2.4)
@@ -201,32 +284,31 @@ function buildFullBodyRobotFrames(): string[] {
 
     // Smile
     ctx.strokeStyle = '#7fe7ff'
-    ctx.lineWidth = 1.8
-    ctx.lineCap = 'round'
+    ctx.lineWidth = 1.9
     ctx.beginPath()
     ctx.moveTo(27, 24.8)
-    ctx.quadraticCurveTo(32, 27.5, 37, 24.8)
+    ctx.quadraticCurveTo(32, 27.6, 37, 24.8)
     ctx.stroke()
 
     // Body Torso + Chest Panel
-    drawRoundedRect(ctx, 18.5, 30.5, 27, 15, 5.5)
+    drawRoundedRect(ctx, 18.5, 30.5, 27, 14.5, 5.5)
     ctx.fillStyle = '#193c33'
     ctx.fill()
     ctx.strokeStyle = '#10b981'
     ctx.lineWidth = 2.6
     ctx.stroke()
 
-    drawRoundedRect(ctx, 23.5, 34, 17, 8, 3)
+    drawRoundedRect(ctx, 23.5, 33.8, 17, 7.8, 3)
     ctx.fillStyle = '#07110d'
     ctx.fill()
 
     ctx.fillStyle = idx % 2 === 0 ? '#7fe7ff' : '#ffd23f'
     ctx.beginPath()
-    ctx.arc(28.5, 38, 2.1, 0, Math.PI * 2)
+    ctx.arc(28.5, 37.7, 2.2, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = '#10b981'
-    drawRoundedRect(ctx, 33, 36.7, 5, 2.6, 1.3)
+    drawRoundedRect(ctx, 33, 36.4, 5, 2.6, 1.3)
     ctx.fill()
 
     ctx.restore()
@@ -275,7 +357,7 @@ export function useDynamicFavicon() {
     const interval = window.setInterval(() => {
       frameIndex = (frameIndex + 1) % frames.length
       updateFavicon(frames[frameIndex], 'image/png')
-    }, 450)
+    }, 280)
 
     return () => {
       window.clearInterval(interval)
