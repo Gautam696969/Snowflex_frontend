@@ -450,12 +450,12 @@ export default function Landing() {
 
         {/* 4. Simple 3-Step Workflow */}
         <section id="workflow" className="max-w-[1160px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="rounded-3xl bg-[#193c33] dark:bg-[#12221a] border border-[#254d40] p-7 sm:p-10 text-white">
+          <div className="rounded-3xl bg-white dark:bg-[#12221a] border border-[#dce5d9] dark:border-[#254d40] p-7 sm:p-10 text-[#14241d] dark:text-white shadow-sm dark:shadow-none">
             <div className="text-center mb-8">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-[0.12em] text-[#d9ed74]">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-[0.12em] text-[#10b981] dark:text-[#d9ed74]">
                 HOW IT WORKS
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold mt-1 mb-0">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#14241d] dark:text-white mt-1 mb-0">
                 Up and running in 3 simple steps
               </h2>
             </div>
@@ -464,13 +464,13 @@ export default function Landing() {
               {steps.map((s) => (
                 <div
                   key={s.num}
-                  className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                  className="p-5 rounded-2xl bg-[#f7faf5] dark:bg-white/5 border border-[#dce5d9] dark:border-white/10 hover:bg-[#eef5ea] dark:hover:bg-white/10 transition-colors"
                 >
-                  <span className="inline-block font-mono text-xs font-black text-[#d9ed74] mb-2">
+                  <span className="inline-block font-mono text-xs font-black text-[#10b981] dark:text-[#d9ed74] mb-2">
                     STEP {s.num}
                   </span>
-                  <h3 className="text-base font-bold text-white m-0 mb-1.5">{s.title}</h3>
-                  <p className="text-xs text-white/75 m-0 leading-relaxed">{s.desc}</p>
+                  <h3 className="text-base font-bold text-[#14241d] dark:text-white m-0 mb-1.5">{s.title}</h3>
+                  <p className="text-xs text-[#54695c] dark:text-white/75 m-0 leading-relaxed">{s.desc}</p>
                 </div>
               ))}
             </div>

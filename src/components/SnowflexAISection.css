@@ -1,3 +1,19 @@
+.sf-ai-section {
+  --bot-body-start: #ffffff;
+  --bot-body-end: #e3f1e8;
+  --bot-limb: #cfe5d8;
+  --bot-leg: #e3f1e8;
+  --bot-stroke: #193c33;
+}
+
+:where([data-theme=dark], .dark) .sf-ai-section {
+  --bot-body-start: #1f4d41;
+  --bot-body-end: #122b24;
+  --bot-limb: #193c33;
+  --bot-leg: #16352d;
+  --bot-stroke: #193c33;
+}
+
 @keyframes sfAiFloat {
   0%, 100% {
     transform: translateY(0px);

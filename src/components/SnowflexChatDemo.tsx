@@ -361,10 +361,10 @@ export default function SnowflexChatDemo({
         }`}
       >
         {/* Header */}
-        <header className="flex items-center justify-between gap-2 px-4 py-3 bg-[#193c33] text-white shrink-0">
+        <header className="flex items-center justify-between gap-2 px-4 py-3 bg-[#eef5eb] dark:bg-[#14261f] text-[#14241d] dark:text-white border-b border-[#dce5d9] dark:border-[#24382c] shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Small Robot SVG Avatar */}
-            <div className="w-9 h-9 rounded-xl bg-[#0e241e] border border-[#10b981]/50 grid place-items-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#0e241e] border border-[#10b981]/50 grid place-items-center shrink-0">
               <svg viewBox="0 0 32 32" className="w-6 h-6" fill="none" aria-hidden="true">
                 <line x1="16" y1="6" x2="16" y2="3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
                 <circle cx="16" cy="2.5" r="2" fill="#ffd23f" />
@@ -376,8 +376,8 @@ export default function SnowflexChatDemo({
               </svg>
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold leading-tight truncate">Snowflex AI</div>
-              <div className="flex items-center gap-1.5 text-[11px] text-[#a7f3d0]">
+              <div className="text-sm font-bold leading-tight truncate text-[#14241d] dark:text-white">Snowflex AI</div>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#059669] dark:text-[#a7f3d0]">
                 <span className="w-2 h-2 rounded-full bg-[#10b981]" />
                 <span>Online • Demo</span>
               </div>
@@ -388,7 +388,7 @@ export default function SnowflexChatDemo({
             <button
               type="button"
               onClick={handleResetChat}
-              className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-semibold text-white/90 border-0 cursor-pointer inline-flex items-center gap-1"
+              className="px-2 py-1 rounded-lg bg-[#ddebd8] hover:bg-[#cfe3c8] dark:bg-white/10 dark:hover:bg-white/20 text-[11px] font-semibold text-[#193c33] dark:text-white/90 border-0 cursor-pointer inline-flex items-center gap-1"
               title="Reset chat"
             >
               <RotateCcw size={12} />
@@ -397,7 +397,7 @@ export default function SnowflexChatDemo({
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-transparent hover:bg-white/15 text-white border-0 grid place-items-center cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-transparent hover:bg-[#ddebd8] dark:hover:bg-white/15 text-[#193c33] dark:text-white border-0 grid place-items-center cursor-pointer"
               aria-label="Close chat"
               title="Close (Esc)"
             >
@@ -420,7 +420,7 @@ export default function SnowflexChatDemo({
                 <div
                   className={`max-w-[84%] px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed whitespace-pre-wrap break-words shadow-sm ${
                     isUser
-                      ? 'bg-[#193c33] text-white rounded-br-sm'
+                      ? 'bg-[#10b981] dark:bg-[#193c33] text-white rounded-br-sm'
                       : 'bg-white dark:bg-[#16221b] text-[#193c33] dark:text-[#e6efe8] border border-[#dce5d9] dark:border-[#24382c] rounded-bl-sm'
                   }`}
                 >

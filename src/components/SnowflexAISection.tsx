@@ -98,7 +98,7 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
   return (
     <section
       id="snowflex-ai"
-      className="min-h-screen flex items-center max-w-[1160px] mx-auto px-4 sm:px-6 py-16 sm:py-20 border-t border-[#e4ece0] dark:border-[#1c2c22]"
+      className="sf-ai-section min-h-screen flex items-center bg-[#f7f8f4] dark:bg-[#0c130f] max-w-[1160px] mx-auto px-4 sm:px-6 py-16 sm:py-20 border-t border-[#e4ece0] dark:border-[#1c2c22]"
     >
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
         {/* LEFT SIDE (~45%): Big Animated Robot + Soft Glowing Circle */}
@@ -120,10 +120,10 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
               key={msgIndex}
               role="status"
               aria-live="polite"
-              className="mb-3 px-4 py-2 rounded-2xl bg-[#193c33] dark:bg-[#162a22] text-[#d9ed74] text-xs sm:text-sm font-bold shadow-lg border border-[#2a5c4d] relative transition-all duration-300"
+              className="mb-3 px-4 py-2 rounded-2xl bg-white dark:bg-[#162a22] text-[#193c33] dark:text-[#d9ed74] text-xs sm:text-sm font-bold shadow-lg border border-[#cfe0ca] dark:border-[#2a5c4d] relative transition-all duration-300"
             >
               <span>{SPEECH_MESSAGES[msgIndex]}</span>
-              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-[#193c33] dark:bg-[#162a22] border-r border-b border-[#2a5c4d]" />
+              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white dark:bg-[#162a22] border-r border-b border-[#cfe0ca] dark:border-[#2a5c4d]" />
             </div>
 
             {/* Robot Wrapper (320px mobile, 440px desktop) */}
@@ -138,15 +138,15 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
               >
                 <defs>
                   <linearGradient id="sfBotBody" x1="90" y1="60" x2="270" y2="330" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#1f4d41" />
-                    <stop offset="100%" stopColor="#122b24" />
+                    <stop offset="0%" style={{ stopColor: 'var(--bot-body-start)' }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--bot-body-end)' }} />
                   </linearGradient>
                   <linearGradient id="sfBotTrim" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#10b981" />
                     <stop offset="100%" stopColor="#7fe7ff" />
                   </linearGradient>
                   <radialGradient id="sfBotFloorShadow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#081410" stopOpacity="0.45" />
+                    <stop offset="0%" stopColor="#081410" stopOpacity="0.35" />
                     <stop offset="100%" stopColor="#081410" stopOpacity="0" />
                   </radialGradient>
                 </defs>
@@ -165,17 +165,17 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
                 <g className="sf-ai-float">
                   {/* Antenna */}
                   <line x1="180" y1="68" x2="180" y2="36" stroke="url(#sfBotTrim)" strokeWidth="6" strokeLinecap="round" />
-                  <circle cx="180" cy="28" r="11" fill="#ffd23f" stroke="#193c33" strokeWidth="2.5" className="sf-ai-antenna-led" />
+                  <circle cx="180" cy="28" r="11" fill="#ffd23f" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="2.5" className="sf-ai-antenna-led" />
 
                   {/* Side Ears */}
-                  <rect x="74" y="106" width="18" height="44" rx="9" fill="#10b981" stroke="#193c33" strokeWidth="3" />
-                  <rect x="268" y="106" width="18" height="44" rx="9" fill="#10b981" stroke="#193c33" strokeWidth="3" />
+                  <rect x="74" y="106" width="18" height="44" rx="9" fill="#10b981" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="3" />
+                  <rect x="268" y="106" width="18" height="44" rx="9" fill="#10b981" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="3" />
 
                   {/* Left Arm */}
                   <g>
                     <path
                       d="M98 202 C66 212, 54 244, 66 270"
-                      stroke="#193c33"
+                      style={{ stroke: 'var(--bot-limb)' }}
                       strokeWidth="16"
                       strokeLinecap="round"
                     />
@@ -185,14 +185,14 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
                       strokeWidth="5"
                       strokeLinecap="round"
                     />
-                    <circle cx="67" cy="276" r="11" fill="#d9ed74" stroke="#193c33" strokeWidth="3" />
+                    <circle cx="67" cy="276" r="11" fill="#d9ed74" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="3" />
                   </g>
 
                   {/* Right Arm (waves periodically) */}
                   <g className="sf-ai-right-arm">
                     <path
                       d="M262 202 C294 186, 310 152, 298 124"
-                      stroke="#193c33"
+                      style={{ stroke: 'var(--bot-limb)' }}
                       strokeWidth="16"
                       strokeLinecap="round"
                     />
@@ -202,14 +202,14 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
                       strokeWidth="5"
                       strokeLinecap="round"
                     />
-                    <circle cx="297" cy="117" r="11" fill="#d9ed74" stroke="#193c33" strokeWidth="3" />
+                    <circle cx="297" cy="117" r="11" fill="#d9ed74" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="3" />
                   </g>
 
                   {/* Legs */}
-                  <rect x="132" y="294" width="24" height="42" rx="10" fill="#16352d" stroke="#10b981" strokeWidth="3" />
-                  <rect x="204" y="294" width="24" height="42" rx="10" fill="#16352d" stroke="#10b981" strokeWidth="3" />
-                  <rect x="124" y="330" width="38" height="16" rx="8" fill="#10b981" stroke="#193c33" strokeWidth="2.5" />
-                  <rect x="198" y="330" width="38" height="16" rx="8" fill="#10b981" stroke="#193c33" strokeWidth="2.5" />
+                  <rect x="132" y="294" width="24" height="42" rx="10" style={{ fill: 'var(--bot-leg)' }} stroke="#10b981" strokeWidth="3" />
+                  <rect x="204" y="294" width="24" height="42" rx="10" style={{ fill: 'var(--bot-leg)' }} stroke="#10b981" strokeWidth="3" />
+                  <rect x="124" y="330" width="38" height="16" rx="8" fill="#10b981" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="2.5" />
+                  <rect x="198" y="330" width="38" height="16" rx="8" fill="#10b981" style={{ stroke: 'var(--bot-stroke)' }} strokeWidth="2.5" />
 
                   {/* Neck */}
                   <rect x="162" y="168" width="36" height="18" rx="6" fill="#10b981" />
