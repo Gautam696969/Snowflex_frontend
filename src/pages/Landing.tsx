@@ -104,14 +104,18 @@ export default function Landing() {
     const originalHref = favicon.getAttribute('href') || '/favicon-blue.svg'
 
     const makeRobotIcon = (frame: 0 | 1 | 2 | 3) => {
-      const yShift = frame === 1 ? -1 : frame === 3 ? 1 : 0
+      const yShift = frame === 1 ? -0.8 : frame === 3 ? 0.6 : 0
       const ledColor = frame === 1 || frame === 3 ? '#fff07c' : '#ffd23f'
-      const ledRadius = frame === 1 ? '3.4' : '2.5'
-      const eyeH = frame === 2 ? '1.6' : '4.5'
-      const eyeY = frame === 2 ? '16.5' : '15'
-      const smile = frame === 3 ? 'M12 22 Q16 25 20 22' : 'M12.5 22 Q16 24.2 19.5 22'
+      const ledRadius = frame === 1 ? '2.4' : '1.9'
+      const eyeH = frame === 2 ? '1.3' : '3'
+      const eyeY = frame === 2 ? '10' : '9'
+      const rightArmPath =
+        frame === 1 || frame === 3 ? 'M23.5 18 Q27.5 15 28.5 11.5' : 'M23.5 18 Q27 17 27.5 13.5'
+      const handX = frame === 1 || frame === 3 ? '28.5' : '27.5'
+      const handY = frame === 1 || frame === 3 ? '11.2' : '13.2'
+      const chestColor = frame % 2 === 0 ? '#7fe7ff' : '#ffd23f'
 
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><g transform="translate(0,${yShift})"><line x1="16" y1="8" x2="16" y2="4" stroke="#10b981" stroke-width="2.4" stroke-linecap="round"/><circle cx="16" cy="3.5" r="${ledRadius}" fill="${ledColor}"/><rect x="3" y="13" width="3" height="8" rx="1.5" fill="#10b981"/><rect x="26" y="13" width="3" height="8" rx="1.5" fill="#10b981"/><rect x="5" y="8" width="22" height="19" rx="7" fill="#193c33" stroke="#10b981" stroke-width="2.2"/><rect x="8.5" y="11.5" width="15" height="12" rx="4" fill="#09110d"/><rect x="11" y="${eyeY}" width="3.5" height="${eyeH}" rx="1.6" fill="#7fe7ff"/><rect x="17.5" y="${eyeY}" width="3.5" height="${eyeH}" rx="1.6" fill="#7fe7ff"/><path d="${smile}" stroke="#7fe7ff" stroke-width="1.6" stroke-linecap="round" fill="none"/></g></svg>`
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><g transform="translate(0,${yShift})"><line x1="16" y1="5.5" x2="16" y2="2.5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="2.2" r="${ledRadius}" fill="${ledColor}"/><path d="M8.5 18 Q5 20 5.5 23.5" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" fill="none"/><circle cx="5.5" cy="24" r="1.6" fill="#d9ed74"/><path d="${rightArmPath}" stroke="#10b981" stroke-width="2.6" stroke-linecap="round" fill="none"/><circle cx="${handX}" cy="${handY}" r="1.6" fill="#d9ed74"/><rect x="11" y="25" width="3.4" height="4.5" rx="1.4" fill="#193c33" stroke="#10b981" stroke-width="1.2"/><rect x="17.6" y="25" width="3.4" height="4.5" rx="1.4" fill="#193c33" stroke="#10b981" stroke-width="1.2"/><rect x="10" y="28.5" width="5" height="2.2" rx="1.1" fill="#10b981"/><rect x="17" y="28.5" width="5" height="2.2" rx="1.1" fill="#10b981"/><rect x="8" y="5.5" width="16" height="10.5" rx="4" fill="#193c33" stroke="#10b981" stroke-width="1.6"/><rect x="10" y="7.4" width="12" height="6.8" rx="2.4" fill="#09110d"/><rect x="12" y="${eyeY}" width="2.6" height="${eyeH}" rx="1.2" fill="#7fe7ff"/><rect x="17.4" y="${eyeY}" width="2.6" height="${eyeH}" rx="1.2" fill="#7fe7ff"/><rect x="9" y="16.5" width="14" height="9" rx="3.2" fill="#193c33" stroke="#10b981" stroke-width="1.6"/><rect x="12" y="18.6" width="8" height="4.6" rx="1.5" fill="#09110d"/><circle cx="14.2" cy="20.9" r="1.1" fill="${chestColor}"/><rect x="16.5" y="20.2" width="2.5" height="1.4" rx="0.7" fill="#10b981"/></g></svg>`
       return `data:image/svg+xml,${encodeURIComponent(svg)}`
     }
 
