@@ -12,6 +12,7 @@ const SPEECH_MESSAGES = [
   'Who is on leave today?',
   'Need attendance report? 📊',
   'Shift starts in 5 min ⏰',
+  'Team chat & HD meetings? 📹',
   'Ask me anything!',
 ]
 

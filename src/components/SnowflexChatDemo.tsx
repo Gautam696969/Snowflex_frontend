@@ -17,12 +17,13 @@ interface SnowflexChatDemoProps {
 }
 
 const GREETING_TEXT =
-  "Hii buddy! 👋 I'm Snowflex AI. How's your day going? I can help with attendance, shifts, leave and reports. What would you like to try?"
+  "Hii buddy! 👋 I'm Snowflex AI. How's your day going? I can help with attendance, shifts, leave, chat, video calls & meetings. What would you like to try?"
 
 const QUICK_REPLIES = [
   'Who is on leave today?',
   "Show today's attendance",
   'When is my next shift?',
+  'How do chat & video meetings work?',
   'Tell me about Snowflex',
 ]
 
@@ -59,10 +60,25 @@ function localFallbackReply(message: string): string {
       ? 'Snowflex shift start aur end se 5 minute pehle smart push notifications bhejta hai — app band ho tab bhi! 🔔'
       : 'Snowflex sends smart push reminders 5 minutes before shift start and end — even when the app is closed! 🔔'
   }
-  if (q.includes('chat') || q.includes('meet') || q.includes('video') || q.includes('call') || q.includes('screen')) {
+  if ((q.includes('chat') || q.includes('messag') || q.includes('dm')) && (q.includes('video') || q.includes('call') || q.includes('meet'))) {
     return isHinglish
-      ? 'Snowflex me built-in live team chat aur HD video meetings hain screen sharing ke saath — kisi external app ki zarurat nahi! 📹'
-      : 'Snowflex includes built-in live team chat and HD video meetings with screen sharing — no external meeting app needed! 📹'
+      ? 'Snowflex me Live Team Chat, 1-on-1 HD Video Calls, aur Group Meetings (screen sharing, raise hand & meeting links ke saath) sab built-in hain! 💬📹'
+      : 'Snowflex includes Live Team Chat, 1-on-1 HD Video Calls, and Group Meetings with screen sharing, raise hand, and instant join links — all built-in! 💬📹'
+  }
+  if (q.includes('meeting') || q.includes('meet') || q.includes('screen shar') || q.includes('screenshar') || q.includes('raise hand')) {
+    return isHinglish
+      ? 'Snowflex Meetings me aap instant ya scheduled meeting start kar sakte hain, chat me direct join link bhej sakte hain, screen share kar sakte hain, aur host sabke liye End-for-All kar sakta hai! 🎥🖥️'
+      : 'With Snowflex Meetings you can launch instant or scheduled rooms, share clickable meeting cards in chat, present your screen, raise hand, and host-manage participants! 🎥🖥️'
+  }
+  if (q.includes('video') || q.includes('call') || q.includes('ring') || q.includes('audio call')) {
+    return isHinglish
+      ? 'Snowflex me aap kisi bhi teammate ko direct 1-on-1 HD Video Call kar sakte hain — live ring notification, camera/mic toggle aur missed call alerts ke saath! 📞📹'
+      : 'Snowflex supports direct 1-on-1 HD Video Calls right from chat — complete with live incoming call rings, mic/camera toggles, and missed call logs! 📞📹'
+  }
+  if (q.includes('chat') || q.includes('messag') || q.includes('dm') || q.includes('conversation')) {
+    return isHinglish
+      ? 'Snowflex Live Chat me real-time 1-on-1 aur group messaging, online status, unread counts, aur chat ke andar se hi call/meeting start karne ka option milta hai! 💬✨'
+      : 'Snowflex Live Chat gives you real-time 1-on-1 and team messaging with online status, unread badges, and one-click video calls or meeting invites right inside chat! 💬✨'
   }
   if (q.includes('price') || q.includes('pricing') || q.includes('free') || q.includes('cost') || q.includes('plan') || q.includes('trial') || q.includes('signup')) {
     return isHinglish
