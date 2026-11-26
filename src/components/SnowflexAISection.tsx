@@ -98,7 +98,7 @@ export default function SnowflexAISection({ isLoggedIn: _isLoggedIn = false }: S
   return (
     <section
       id="snowflex-ai"
-      className="sf-ai-section min-h-screen flex items-center bg-[#f7f8f4] dark:bg-[#0c130f] max-w-[1160px] mx-auto px-4 sm:px-6 py-16 sm:py-20 border-t border-[#e4ece0] dark:border-[#1c2c22]"
+      className="sf-ai-section min-h-screen flex items-center max-w-[1160px] mx-auto px-4 sm:px-6 py-16 sm:py-20 border-t border-[#e4ece0] dark:border-[#1c2c22]"
     >
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
         {/* LEFT SIDE (~45%): Big Animated Robot + Soft Glowing Circle */}

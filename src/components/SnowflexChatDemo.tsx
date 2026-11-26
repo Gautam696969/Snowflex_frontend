@@ -474,7 +474,7 @@ export default function SnowflexChatDemo({
               </span>
               <Link
                 to="/register"
-                className="px-3 py-1.5 rounded-full bg-[#193c33] dark:bg-[#10b981] text-[#d9ed74] dark:text-[#08150e] text-[11px] font-extrabold no-underline shrink-0"
+                className="px-3 py-1.5 rounded-full bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] text-[11px] font-extrabold no-underline shrink-0 transition-colors"
               >
                 Sign Up
               </Link>
@@ -507,7 +507,7 @@ export default function SnowflexChatDemo({
           <button
             type="submit"
             disabled={isTyping || !input.trim()}
-            className="w-10 h-10 rounded-xl bg-[#193c33] hover:bg-[#235246] dark:bg-[#10b981] dark:hover:bg-[#34d399] text-[#d9ed74] dark:text-[#08150e] border-0 grid place-items-center cursor-pointer shrink-0 disabled:opacity-45 disabled:cursor-not-allowed transition-colors"
+            className="w-10 h-10 rounded-xl bg-[#10b981] hover:bg-[#059669] dark:bg-[#193c33] dark:hover:bg-[#235246] text-white dark:text-[#d9ed74] border-0 grid place-items-center cursor-pointer shrink-0 disabled:opacity-45 disabled:cursor-not-allowed transition-colors"
             aria-label="Send message"
           >
             <Send size={16} />
