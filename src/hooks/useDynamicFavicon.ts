@@ -80,9 +80,9 @@ function buildRobotFaceFrames(): string[] {
     const cos1 = Math.cos(phase)
     const sin2 = Math.sin(phase * 2)
 
-    const bobY = sin1 * 2.2
-    const tiltDeg = cos1 * 2.6
-    const eyeShiftX = sin1 * 1.8
+    const bobY = sin1 * 1.5
+    const tiltDeg = cos1 * 2.4
+    const eyeShiftX = sin1 * 2.2
     const ledGlow = 0.45 + ((sin2 + 1) / 2) * 0.55
     const auraAlpha = 0.16 + ((sin1 + 1) / 2) * 0.14
 
@@ -94,96 +94,96 @@ function buildRobotFaceFrames(): string[] {
     ctx.clearRect(0, 0, size, size)
 
     // Soft breathing emerald-cyan halo behind the face
-    const aura = ctx.createRadialGradient(32, 34, 8, 32, 34, 30)
+    const aura = ctx.createRadialGradient(32, 35, 10, 32, 35, 31)
     aura.addColorStop(0, `rgba(16, 185, 129, ${(auraAlpha * 1.15).toFixed(3)})`)
-    aura.addColorStop(0.65, `rgba(127, 231, 255, ${(auraAlpha * 0.55).toFixed(3)})`)
+    aura.addColorStop(0.68, `rgba(127, 231, 255, ${(auraAlpha * 0.55).toFixed(3)})`)
     aura.addColorStop(1, 'rgba(16, 185, 129, 0)')
     ctx.fillStyle = aura
     ctx.beginPath()
-    ctx.arc(32, 34, 30, 0, Math.PI * 2)
+    ctx.arc(32, 35, 31, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.save()
-    ctx.translate(32, 35 + bobY)
+    ctx.translate(32, 36 + bobY)
     ctx.rotate((tiltDeg * Math.PI) / 180)
-    ctx.translate(-32, -35)
+    ctx.translate(-32, -36)
 
-    // Antenna stem + breathing golden LED
+    // Short Compact Antenna stem + glowing golden LED
     ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 4.2
+    ctx.lineWidth = 4
     ctx.lineCap = 'round'
     ctx.beginPath()
-    ctx.moveTo(32, 17)
-    ctx.lineTo(32, 8.5)
+    ctx.moveTo(32, 14)
+    ctx.lineTo(32, 7.5)
     ctx.stroke()
 
-    ctx.fillStyle = `rgba(255, 210, 63, ${(0.22 + ledGlow * 0.4).toFixed(3)})`
+    ctx.fillStyle = `rgba(255, 210, 63, ${(0.22 + ledGlow * 0.42).toFixed(3)})`
     ctx.beginPath()
-    ctx.arc(32, 7.5, 6 + ledGlow * 2.2, 0, Math.PI * 2)
+    ctx.arc(32, 6.2, 5.8 + ledGlow * 2, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = ledGlow > 0.72 ? '#ffef8a' : '#ffd23f'
     ctx.strokeStyle = '#143229'
-    ctx.lineWidth = 1.8
+    ctx.lineWidth = 1.6
     ctx.beginPath()
-    ctx.arc(32, 7.5, 4.3, 0, Math.PI * 2)
+    ctx.arc(32, 6.2, 4.2, 0, Math.PI * 2)
     ctx.fill()
     ctx.stroke()
 
-    // Side Ears
-    drawRoundedRect(ctx, 4.5, 27, 6.5, 16, 3.2)
+    // Sleek Rounded Side Ear Pods
+    drawRoundedRect(ctx, 2, 28.5, 5.5, 16, 2.75)
     ctx.fillStyle = '#10b981'
     ctx.fill()
     ctx.strokeStyle = '#143229'
-    ctx.lineWidth = 1.6
+    ctx.lineWidth = 1.5
     ctx.stroke()
 
-    drawRoundedRect(ctx, 53, 27, 6.5, 16, 3.2)
+    drawRoundedRect(ctx, 56.5, 28.5, 5.5, 16, 2.75)
     ctx.fillStyle = '#10b981'
     ctx.fill()
     ctx.stroke()
 
-    // Big Bold Rounded Head
-    drawRoundedRect(ctx, 9.5, 16.5, 45, 37, 13)
+    // Bigger, Plump Round AI Bot Head
+    drawRoundedRect(ctx, 5, 13, 54, 47, 23.5)
     ctx.fillStyle = '#193c33'
     ctx.fill()
     ctx.strokeStyle = '#10b981'
-    ctx.lineWidth = 3.6
+    ctx.lineWidth = 3.8
     ctx.stroke()
 
-    // Dark Face Visor Screen
-    drawRoundedRect(ctx, 15, 22, 34, 25, 8.5)
+    // Large Round Dark Face Visor
+    drawRoundedRect(ctx, 11, 19.5, 42, 33.5, 16.75)
     ctx.fillStyle = '#07110d'
     ctx.fill()
     ctx.strokeStyle = '#255243'
-    ctx.lineWidth = 1.4
+    ctx.lineWidth = 1.5
     ctx.stroke()
 
-    // Glowing Cyan Eyes (smooth glance + soft blink)
-    const eyeH = 10.5 * eyeScaleY
-    const eyeY = 32 - eyeH / 2
+    // Big Expressive Glowing Cyan Eyes (smooth glance + soft blink)
+    const eyeH = 12 * eyeScaleY
+    const eyeY = 32.5 - eyeH / 2
     ctx.fillStyle = '#7fe7ff'
-    drawRoundedRect(ctx, 21 + eyeShiftX, eyeY, 7.5, eyeH, Math.min(3.6, eyeH / 2))
+    drawRoundedRect(ctx, 18.5 + eyeShiftX, eyeY, 9, eyeH, Math.min(4.5, eyeH / 2))
     ctx.fill()
-    drawRoundedRect(ctx, 35.5 + eyeShiftX, eyeY, 7.5, eyeH, Math.min(3.6, eyeH / 2))
+    drawRoundedRect(ctx, 36.5 + eyeShiftX, eyeY, 9, eyeH, Math.min(4.5, eyeH / 2))
     ctx.fill()
 
-    // Eye catchlight shine when open
+    // Crisp Eye Catchlights
     if (eyeScaleY > 0.7) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
       ctx.beginPath()
-      ctx.arc(23.5 + eyeShiftX, eyeY + 2.6, 1.4, 0, Math.PI * 2)
-      ctx.arc(38 + eyeShiftX, eyeY + 2.6, 1.4, 0, Math.PI * 2)
+      ctx.arc(21.4 + eyeShiftX, eyeY + 3.2, 1.7, 0, Math.PI * 2)
+      ctx.arc(39.4 + eyeShiftX, eyeY + 3.2, 1.7, 0, Math.PI * 2)
       ctx.fill()
     }
 
-    // Smooth Friendly Smile
+    // Wider Smooth Friendly Smile
     ctx.strokeStyle = '#7fe7ff'
-    ctx.lineWidth = 2.6
+    ctx.lineWidth = 2.8
     ctx.lineCap = 'round'
     ctx.beginPath()
-    ctx.moveTo(25 + eyeShiftX * 0.45, 40.2)
-    ctx.quadraticCurveTo(32 + eyeShiftX * 0.45, 44.8, 39 + eyeShiftX * 0.45, 40.2)
+    ctx.moveTo(24 + eyeShiftX * 0.45, 42.8)
+    ctx.quadraticCurveTo(32 + eyeShiftX * 0.45, 48.2, 40 + eyeShiftX * 0.45, 42.8)
     ctx.stroke()
 
     ctx.restore()
